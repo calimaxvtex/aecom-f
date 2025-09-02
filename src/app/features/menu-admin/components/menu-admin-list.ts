@@ -634,15 +634,7 @@ import { ApiConfig } from './api-config';
                 <!-- Toast para notificaciones -->
                 <p-toast />
 
-                <!-- Debug Info -->
-                <div class="mt-6 p-3 bg-blue-100 border border-blue-300 rounded">
-                    <strong>Debug Info:</strong><br>
-                    Total items: {{menuItems.length}}<br>
-                    Editando: {{editingCell || 'Ninguno'}}<br>
-                    <br>
-                    <strong>Primer item:</strong><br>
-                    <pre>{{menuItems[0] | json}}</pre>
-                </div>
+
                     </p-tabpanel>
 
                     <!-- Panel 2: Explorar Rutas -->

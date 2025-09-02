@@ -541,23 +541,26 @@ import { ApiConfig } from './api-config';
                             </div>
                         </div>
 
-                        <!-- Tiene hijos (swItems) -->
+                        <!-- Tiene hijos (swItems) - Solo visual -->
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <p-checkbox 
                                     formControlName="swItenms" 
                                     [binary]="true"
                                     inputId="swItems"
-                                    (onChange)="onSwItemsChange()"
+                                    [disabled]="true"
                                 />
-                                <label for="swItems" class="flex items-center gap-2 text-sm font-medium">
+                                <label for="swItems" class="flex items-center gap-2 text-sm font-medium text-gray-500">
                                     Este item tiene sub-items (hijos)
                                     <i class="pi pi-question-circle text-gray-400 cursor-help" 
-                                       pTooltip="Los items con hijos actúan como contenedores y no pueden tener ruta asignada."
+                                       pTooltip="Campo automático: Si no tiene ruta, el backend marcará que tiene hijos."
                                        tooltipPosition="top">
                                     </i>
                                 </label>
                             </div>
+                            <small class="text-gray-500 text-xs">
+                                🔄 Se actualiza automáticamente según la ruta asignada
+                            </small>
                         </div>
                     </div>
 
@@ -877,12 +880,8 @@ export class MenuAdminList implements OnInit {
                 disable: item.disable
             });
             
-            // Configurar estado de controles según las reglas
-            if (item.separator) {
-                this.menuForm.get('swItenms')?.disable();
-            } else {
-                this.menuForm.get('swItenms')?.enable();
-            }
+            // swItenms siempre deshabilitado (solo visual)
+            this.menuForm.get('swItenms')?.disable();
         } else {
             this.menuForm.reset({
                 label: '',
@@ -897,8 +896,8 @@ export class MenuAdminList implements OnInit {
                 disable: false
             });
             
-            // Asegurar que todos los controles estén habilitados para nuevo item
-            this.menuForm.get('swItenms')?.enable();
+            // swItenms siempre deshabilitado (solo visual)
+            this.menuForm.get('swItenms')?.disable();
         }
         
         this.showFormModal = true;
@@ -927,16 +926,13 @@ export class MenuAdminList implements OnInit {
                     let routerLink = formData.routerLink || this.menuItems[itemIndex].routerLink;
                     let icon = formData.icon || this.menuItems[itemIndex].icon;
                     
-                    // Si es separador: no ruta, no icono, no hijos
+                    // Si es separador: no ruta, no icono
                     if (formData.separator) {
                         routerLink = '';
                         icon = '';
-                        formData.swItenms = false;
                     }
-                    // Si tiene hijos: no ruta
-                    else if (formData.swItenms) {
-                        routerLink = '';
-                    }
+                    
+                    // swItenms se manejará automáticamente por el backend según la ruta
                     
                     // Mantener los campos requeridos del item original y solo actualizar los editables
                     this.menuItems[itemIndex] = {
@@ -946,7 +942,7 @@ export class MenuAdminList implements OnInit {
                         label: formData.label || this.menuItems[itemIndex].label,
                         tooltip: formData.tooltip || this.menuItems[itemIndex].tooltip,
                         icon: icon,
-                        swItenms: formData.swItenms ?? this.menuItems[itemIndex].swItenms,
+                        swItenms: this.menuItems[itemIndex].swItenms, // Mantener valor actual, backend lo actualizará
                         separator: formData.separator ?? this.menuItems[itemIndex].separator,
                         routerLink: routerLink,
                         visible: formData.visible ?? this.menuItems[itemIndex].visible,
@@ -968,16 +964,13 @@ export class MenuAdminList implements OnInit {
                 let routerLink = formData.routerLink || '';
                 let icon = formData.icon || '';
                 
-                // Si es separador: no ruta, no icono, no hijos
+                // Si es separador: no ruta, no icono
                 if (formData.separator) {
                     routerLink = '';
                     icon = '';
-                    formData.swItenms = false;
                 }
-                // Si tiene hijos: no ruta
-                else if (formData.swItenms) {
-                    routerLink = '';
-                }
+                
+                // swItenms se determinará automáticamente por el backend según la ruta
                 
                 const newItem: MenuCrudItem = {
                     id_menu: newId,
@@ -987,7 +980,7 @@ export class MenuAdminList implements OnInit {
                     label: formData.label || '',
                     tooltip: formData.tooltip || null,
                     icon: icon,
-                    swItenms: formData.swItenms || false,
+                    swItenms: false, // Backend lo determinará según la ruta
                     separator: formData.separator || false,
                     routerLink: routerLink,
                     visible: formData.visible ?? true,
@@ -1071,41 +1064,16 @@ export class MenuAdminList implements OnInit {
         const isSeparator = this.menuForm.get('separator')?.value;
         const iconControl = this.menuForm.get('icon');
         const routerLinkControl = this.menuForm.get('routerLink');
-        const swItemsControl = this.menuForm.get('swItenms');
         
         if (isSeparator) {
-            // Si es separador, limpiar campos y deshabilitar swItems
+            // Si es separador, limpiar campos no aplicables
             iconControl?.setValue('');
             routerLinkControl?.setValue('');
-            swItemsControl?.setValue(false);
-            swItemsControl?.disable();
-            console.log('📏 Item marcado como separador - campos limpiados y swItems deshabilitado');
-        } else {
-            // Si no es separador, habilitar swItems
-            swItemsControl?.enable();
-            console.log('✅ Item no es separador - swItems habilitado');
+            console.log('📏 Item marcado como separador - campos limpiados');
         }
     }
 
-    // Método para manejar cambios en swItems
-    onSwItemsChange(): void {
-        const swItems = this.menuForm.get('swItenms')?.value;
-        const routerLinkControl = this.menuForm.get('routerLink');
-        
-        if (swItems) {
-            // Si tiene hijos, limpiar y deshabilitar la ruta
-            routerLinkControl?.setValue('');
-            routerLinkControl?.disable();
-            console.log('🚫 Item marcado como padre - ruta limpiada y deshabilitada');
-        } else {
-            // Si no tiene hijos, habilitar la ruta (si no es separador)
-            const isSeparator = this.menuForm.get('separator')?.value;
-            if (!isSeparator) {
-                routerLinkControl?.enable();
-            }
-            console.log('✅ Item sin hijos - ruta habilitada');
-        }
-    }
+
 
     // Método para manejar cambios en padre
     onParentChange(): void {

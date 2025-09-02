@@ -5,6 +5,8 @@
 
 // Interfaces
 export * from './usuario.interface';
+export * from './rol.interface';
 
 // Constantes
 export * from './usuario.constants';
+export * from './rol.constants';

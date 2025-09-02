@@ -1,4 +1,4 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ApplicationConfig } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
@@ -6,6 +6,8 @@ import { providePrimeNG } from 'primeng/config';
 import { appRoutes } from './app.routes';
 import Material from '@primeuix/themes/material';
 import { definePreset } from '@primeuix/themes';
+import { ConfirmationService, MessageService } from 'primeng/api';
+// import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
 
 const MyPreset = definePreset(Material, {
     semantic: {
@@ -41,6 +43,14 @@ export const appConfig: ApplicationConfig = {
             ripple: true,
             inputStyle: 'filled',
             theme: { preset: MyPreset, options: { darkModeSelector: '.app-dark' } }
-        })
+        }),
+        // Servicios globales de PrimeNG necesarios para tablas, diálogos, etc.
+        ConfirmationService,
+        MessageService
+        // {
+        //     provide: HTTP_INTERCEPTORS,
+        //     useClass: HttpLoggingInterceptor,
+        //     multi: true
+        // }
     ]
 };

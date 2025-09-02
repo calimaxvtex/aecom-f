@@ -15,14 +15,19 @@ import {InputGroupAddon} from 'primeng/inputgroupaddon';
     standalone: true,
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppConfigurator, InputGroup, InputGroupAddon],
     template: `<div class="h-screen flex w-full bg-surface-50 dark:bg-surface-950">
-            <div class="flex flex-1 flex-col bg-surface-50 dark:bg-surface-950 items-center justify-center">
+            <div class="flex flex-1 flex-col bg-surface-50 dark:bg-surface-950 items-center justify-center" style="flex: 0 0 30%">
                 <div class="w-11/12 sm:w-120">
-                    <div class="flex flex-col">
-                        <div style="height: 56px; width: 56px" class="bg-primary rounded-full flex items-center justify-center">
-                            <i class="pi pi-sign-in text-surface-0 dark:text-surface-900 text-4xl!"></i>
+                    <div class="flex flex-col items-center">
+                        <!-- Logo de Calimax en círculo azul - subido para mejor centrado -->
+                        <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-8 shadow-lg -mt-8">
+                            <img 
+                                src="/layout/images/logo/calimax-vector-logo.svg" 
+                                alt="Calimax Logo" 
+                                class="w-16 h-16 text-white"
+                            />
                         </div>
-                        <div class="mt-6">
-                            <h1 class="m-0 text-primary font-semibold text-4xl">Welcome back!</h1>
+                        <div class="text-center">
+                            <h1 class="m-0 text-primary font-medium text-3xl">Welcome back!</h1>
                             <span class="block text-surface-700 dark:text-surface-100 mt-2">Please fill the fields to sign-up Ultima network</span>
                         </div>
                     </div>
@@ -48,8 +53,8 @@ import {InputGroupAddon} from 'primeng/inputgroupaddon';
                     </div>
                 </div>
             </div>
-            <div [style]="{ backgroundImage: 'url(/images/pages/accessDenied-bg.jpg)' }" class="hidden lg:flex flex-1 items-center justify-center bg-cover">
-                <img src="/layout/images/logo/vector_logo.png" alt="" />
+            <div [style]="{ backgroundImage: 'url(/images/pages/calimax-login-bg.jpg)' }" class="hidden lg:flex items-center justify-center bg-cover" style="flex: 0 0 70%">
+                <!-- Solo imagen de fondo de Calimax -->
             </div>
         </div>
         <app-configurator simple />`

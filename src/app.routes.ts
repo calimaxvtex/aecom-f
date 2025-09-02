@@ -46,6 +46,11 @@ export const appRoutes: Routes = [
                 path: 'profile',
                 data: { breadcrumb: 'User Management' },
                 loadChildren: () => import('@/pages/usermanagement/usermanagement.routes')
+            },
+            {
+                path: 'menu-admin',
+                data: { breadcrumb: 'Administración de Menú' },
+                loadComponent: () => import('@/features/menu-admin/components/menu-admin-list').then(m => m.MenuAdminList)
             }
         ]
     },

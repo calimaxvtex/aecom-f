@@ -14,9 +14,18 @@ import { AppConfigurator } from '@/layout/components/app.configurator';
     selector: 'app-login',
     standalone: true,
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, InputIcon, IconField, AppConfigurator],
-    template: `<div class="min-h-screen flex flex-col bg-cover" [style]="{ backgroundImage: 'url(/images/pages/login-bg.jpg)' }">
+    template: `<div class="min-h-screen flex flex-col bg-cover relative" [style]="{ backgroundImage: 'url(/images/pages/calimax-login-bg.jpg)' }">
             <div class="self-center mt-auto mb-auto">
                 <div class="text-center z-50 flex flex-col border rounded-md border-surface bg-surface-0 dark:bg-surface-900 p-12">
+                    <!-- Logo de Calimax en círculo azul -->
+                    <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-6 shadow-lg mx-auto">
+                        <img 
+                            src="/layout/images/logo/calimax-vector-logo.svg" 
+                            alt="Calimax Logo" 
+                            class="w-16 h-16 text-white"
+                        />
+                    </div>
+                    
                     <span class="text-2xl font-semibold">Welcome</span>
                     <div class="text-muted-color mb-12 px-12">Please use the form to sign-in Ultima network</div>
 

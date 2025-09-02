@@ -43,7 +43,9 @@ export interface TabCloseEvent {
     providedIn: 'root'
 })
 export class LayoutService {
-    _config: layoutConfig = {
+    private readonly CONFIG_KEY = 'calimax-layout-config';
+    
+    _config: layoutConfig = this.loadConfigFromStorage() || {
         primary: 'indigo',
         surface: 'slate',
         darkTheme: false,
@@ -114,6 +116,7 @@ export class LayoutService {
             const config = this.layoutConfig();
             if (config) {
                 this.onConfigUpdate();
+                this.saveConfigToStorage(config);
             }
         });
 
@@ -131,6 +134,24 @@ export class LayoutService {
         effect(() => {
             this.isSidebarStateChanged() && this.reset();
         });
+    }
+
+    private loadConfigFromStorage(): layoutConfig | null {
+        try {
+            const savedConfig = localStorage.getItem(this.CONFIG_KEY);
+            return savedConfig ? JSON.parse(savedConfig) : null;
+        } catch (error) {
+            console.warn('Error loading layout config from storage:', error);
+            return null;
+        }
+    }
+
+    private saveConfigToStorage(config: layoutConfig): void {
+        try {
+            localStorage.setItem(this.CONFIG_KEY, JSON.stringify(config));
+        } catch (error) {
+            console.warn('Error saving layout config to storage:', error);
+        }
     }
 
     private handleDarkModeTransition(config: layoutConfig): void {

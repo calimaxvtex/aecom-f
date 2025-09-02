@@ -10,6 +10,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { TabsModule } from 'primeng/tabs';
 import { CheckboxModule } from 'primeng/checkbox';
+import { CardModule } from 'primeng/card';
+import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { MenuService } from '../../../core/services/menu/menu.service';
 import { MenuCrudItem, MenuFormItem } from '../../../core/models/menu.interface';
@@ -19,6 +21,7 @@ import { RouteSelector } from './route-selector';
 import { RouteExplorer } from './route-explorer';
 import { IconExplorer } from './icon-explorer';
 import { IconSelectorAdvanced } from './icon-selector-advanced';
+import { ApiConfig } from './api-config';
 
 @Component({
     selector: 'app-menu-admin-list',
@@ -36,21 +39,19 @@ import { IconSelectorAdvanced } from './icon-selector-advanced';
         ToastModule,
         TabsModule,
         CheckboxModule,
+        CardModule,
+        SelectModule,
         IconField,
         InputIcon,
         RouteSelector,
         RouteExplorer,
         IconExplorer,
-        IconSelectorAdvanced
+        IconSelectorAdvanced,
+        ApiConfig
     ],
     providers: [MessageService],
     template: `
         <div class="card">
-            <div class="mb-4">
-                <h1 class="text-2xl font-bold mb-2">✅ Administración de Menú</h1>
-                <p class="text-gray-600 mb-4">Gestiona los items del menú de la aplicación</p>
-            </div>
-
             <!-- Pestañas siguiendo el patrón del proyecto -->
             <p-tabs value="0">
                 <p-tablist>
@@ -66,10 +67,18 @@ import { IconSelectorAdvanced } from './icon-selector-advanced';
                         <i class="pi pi-palette mr-2"></i>
                         Explorar Iconos
                     </p-tab>
+                    <p-tab value="3">
+                        <i class="pi pi-cog mr-2"></i>
+                        Configuración API
+                    </p-tab>
                 </p-tablist>
                 <p-tabpanels>
                     <!-- Panel 1: Gestión de Menú -->
                     <p-tabpanel value="0">
+                        <div class="mb-4">
+                            <h1 class="text-2xl font-bold mb-2">✅ Administración de Menú</h1>
+                            <p class="text-gray-600 mb-4">Gestiona los items del menú de la aplicación</p>
+                        </div>
             
             <p-table
                 #dt
@@ -408,81 +417,148 @@ import { IconSelectorAdvanced } from './icon-selector-advanced';
                             />
                         </div>
 
+                        <!-- Tooltip -->
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium mb-1">
+                                Tooltip
+                                <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                   pTooltip="Texto que aparece al pasar el mouse sobre el item del menú. Opcional."
+                                   tooltipPosition="top">
+                                </i>
+                            </label>
+                            <input 
+                                pInputText 
+                                formControlName="tooltip"
+                                placeholder="Descripción que aparece al pasar el mouse"
+                                class="w-full"
+                            />
+                        </div>
+
                         <!-- Icono con Selector Avanzado -->
                         <div>
-                            <label class="block text-sm font-medium mb-1">Icono *</label>
+                            <label class="flex items-center gap-2 text-sm font-medium mb-1">
+                                Icono 
+                                <span *ngIf="!menuForm.get('separator')?.value">*</span>
+                                <span *ngIf="menuForm.get('separator')?.value" class="text-red-500 text-xs">(No aplica para separadores)</span>
+                                <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                   pTooltip="Usa el selector visual para encontrar el icono perfecto. Los separadores no requieren icono."
+                                   tooltipPosition="top"
+                                   *ngIf="!menuForm.get('separator')?.value">
+                                </i>
+                            </label>
                             <app-icon-selector-advanced
                                 formControlName="icon"
                                 class="w-full"
+                                [class.opacity-50]="menuForm.get('separator')?.value"
+                                [style.pointer-events]="menuForm.get('separator')?.value ? 'none' : 'auto'"
                             ></app-icon-selector-advanced>
-                            <small class="text-gray-500 text-xs mt-1">
-                                💡 Usa el selector visual para encontrar el icono perfecto
+                            <small class="text-red-500 text-xs mt-1" *ngIf="menuForm.get('separator')?.value">
+                                🚫 Los separadores no requieren icono
                             </small>
                         </div>
 
                         <!-- Router Link -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-1">
+                            <label class="flex items-center gap-2 text-sm font-medium mb-1">
                                 Ruta 
                                 <span *ngIf="menuForm.get('swItenms')?.value" class="text-red-500 text-xs">(Deshabilitada - Item con hijos)</span>
+                                <span *ngIf="menuForm.get('separator')?.value" class="text-red-500 text-xs">(No aplica para separadores)</span>
+                                <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                   pTooltip="Haz clic en el campo para abrir el selector de rutas disponibles. Los items con hijos y los separadores no pueden tener ruta."
+                                   tooltipPosition="top"
+                                   *ngIf="!menuForm.get('swItenms')?.value && !menuForm.get('separator')?.value">
+                                </i>
                             </label>
                             <app-route-selector
                                 formControlName="routerLink"
                                 class="w-full"
-                                [class.opacity-50]="menuForm.get('swItenms')?.value"
-                                [style.pointer-events]="menuForm.get('swItenms')?.value ? 'none' : 'auto'"
+                                [class.opacity-50]="menuForm.get('swItenms')?.value || menuForm.get('separator')?.value"
+                                [style.pointer-events]="(menuForm.get('swItenms')?.value || menuForm.get('separator')?.value) ? 'none' : 'auto'"
                             ></app-route-selector>
-                            <small class="text-gray-500 text-xs mt-1" *ngIf="!menuForm.get('swItenms')?.value">
-                                💡 Haz clic en el campo para abrir el selector de rutas disponibles
-                            </small>
                             <small class="text-red-500 text-xs mt-1" *ngIf="menuForm.get('swItenms')?.value">
                                 🚫 Los items con sub-items no pueden tener ruta asignada
                             </small>
+                            <small class="text-red-500 text-xs mt-1" *ngIf="menuForm.get('separator')?.value">
+                                🚫 Los separadores no tienen ruta asignada
+                            </small>
                         </div>
 
-                        <!-- Nivel -->
+                        <!-- Nivel (Automático) -->
                         <div>
-                            <label class="block text-sm font-medium mb-1">Nivel</label>
+                            <label class="flex items-center gap-2 text-sm font-medium mb-1">
+                                Nivel (Automático)
+                                <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                   pTooltip="Se calcula automáticamente según el padre seleccionado. Raíz = 1, hijos del raíz = 2, etc."
+                                   tooltipPosition="top">
+                                </i>
+                            </label>
                             <input 
                                 pInputText 
                                 type="number"
                                 formControlName="nivel"
-                                placeholder="1"
-                                class="w-full"
+                                placeholder="Se calculará automáticamente"
+                                class="w-full bg-gray-50"
+                                readonly
                             />
                         </div>
 
                         <!-- Nivel Padre -->
                         <div>
-                            <label class="block text-sm font-medium mb-1">Nivel Padre</label>
-                            <input 
-                                pInputText 
-                                type="number"
+                            <label class="flex items-center gap-2 text-sm font-medium mb-1">
+                                Nivel Padre
+                                <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                   pTooltip="Solo se muestran items existentes que pueden ser padres. Selecciona 'Raíz' para items principales."
+                                   tooltipPosition="top">
+                                </i>
+                            </label>
+                            <p-select
                                 formControlName="id_padre"
-                                placeholder="0"
+                                [options]="availableParents"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Seleccionar padre..."
                                 class="w-full"
+                                (onChange)="onParentChange()"
                             />
-                            <small class="text-gray-500 text-xs mt-1">
-                                0 = Item raíz, otro número = ID del item padre
-                            </small>
+                        </div>
+
+                        <!-- Es Separador -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <p-checkbox 
+                                    formControlName="separator" 
+                                    [binary]="true"
+                                    inputId="separator"
+                                    (onChange)="onSeparatorChange()"
+                                />
+                                <label for="separator" class="flex items-center gap-2 text-sm font-medium">
+                                    Es un separador visual
+                                    <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                       pTooltip="Los separadores son líneas divisorias en el menú. No tienen ruta, icono ni sub-items."
+                                       tooltipPosition="top">
+                                    </i>
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Tiene hijos (swItems) -->
-                        <div class="md:col-span-2">
-                            <div class="flex items-center gap-2 mb-2">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
                                 <p-checkbox 
                                     formControlName="swItenms" 
                                     [binary]="true"
                                     inputId="swItems"
                                     (onChange)="onSwItemsChange()"
+                                    [disabled]="menuForm.get('separator')?.value"
                                 />
-                                <label for="swItems" class="text-sm font-medium">
+                                <label for="swItems" class="flex items-center gap-2 text-sm font-medium">
                                     Este item tiene sub-items (hijos)
+                                    <i class="pi pi-question-circle text-gray-400 cursor-help" 
+                                       pTooltip="Los items con hijos actúan como contenedores y no pueden tener ruta asignada."
+                                       tooltipPosition="top">
+                                    </i>
                                 </label>
                             </div>
-                            <small class="text-gray-500 text-xs">
-                                ⚠️ Los items con hijos no pueden tener ruta asignada
-                            </small>
                         </div>
                     </div>
 
@@ -578,6 +654,11 @@ import { IconSelectorAdvanced } from './icon-selector-advanced';
                     <p-tabpanel value="2">
                         <app-icon-explorer></app-icon-explorer>
                     </p-tabpanel>
+
+                    <!-- Panel 4: Configuración API -->
+                    <p-tabpanel value="3">
+                        <app-api-config></app-api-config>
+                    </p-tabpanel>
                 </p-tabpanels>
             </p-tabs>
         </div>
@@ -654,6 +735,7 @@ import { IconSelectorAdvanced } from './icon-selector-advanced';
 export class MenuAdminList implements OnInit {
     // Datos
     menuItems: MenuCrudItem[] = [];
+    availableParents: any[] = [];
     
     // Formulario
     menuForm: FormGroup;
@@ -677,11 +759,13 @@ export class MenuAdminList implements OnInit {
     ) {
         this.menuForm = this.fb.group({
             label: ['', Validators.required],
-            icon: ['', Validators.required],
+            icon: [''],
             routerLink: [''],
+            tooltip: [''],
             nivel: [1],
             id_padre: [0],
             swItenms: [false],
+            separator: [false],
             visible: [true],
             disable: [false]
         });
@@ -691,11 +775,34 @@ export class MenuAdminList implements OnInit {
         this.loadMenuItems();
     }
 
+    // Cargar padres disponibles
+    loadAvailableParents(): void {
+        this.availableParents = [
+            { label: '🏠 Raíz (sin padre)', value: 0 }
+        ];
+
+        // Agregar items existentes que pueden ser padres
+        this.menuItems
+            .filter(item => !item.separator) // Los separadores no pueden ser padres
+            .sort((a, b) => a.nivel - b.nivel || a.orden - b.orden)
+            .forEach(item => {
+                const indent = '  '.repeat(item.nivel);
+                const icon = item.icon ? `${item.icon.replace('pi pi-', '')} ` : '';
+                this.availableParents.push({
+                    label: `${indent}${icon}${item.label} (Nivel ${item.nivel})`,
+                    value: item.id_menu
+                });
+            });
+
+        console.log('📋 Padres disponibles:', this.availableParents);
+    }
+
     // Cargar datos
     loadMenuItems(): void {
         this.menuService.getMenuItems().subscribe({
             next: (response) => {
                 this.menuItems = response.data;
+                this.loadAvailableParents(); // Cargar padres después de obtener los datos
                 console.log('✅ Datos cargados:', this.menuItems);
             },
             error: (error) => {
@@ -762,25 +869,32 @@ export class MenuAdminList implements OnInit {
         this.editingItemId = item?.id_menu || null;
         this.formTitle = this.isEditing ? 'Editar Item' : 'Nuevo Item';
         
+        // Recargar padres disponibles
+        this.loadAvailableParents();
+        
         if (item) {
             this.menuForm.patchValue({
                 label: item.label,
+                tooltip: item.tooltip,
                 icon: item.icon,
                 routerLink: item.routerLink,
                 nivel: item.nivel,
                 id_padre: item.id_padre,
                 swItenms: item.swItenms,
+                separator: item.separator,
                 visible: item.visible,
                 disable: item.disable
             });
         } else {
             this.menuForm.reset({
                 label: '',
+                tooltip: '',
                 icon: '',
                 routerLink: '',
                 nivel: 1,
                 id_padre: 0,
                 swItenms: false,
+                separator: false,
                 visible: true,
                 disable: false
             });
@@ -808,8 +922,20 @@ export class MenuAdminList implements OnInit {
                 // ACTUALIZAR ITEM EXISTENTE
                 const itemIndex = this.menuItems.findIndex(i => i.id_menu === this.editingItemId);
                 if (itemIndex !== -1) {
-                    // Aplicar regla de negocio: si tiene hijos, no debe tener ruta
-                    const routerLink = formData.swItenms ? '' : (formData.routerLink || this.menuItems[itemIndex].routerLink);
+                    // Aplicar reglas de negocio
+                    let routerLink = formData.routerLink || this.menuItems[itemIndex].routerLink;
+                    let icon = formData.icon || this.menuItems[itemIndex].icon;
+                    
+                    // Si es separador: no ruta, no icono, no hijos
+                    if (formData.separator) {
+                        routerLink = '';
+                        icon = '';
+                        formData.swItenms = false;
+                    }
+                    // Si tiene hijos: no ruta
+                    else if (formData.swItenms) {
+                        routerLink = '';
+                    }
                     
                     // Mantener los campos requeridos del item original y solo actualizar los editables
                     this.menuItems[itemIndex] = {
@@ -817,8 +943,10 @@ export class MenuAdminList implements OnInit {
                         nivel: formData.nivel || this.menuItems[itemIndex].nivel,
                         id_padre: formData.id_padre ?? this.menuItems[itemIndex].id_padre,
                         label: formData.label || this.menuItems[itemIndex].label,
-                        icon: formData.icon || this.menuItems[itemIndex].icon,
+                        tooltip: formData.tooltip || this.menuItems[itemIndex].tooltip,
+                        icon: icon,
                         swItenms: formData.swItenms ?? this.menuItems[itemIndex].swItenms,
+                        separator: formData.separator ?? this.menuItems[itemIndex].separator,
                         routerLink: routerLink,
                         visible: formData.visible ?? this.menuItems[itemIndex].visible,
                         disable: formData.disable ?? this.menuItems[itemIndex].disable
@@ -835,8 +963,20 @@ export class MenuAdminList implements OnInit {
                 // CREAR NUEVO ITEM
                 const newId = Math.max(...this.menuItems.map(i => i.id_menu)) + 1;
                 
-                // Aplicar regla de negocio: si tiene hijos, no debe tener ruta
-                const routerLink = formData.swItenms ? '' : (formData.routerLink || '');
+                // Aplicar reglas de negocio
+                let routerLink = formData.routerLink || '';
+                let icon = formData.icon || '';
+                
+                // Si es separador: no ruta, no icono, no hijos
+                if (formData.separator) {
+                    routerLink = '';
+                    icon = '';
+                    formData.swItenms = false;
+                }
+                // Si tiene hijos: no ruta
+                else if (formData.swItenms) {
+                    routerLink = '';
+                }
                 
                 const newItem: MenuCrudItem = {
                     id_menu: newId,
@@ -844,13 +984,13 @@ export class MenuAdminList implements OnInit {
                     orden: this.menuItems.length + 1,
                     nivel: formData.nivel || 1,
                     label: formData.label || '',
-                    icon: formData.icon || '',
+                    tooltip: formData.tooltip || null,
+                    icon: icon,
                     swItenms: formData.swItenms || false,
+                    separator: formData.separator || false,
                     routerLink: routerLink,
                     visible: formData.visible ?? true,
                     disable: formData.disable ?? false,
-                    tooltip: `${formData.label} - Agregado por formulario`,
-                    separator: false,
                     fecha_m: new Date().toISOString(),
                     usu_a: 'ADMIN'
                 };
@@ -925,6 +1065,22 @@ export class MenuAdminList implements OnInit {
         // this.menuService.deleteItem(itemId).subscribe(...)
     }
 
+    // Método para manejar cambios en separador
+    onSeparatorChange(): void {
+        const isSeparator = this.menuForm.get('separator')?.value;
+        const iconControl = this.menuForm.get('icon');
+        const routerLinkControl = this.menuForm.get('routerLink');
+        const swItemsControl = this.menuForm.get('swItenms');
+        
+        if (isSeparator) {
+            // Si es separador, limpiar y deshabilitar campos no aplicables
+            iconControl?.setValue('');
+            routerLinkControl?.setValue('');
+            swItemsControl?.setValue(false);
+            console.log('📏 Item marcado como separador - campos limpiados');
+        }
+    }
+
     // Método para manejar cambios en swItems
     onSwItemsChange(): void {
         const swItems = this.menuForm.get('swItenms')?.value;
@@ -936,10 +1092,33 @@ export class MenuAdminList implements OnInit {
             routerLinkControl?.disable();
             console.log('🚫 Item marcado como padre - ruta limpiada y deshabilitada');
         } else {
-            // Si no tiene hijos, habilitar la ruta
-            routerLinkControl?.enable();
+            // Si no tiene hijos, habilitar la ruta (si no es separador)
+            const isSeparator = this.menuForm.get('separator')?.value;
+            if (!isSeparator) {
+                routerLinkControl?.enable();
+            }
             console.log('✅ Item sin hijos - ruta habilitada');
         }
+    }
+
+    // Método para manejar cambios en padre
+    onParentChange(): void {
+        const parentId = this.menuForm.get('id_padre')?.value;
+        let newLevel = 1; // Nivel por defecto para raíz
+        
+        if (parentId && parentId !== 0) {
+            // Buscar el item padre para obtener su nivel
+            const parentItem = this.menuItems.find(item => item.id_menu === parentId);
+            if (parentItem) {
+                newLevel = parentItem.nivel + 1;
+                console.log(`📊 Padre seleccionado: ${parentItem.label} (Nivel ${parentItem.nivel}) -> Nuevo nivel: ${newLevel}`);
+            }
+        } else {
+            console.log('🏠 Item raíz seleccionado -> Nivel: 1');
+        }
+        
+        // Actualizar el nivel automáticamente
+        this.menuForm.get('nivel')?.setValue(newLevel);
     }
 
     // ========== MÉTODOS DE EDICIÓN INLINE ==========

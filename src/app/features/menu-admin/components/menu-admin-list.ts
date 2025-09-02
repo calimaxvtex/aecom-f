@@ -549,7 +549,6 @@ import { ApiConfig } from './api-config';
                                     [binary]="true"
                                     inputId="swItems"
                                     (onChange)="onSwItemsChange()"
-                                    [disabled]="menuForm.get('separator')?.value"
                                 />
                                 <label for="swItems" class="flex items-center gap-2 text-sm font-medium">
                                     Este item tiene sub-items (hijos)
@@ -877,6 +876,13 @@ export class MenuAdminList implements OnInit {
                 visible: item.visible,
                 disable: item.disable
             });
+            
+            // Configurar estado de controles según las reglas
+            if (item.separator) {
+                this.menuForm.get('swItenms')?.disable();
+            } else {
+                this.menuForm.get('swItenms')?.enable();
+            }
         } else {
             this.menuForm.reset({
                 label: '',
@@ -890,6 +896,9 @@ export class MenuAdminList implements OnInit {
                 visible: true,
                 disable: false
             });
+            
+            // Asegurar que todos los controles estén habilitados para nuevo item
+            this.menuForm.get('swItenms')?.enable();
         }
         
         this.showFormModal = true;
@@ -1065,11 +1074,16 @@ export class MenuAdminList implements OnInit {
         const swItemsControl = this.menuForm.get('swItenms');
         
         if (isSeparator) {
-            // Si es separador, limpiar y deshabilitar campos no aplicables
+            // Si es separador, limpiar campos y deshabilitar swItems
             iconControl?.setValue('');
             routerLinkControl?.setValue('');
             swItemsControl?.setValue(false);
-            console.log('📏 Item marcado como separador - campos limpiados');
+            swItemsControl?.disable();
+            console.log('📏 Item marcado como separador - campos limpiados y swItems deshabilitado');
+        } else {
+            // Si no es separador, habilitar swItems
+            swItemsControl?.enable();
+            console.log('✅ Item no es separador - swItems habilitado');
         }
     }
 

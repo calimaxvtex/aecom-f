@@ -548,7 +548,6 @@ import { ApiConfig } from './api-config';
                                     formControlName="swItenms" 
                                     [binary]="true"
                                     inputId="swItems"
-                                    [disabled]="true"
                                 />
                                 <label for="swItems" class="flex items-center gap-2 text-sm font-medium text-gray-500">
                                     Este item tiene sub-items (hijos)
@@ -758,7 +757,7 @@ export class MenuAdminList implements OnInit {
             tooltip: [''],
             nivel: [1],
             id_padre: [0],
-            swItenms: [false],
+            swItenms: [{value: false, disabled: true}], // Siempre deshabilitado
             separator: [false],
             visible: [true],
             disable: [false]
@@ -880,8 +879,7 @@ export class MenuAdminList implements OnInit {
                 disable: item.disable
             });
             
-            // swItenms siempre deshabilitado (solo visual)
-            this.menuForm.get('swItenms')?.disable();
+            // swItenms ya está deshabilitado por defecto
         } else {
             this.menuForm.reset({
                 label: '',
@@ -896,8 +894,7 @@ export class MenuAdminList implements OnInit {
                 disable: false
             });
             
-            // swItenms siempre deshabilitado (solo visual)
-            this.menuForm.get('swItenms')?.disable();
+            // swItenms ya está deshabilitado por defecto
         }
         
         this.showFormModal = true;

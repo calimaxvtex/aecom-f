@@ -30,7 +30,7 @@ export const appRoutes: Routes = [
             {
                 path: 'apps',
                 data: { breadcrumb: 'Apps' },
-                loadChildren: () => import('./app/apps/apps.routes')
+                loadChildren: () => import('@/apps/apps.routes')
             },
             {
                 path: 'ecommerce',

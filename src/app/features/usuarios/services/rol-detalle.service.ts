@@ -278,17 +278,22 @@ export class RolDetalleService {
       map(detalles => {
         const { page, limit, sortBy, sortOrder } = pagination;
         
-        // Aplicar ordenamiento
+                // Aplicar ordenamiento
         let sortedDetalles = [...detalles];
         if (sortBy) {
-          sortedDetalles.sort((a, b) => {
-            const aValue = a[sortBy as keyof RolDetalle];
-            const bValue = b[sortBy as keyof RolDetalle];
-            
-            if (aValue < bValue) return sortOrder === 'desc' ? 1 : -1;
-            if (aValue > bValue) return sortOrder === 'desc' ? -1 : 1;
-            return 0;
-          });
+            sortedDetalles.sort((a, b) => {
+                const aValue = a[sortBy as keyof RolDetalle];
+                const bValue = b[sortBy as keyof RolDetalle];
+                
+                // Manejar valores null/undefined
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return sortOrder === 'desc' ? 1 : -1;
+                if (bValue == null) return sortOrder === 'desc' ? -1 : 1;
+                
+                if (aValue < bValue) return sortOrder === 'desc' ? 1 : -1;
+                if (aValue > bValue) return sortOrder === 'desc' ? -1 : 1;
+                return 0;
+            });
         }
         
         // Aplicar paginación

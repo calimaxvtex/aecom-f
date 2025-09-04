@@ -53,10 +53,21 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('@/features/menu-admin/components/menu-admin-list').then(m => m.MenuAdminList)
             },
             {
-                path: 'usuarios',
+                path: 'system/usuarios',
                 data: { breadcrumb: 'Gestión de Usuarios' },
                 loadComponent: () => import('@/pages/usuarios/usuarios.component').then(c => c.UsuariosComponent)
+            },
+            {
+                path: 'aec/banner/tab',
+                data: { breadcrumb: 'Administración de Tabloides' },
+                loadComponent: () => import('@/pages/tabadm/tabadm.component').then(c => c.TabAdmComponent)
+            },
+            {
+                path: 'system/labdb/spconfig',
+                data: { breadcrumb: 'Configuración del Sistema' },
+                loadComponent: () => import('@/pages/spconfig/spconfig.component').then(c => c.SPConfigComponent)
             }
+
         ]
     },
     { path: 'auth', loadChildren: () => import('@/pages/auth/auth.routes') },

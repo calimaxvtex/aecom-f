@@ -1,13 +1,18 @@
 import { provideHttpClient, withFetch, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ApplicationConfig } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
+import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling, withDebugTracing } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
-import { appRoutes } from './app.routes';
+import { appRoutes } from './app/app.routes';
 import Material from '@primeuix/themes/material';
 import { definePreset } from '@primeuix/themes';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ApiMonitorInterceptor } from './app/api-monitor.interceptor';
+import { SimpleTestInterceptor } from './app/simple-test.interceptor';
 // import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
+
+console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);
+console.log('🔍 App Config: SimpleTestInterceptor importado:', SimpleTestInterceptor);
 
 const MyPreset = definePreset(Material, {
     semantic: {
@@ -29,13 +34,19 @@ const MyPreset = definePreset(Material, {
 
 export const appConfig: ApplicationConfig = {
     providers: [
+        // Log para verificar que se está ejecutando
+        {
+            provide: 'APP_CONFIG_DEBUG',
+            useValue: 'App config ejecutándose'
+        },
         provideRouter(
             appRoutes,
             withInMemoryScrolling({
                 anchorScrolling: 'enabled',
                 scrollPositionRestoration: 'enabled'
             }),
-            withEnabledBlockingInitialNavigation()
+            withEnabledBlockingInitialNavigation(),
+            // withDebugTracing() // 🔍 Debug deshabilitado
         ),
         provideHttpClient(withFetch()),
         provideAnimationsAsync(),
@@ -46,7 +57,19 @@ export const appConfig: ApplicationConfig = {
         }),
         // Servicios globales de PrimeNG necesarios para tablas, diálogos, etc.
         ConfirmationService,
-        MessageService
+        MessageService,
+        // Interceptor simple para testing
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: SimpleTestInterceptor,
+            multi: true
+        }
+        // Interceptor para monitoreo de APIs
+        // {
+        //     provide: HTTP_INTERCEPTORS,
+        //     useClass: ApiMonitorInterceptor,
+        //     multi: true
+        // }
         // {
         //     provide: HTTP_INTERCEPTORS,
         //     useClass: HttpLoggingInterceptor,

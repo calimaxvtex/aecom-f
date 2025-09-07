@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Directo</title>
+    <script src="https://unpkg.com/zone.js@0.11.4/dist/zone.js"></script>
+    <script src="https://unpkg.com/rxjs@7.8.1/dist/bundles/rxjs.umd.js"></script>
+</head>
+<body>
+    <h1>Test Directo del Interceptor</h1>
+    <button onclick="testDirectCall()">Probar Llamada Directa</button>
+    <div id="results"></div>
+
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+        }
+
+        // Simular HttpClient de Angular
+        function testDirectCall() {
+            log('🧪 Probando llamada directa...');
+            
+            // Crear XMLHttpRequest para simular llamada HTTP
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://localhost:3000/api/admcoll/v1');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            xhr.onload = function() {
+                log('✅ Respuesta recibida: ' + xhr.status);
+                log('📄 Respuesta: ' + xhr.responseText.substring(0, 100) + '...');
+            };
+            
+            xhr.onerror = function() {
+                log('❌ Error en la llamada');
+            };
+            
+            const data = JSON.stringify({ action: 'TP' });
+            xhr.send(data);
+            
+            log('📤 Petición enviada');
+        }
+
+        window.onload = function() {
+            log('🚀 Página cargada - XMLHttpRequest test');
+        };
+    </script>
+</body>
+</html>

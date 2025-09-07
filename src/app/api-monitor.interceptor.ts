@@ -13,51 +13,15 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
 
   constructor() {
     console.log('🔍 Interceptor: ApiMonitorInterceptor instanciado');
+    console.log('🔍 Interceptor: Constructor ejecutado correctamente');
   }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    console.log('🔍 Interceptor: Llamada interceptada:', req.url);
-    console.log('🔍 Interceptor: Método:', req.method);
-    console.log('🔍 Interceptor: Headers:', req.headers);
-    
-    // Verificar si el monitor está activo
-    const monitorConfig = localStorage.getItem('monitorConfig');
-    console.log('🔍 Interceptor: Config del monitor:', monitorConfig);
-    
-    if (!monitorConfig) {
-      console.log('🔍 Interceptor: No hay configuración del monitor');
-      return next.handle(req);
-    }
-    
-    const config = JSON.parse(monitorConfig);
-    console.log('🔍 Interceptor: Monitor habilitado:', config.enabled);
-    
-    if (!config.enabled) {
-      console.log('🔍 Interceptor: Monitor deshabilitado');
-      return next.handle(req);
-    }
+    console.log('🔍 Interceptor: === INTERCEPTOR EJECUTADO ===');
+    console.log('🔍 Interceptor: URL:', req.url);
 
-    console.log('🔍 Interceptor: Procesando llamada...');
-    
-    // Capturar tiempo de inicio
-    this.startTime = Date.now();
-
-    // Extraer información de la request
-    const requestInfo = this.extractRequestInfo(req);
-    console.log('🔍 Interceptor: Info de request:', requestInfo);
-
-    return next.handle(req).pipe(
-      tap(
-        (event: HttpEvent<any>) => {
-          if (event instanceof HttpResponse) {
-            this.captureApiCall(requestInfo, event, null);
-          }
-        },
-        (error: HttpErrorResponse) => {
-          this.captureApiCall(requestInfo, null, error);
-        }
-      )
-    );
+    // Solo pasar la petición al siguiente interceptor
+    return next.handle(req);
   }
 
   private extractRequestInfo(req: HttpRequest<any>): any {
@@ -84,8 +48,10 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
 
   private captureApiCall(requestInfo: any, response?: HttpResponse<any> | null, error?: HttpErrorResponse | null): void {
     const duration = Date.now() - this.startTime;
-    
+
     const apiCall = {
+      id: this.generateId(),
+      timestamp: new Date(),
       ...requestInfo,
       statusCode: response ? response.status : (error ? error.status : 0),
       respuesta: response ? response.body : null,
@@ -93,10 +59,28 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
       duracion: duration
     };
 
-    console.log('🔍 Interceptor: Capturando llamada API:', apiCall);
+    console.log('🔍 Interceptor: === CAPTURANDO LLAMADA API ===');
+    console.log('🔍 Interceptor: Duración:', duration + 'ms');
+    console.log('🔍 Interceptor: Status Code:', apiCall.statusCode);
+    console.log('🔍 Interceptor: Llamada capturada:', apiCall);
 
     // Agregar al array local
     this.apiCalls.push(apiCall);
+
+    // Aplicar límite de registros
+    const maxRecords = this.getMaxRecords();
+    if (this.apiCalls.length > maxRecords) {
+      this.apiCalls = this.apiCalls.slice(-maxRecords);
+    }
+
+    // Guardar en localStorage
+    console.log('🔍 Interceptor: Guardando en localStorage, total llamadas:', this.apiCalls.length);
+    localStorage.setItem('apiMonitor', JSON.stringify(this.apiCalls));
+    console.log('✅ Interceptor: Datos guardados en localStorage');
+
+    // Verificar que se guardó correctamente
+    const savedData = localStorage.getItem('apiMonitor');
+    console.log('🔍 Interceptor: Verificación - Datos en localStorage:', savedData ? JSON.parse(savedData).length + ' llamadas' : 'null');
 
     // Notificar al componente (si está disponible)
     this.notifyComponent(apiCall);
@@ -104,13 +88,26 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
 
   private notifyComponent(apiCall: any): void {
     console.log('🔍 Interceptor: Notificando al componente...');
-    
+
     // Buscar el componente SPConfig en el DOM y notificar
     const event = new CustomEvent('apiCallCaptured', {
       detail: apiCall
     });
     window.dispatchEvent(event);
-    
+
     console.log('🔍 Interceptor: Evento enviado:', event);
+  }
+
+  private generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  private getMaxRecords(): number {
+    const config = localStorage.getItem('monitorConfig');
+    if (config) {
+      const parsedConfig = JSON.parse(config);
+      return parsedConfig.maxRecords || 1000;
+    }
+    return 1000; // Valor por defecto
   }
 }

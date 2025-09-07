@@ -1,5 +1,5 @@
 import { provideHttpClient, withFetch, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling, withDebugTracing } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
@@ -9,10 +9,32 @@ import { definePreset } from '@primeuix/themes';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ApiMonitorInterceptor } from './app/api-monitor.interceptor';
 import { SimpleTestInterceptor } from './app/simple-test.interceptor';
+import { ApiConfigService } from './app/core/services/api/api-config.service';
 // import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
 
 console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);
 console.log('🔍 App Config: SimpleTestInterceptor importado:', SimpleTestInterceptor);
+
+// Función factory para inicializar los endpoints
+function initializeApiConfig(apiConfigService: ApiConfigService) {
+    return (): Promise<any> => {
+        console.log('🚀 Inicializando configuración de API...');
+        return new Promise((resolve, reject) => {
+            apiConfigService.getspConfis().subscribe({
+                next: (response) => {
+                    console.log('✅ Endpoints cargados exitosamente:', response.controllers?.length || 0);
+                    resolve(response);
+                },
+                error: (error) => {
+                    console.error('❌ Error cargando endpoints:', error);
+                    // No rechazamos para no bloquear el inicio de la app
+                    // pero sí logueamos el error
+                    resolve(null);
+                }
+            });
+        });
+    };
+}
 
 const MyPreset = definePreset(Material, {
     semantic: {
@@ -53,23 +75,42 @@ export const appConfig: ApplicationConfig = {
         providePrimeNG({
             ripple: true,
             inputStyle: 'filled',
-            theme: { preset: MyPreset, options: { darkModeSelector: '.app-dark' } }
+            theme: { preset: MyPreset, options: { darkModeSelector: '.app-dark' } },
+            // Configuración adicional para reducir warnings NG0912
+            csp: {
+                nonce: undefined
+            },
+            zIndex: {
+                modal: 1100,
+                overlay: 1000,
+                menu: 1000,
+                tooltip: 1100
+            }
         }),
         // Servicios globales de PrimeNG necesarios para tablas, diálogos, etc.
         ConfirmationService,
         MessageService,
+
+        // 🔥 APP_INITIALIZER para cargar endpoints al inicio
+        {
+            provide: APP_INITIALIZER,
+            useFactory: initializeApiConfig,
+            deps: [ApiConfigService],
+            multi: true
+        },
+
         // Interceptor simple para testing
         {
             provide: HTTP_INTERCEPTORS,
             useClass: SimpleTestInterceptor,
             multi: true
-        }
+        },
         // Interceptor para monitoreo de APIs
-        // {
-        //     provide: HTTP_INTERCEPTORS,
-        //     useClass: ApiMonitorInterceptor,
-        //     multi: true
-        // }
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: ApiMonitorInterceptor,
+            multi: true
+        }
         // {
         //     provide: HTTP_INTERCEPTORS,
         //     useClass: HttpLoggingInterceptor,

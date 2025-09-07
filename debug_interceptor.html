@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Interceptor</title>
+</head>
+<body>
+    <h1>Debug Interceptor</h1>
+    <button onclick="testInterceptor()">Probar Interceptor</button>
+    <button onclick="clearMonitor()">Limpiar Monitor</button>
+    <button onclick="checkLocalStorage()">Ver LocalStorage</button>
+    <div id="results"></div>
+
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+        }
+
+        function testInterceptor() {
+            log('🧪 Probando interceptor manualmente...');
+            
+            // Verificar configuración
+            const config = localStorage.getItem('monitorConfig');
+            log('🔍 Configuración actual: ' + config);
+            
+            // Hacer una llamada de prueba
+            fetch('http://localhost:3000/api/admcoll/v1', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'TP' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                log('✅ Respuesta de prueba: ' + JSON.stringify(data).substring(0, 100) + '...');
+                
+                // Verificar si se guardó en localStorage
+                setTimeout(() => {
+                    const monitorData = localStorage.getItem('apiMonitor');
+                    log('🔍 Datos en localStorage después de la llamada: ' + (monitorData ? JSON.parse(monitorData).length + ' llamadas' : 'null'));
+                }, 1000);
+            })
+            .catch(error => {
+                log('❌ Error en prueba: ' + error);
+            });
+        }
+
+        function clearMonitor() {
+            localStorage.removeItem('apiMonitor');
+            localStorage.removeItem('monitorConfig');
+            log('🧹 Monitor limpiado');
+        }
+
+        function checkLocalStorage() {
+            const config = localStorage.getItem('monitorConfig');
+            const data = localStorage.getItem('apiMonitor');
+            
+            log('🔍 LocalStorage - Config: ' + config);
+            log('🔍 LocalStorage - Data: ' + (data ? JSON.parse(data).length + ' llamadas' : 'null'));
+        }
+
+        // Verificar estado inicial
+        window.onload = function() {
+            log('🚀 Página cargada');
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

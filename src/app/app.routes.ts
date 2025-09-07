@@ -63,11 +63,10 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('@/pages/tabadm/tabadm.component').then(c => c.TabAdmComponent)
             },
             {
-                path: 'system/labdb/spconfig',
-                data: { breadcrumb: 'Configuración del Sistema' },
-                loadComponent: () => import('@/pages/spconfig/spconfig.component').then(c => c.SPConfigComponent)
+                path: 'collections',
+                data: { breadcrumb: 'Administración de Colecciones' },
+                loadComponent: () => import('@/pages/collections/collections.component').then(c => c.CollectionsComponent)
             }
-
         ]
     },
     { path: 'auth', loadChildren: () => import('@/pages/auth/auth.routes') },
@@ -78,6 +77,14 @@ export const appRoutes: Routes = [
     {
         path: 'notfound',
         loadComponent: () => import('@/pages/notfound/notfound').then((c) => c.Notfound)
+    },
+    {
+        path: 'test-endpoints',
+        loadComponent: () => import('@/pages/test-endpoints/test-endpoints').then((c) => c.TestEndpoints)
+    },
+    {
+        path: 'test-coll',
+        loadComponent: () => import('@/features/coll/test-coll.component').then((c) => c.TestCollComponent)
     },
     { path: '**', redirectTo: '/notfound' }
 ];

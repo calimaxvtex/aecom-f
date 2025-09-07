@@ -91,7 +91,89 @@ const payload = {
 };
 ```
 
-### **3.2 Manejo de Respuestas**
+### **3.2 Inyección de Sesión en Peticiones**
+
+#### **⚠️ REGLA CRÍTICA: Inyección Obligatoria de Sesión**
+
+**Cuando se haga una acción en el servicio con cualquier método (excepto GET), SE DEBE insertar en el body el `usr` y `id_session`.**
+
+#### **Implementación Correcta:**
+```typescript
+@Injectable({
+    providedIn: 'root'
+})
+export class CollService {
+    // ✅ CORRECTO: Inyección de sesión en POST
+    createCollection(data: any): Observable<any> {
+        const payload = {
+            action: 'IN',
+            ...data,
+            ...this.sessionService.getApiPayloadBase() // usr, id_session
+        };
+        return this.http.post(this.apiUrl, payload);
+    }
+
+    // ✅ CORRECTO: Inyección de sesión en PUT
+    updateCollection(data: any): Observable<any> {
+        const payload = {
+            action: 'UP',
+            ...data,
+            ...this.sessionService.getApiPayloadBase() // usr, id_session
+        };
+        return this.http.put(`${this.apiUrl}/${data.id}`, payload);
+    }
+
+    // ✅ CORRECTO: Inyección de sesión en DELETE
+    deleteCollection(id: number): Observable<any> {
+        const sessionData = this.sessionService.getApiPayloadBase();
+        const params = new HttpParams()
+            .set('usr', sessionData.usr.toString())
+            .set('id_session', sessionData.id_session.toString());
+
+        return this.http.delete(`${this.apiUrl}/${id}`, { params });
+    }
+
+    // ✅ CORRECTO: GET sin inyección de sesión
+    getCollections(): Observable<any> {
+        return this.http.get(this.apiUrl);
+    }
+}
+```
+
+#### **Implementación Incorrecta:**
+```typescript
+// ❌ INCORRECTO: POST sin inyección de sesión
+createCollection(data: any): Observable<any> {
+    return this.http.post(this.apiUrl, data); // FALTA usr e id_session
+}
+
+// ❌ INCORRECTO: PUT sin inyección de sesión
+updateCollection(data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${data.id}`, data); // FALTA usr e id_session
+}
+
+// ❌ INCORRECTO: DELETE sin inyección de sesión
+deleteCollection(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`); // FALTA usr e id_session
+}
+```
+
+#### **Beneficios:**
+- ✅ **Auditoría completa** de todas las operaciones
+- ✅ **Trazabilidad** de usuarios y sesiones
+- ✅ **Seguridad** en todas las modificaciones de datos
+- ✅ **Consistencia** en todas las peticiones
+- ✅ **Mantenibilidad** centralizada
+
+#### **Referencia:**
+- **Método:** `SessionService.getApiPayloadBase()`
+- **Retorna:** `{ usr: string | number, id_session: number }`
+- **Aplicación:** Todas las peticiones POST/PUT/DELETE
+- **Excepción:** Peticiones GET (solo lectura)
+
+---
+
+### **3.3 Manejo de Respuestas**
 ```typescript
 // Patrón estándar de respuesta
 interface ApiResponse<T = any> {
@@ -138,7 +220,7 @@ cargarDatos(): void {
 }
 ```
 
-### **3.3 URLs de API**
+### **3.4 URLs de API**
 ```typescript
 // Patrón de URLs
 const BASE_URL = 'http://localhost:3000';
@@ -151,11 +233,68 @@ const API_ENDPOINTS = {
 };
 ```
 
+### **3.5 Configuración Dinámica de Servicios**
+```typescript
+## ⚠️ **REGLA CRÍTICA: ID de Servicio Obligatorio**
+
+**Cuando se genere un servicio, SE DEBE tener el ID del servicio** para poderlo implementar con `getEndpointById()` del `ApiConfigService`.
+
+### **Implementación Correcta:**
+```typescript
+@Injectable({
+    providedIn: 'root'
+})
+export class CollService {
+    private http = inject(HttpClient);
+    private apiConfigService = inject(ApiConfigService);
+
+    // ✅ CORRECTO: Usar ID específico del servicio
+    private readonly SERVICE_ID = 8; // ID del servicio de colecciones
+
+    getAllCollections(): Observable<CollResponse> {
+        // Obtener endpoint dinámicamente por ID
+        const endpoint = this.apiConfigService.getEndpointById(this.SERVICE_ID);
+        return this.http.get<CollArrayResponse>(endpoint.url);
+    }
+}
+```
+
+### **Implementación Incorrecta:**
+```typescript
+// ❌ INCORRECTO: Hardcodear URLs
+const HARDCODED_URL = 'http://localhost:3000/api/admcoll/v1';
+
+getData(): Observable<any> {
+    return this.http.get(HARDCODED_URL); // NO HACER ESTO
+}
+```
+
+### **Proceso para Obtener ID del Servicio:**
+1. **Verificar tabla `spconfig`** en la base de datos
+2. **Buscar el registro** correspondiente al servicio
+3. **Obtener el `id_sp`** del registro
+4. **Documentar el ID** en el código del servicio
+5. **Usar `getEndpointById(id)`** para obtener la URL dinámica
+
+### **Beneficios:**
+- ✅ **Configuración centralizada** en base de datos
+- ✅ **URLs dinámicas** sin hardcodeo
+- ✅ **Mantenibilidad** simplificada
+- ✅ **Consistencia** en todos los servicios
+- ✅ **Flexibilidad** para cambiar URLs sin modificar código
+
+### **Referencia:**
+- **Tabla:** `spconfig` en base de datos
+- **Campo ID:** `id_sp`
+- **Campo URL:** `fullRoute`
+- **Servicio:** `ApiConfigService.getEndpointById(id)`
+```
+
 ---
 
-## 🎨 **4. UI/UX CON PRIMENG**
+## 🎨 **5. UI/UX CON PRIMENG**
 
-### **4.1 Tema y Configuración**
+### **5.1 Tema y Configuración**
 ```typescript
 // app.config.ts
 providePrimeNG({
@@ -165,7 +304,7 @@ providePrimeNG({
 })
 ```
 
-### **4.2 Componentes de Tabla (p-table)**
+### **5.2 Componentes de Tabla (p-table)**
 ```typescript
 <p-table
     [value]="datos"
@@ -213,7 +352,7 @@ providePrimeNG({
 </p-table>
 ```
 
-### **4.3 Sistema de Tabs (p-tabs)**
+### **5.3 Sistema de Tabs (p-tabs)**
 ```typescript
 <p-tabs [value]="activeTabIndex" (onTabChange)="onTabChange($event)">
     <p-tablist>
@@ -238,7 +377,7 @@ providePrimeNG({
 </p-tabs>
 ```
 
-### **4.4 Formularios con p-dialog**
+### **5.4 Formularios con p-dialog**
 ```typescript
 <p-dialog
     [(visible)]="showForm"
@@ -282,9 +421,9 @@ providePrimeNG({
 
 ---
 
-## 🔄 **5. GESTIÓN DE ESTADO**
+## 🔄 **6. GESTIÓN DE ESTADO**
 
-### **5.1 Patrón de Estados**
+### **6.1 Patrón de Estados**
 ```typescript
 export class [Component]Component {
     // Estados de carga
@@ -305,7 +444,7 @@ export class [Component]Component {
 }
 ```
 
-### **5.2 SessionService (OBLIGATORIO)**
+### **6.2 SessionService (OBLIGATORIO)**
 ```typescript
 @Injectable({
     providedIn: 'root'
@@ -323,9 +462,9 @@ export class SessionService {
 
 ---
 
-## ⚡ **6. INTERACTIVIDAD AVANZADA**
+## ⚡ **7. INTERACTIVIDAD AVANZADA**
 
-### **6.1 Edición Inline**
+### **7.1 Edición Inline**
 ```typescript
 // Template
 <td>
@@ -368,7 +507,7 @@ saveEdit(item: any, field: string): void {
 }
 ```
 
-### **6.2 Doble Clic con Transición**
+### **7.2 Doble Clic con Transición**
 ```typescript
 // Template
 <tr (click)="seleccionarItem(item)"
@@ -393,7 +532,7 @@ seleccionarYMostrarPreview(item: any): void {
 }
 ```
 
-### **6.3 Toggle de Estado**
+### **7.3 Toggle de Estado**
 ```typescript
 // Template
 <p-tag [value]="getEstadoLabel(item.estado)"
@@ -429,9 +568,9 @@ getEstadoSeverity(estado: string): string {
 
 ---
 
-## 🚨 **7. MANEJO DE ERRORES**
+## 🚨 **8. MANEJO DE ERRORES**
 
-### **7.1 Toast Messages (RECOMENDADO)**
+### **8.1 Toast Messages (RECOMENDADO)**
 ```typescript
 // Éxito
 this.messageService.add({
@@ -458,7 +597,7 @@ this.messageService.add({
 });
 ```
 
-### **7.2 Manejo de Errores HTTP**
+### **8.2 Manejo de Errores HTTP**
 ```typescript
 this.http.post(url, payload).subscribe({
     next: (response) => {
@@ -492,9 +631,9 @@ this.http.post(url, payload).subscribe({
 
 ---
 
-## 🎯 **8. RUTAS Y NAVEGACIÓN**
+## 🎯 **9. RUTAS Y NAVEGACIÓN**
 
-### **8.1 Configuración de Rutas**
+### **9.1 Configuración de Rutas**
 ```typescript
 // src/app/app.routes.ts
 {
@@ -510,6 +649,68 @@ this.http.post(url, payload).subscribe({
 - **Aplicaciones**: `apps/[app-name]`
 - **Autenticación**: `auth/[action]`
 - **Páginas públicas**: ruta directa
+
+### **8.3 Archivo de Rutas Principal**
+```typescript
+## ⚠️ **REGLA CRÍTICA: Archivo de Rutas Principal**
+
+**El archivo de rutas principal del proyecto es:**
+```
+📄 src/app/app.routes.ts
+```
+
+### **Ubicación Exacta:**
+```
+src/
+├── app/
+│   ├── app.routes.ts        ← 📍 **ARCHIVO PRINCIPAL DE RUTAS**
+│   ├── app.config.ts
+│   ├── app.component.ts
+│   └── ...
+```
+
+### **¿Cuándo usar cada archivo?**
+
+#### **✅ src/app/app.routes.ts (PRINCIPAL)**
+- **Rutas principales** de la aplicación
+- **Lazy loading** de módulos principales
+- **Rutas del sistema**: `/system/*`
+- **Rutas de aplicaciones**: `/apps/*`
+- **Rutas de autenticación**: `/auth/*`
+
+#### **❌ src/app/pages/pages.routes.ts (SECUNDARIO)**
+- **Solo rutas de páginas** individuales
+- **Configurado como children** en rutas principales
+- **No usar directamente** como archivo principal
+
+### **Ejemplo de Configuración Correcta:**
+```typescript
+// ✅ CORRECTO: src/app/app.routes.ts
+export const appRoutes: Routes = [
+    {
+        path: 'system',
+        loadChildren: () => import('@/pages/pages.routes')
+            .then(m => m.default)
+    },
+    {
+        path: 'apps',
+        loadChildren: () => import('@/apps/apps.routes')
+            .then(m => m.default)
+    }
+];
+```
+
+### **Beneficios:**
+- ✅ **Consistencia** en la configuración de rutas
+- ✅ **Mantenibilidad** centralizada
+- ✅ **Estandarización** del proyecto
+- ✅ **Evita confusión** entre archivos de rutas
+
+### **Referencia:**
+- **Archivo Principal:** `src/app/app.routes.ts`
+- **Páginas Secundarias:** `src/app/pages/pages.routes.ts`
+- **Aplicaciones:** `src/app/apps/apps.routes.ts`
+```
 
 ---
 
@@ -574,7 +775,47 @@ console.log('🔍 Debug:', { variable, state, payload });
 
 ---
 
-## ✅ **11. CHECKLIST DE CALIDAD**
+## 💬 **11. COMUNICACIÓN Y WORKFLOW**
+
+### **11.1 Reglas de Comunicación**
+```markdown
+## ⚠️ **REGLA CRÍTICA DE WORKFLOW**
+
+**Cuando se haga una pregunta en el prompt:**
+- ❌ **NO EJECUTAR** acciones automáticamente
+- ✅ **RESPONDER** la pregunta de manera clara y completa
+- ✅ **PEDIR CONFIRMACIÓN** antes de ejecutar cualquier acción
+- ✅ **ESPERAR** aprobación explícita del usuario
+
+### **Ejemplo de Flujo Correcto:**
+```
+Usuario: "agrega un botón rojo a la página"
+Respuesta: "Entiendo que quieres agregar un botón rojo. ¿Dónde exactamente lo quieres ubicar y qué acción debe realizar?"
+[ESPERAR CONFIRMACIÓN DEL USUARIO]
+```
+
+### **Flujo Incorrecto:**
+```
+Usuario: "agrega un botón rojo a la página"
+Respuesta: [Ejecuta automáticamente sin preguntar]
+```
+
+### **Beneficios:**
+- ✅ **Claridad** en los requerimientos
+- ✅ **Evita malentendidos** en la implementación
+- ✅ **Mejor comunicación** usuario-desarrollador
+- ✅ **Control total** del usuario sobre los cambios
+```
+
+### **11.2 Confirmación de Cambios**
+- **Antes de cualquier modificación:** Pedir confirmación
+- **Cambios críticos:** Documentar el impacto esperado
+- **Nuevas funcionalidades:** Confirmar ubicación y comportamiento
+- **Refactors:** Explicar el alcance del cambio
+
+---
+
+## ✅ **12. CHECKLIST DE CALIDAD**
 
 ### **Antes de commit:**
 - [ ] **Linting**: `npm run lint` sin errores

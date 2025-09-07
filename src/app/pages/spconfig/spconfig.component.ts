@@ -2025,13 +2025,16 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         console.log('🚀 SPConfigComponent: ngOnInit ejecutado');
         this.cargarDatos();
-        
+
+        // Inicializar configuración del monitor al inicio
+        this.initializeMonitorConfig();
+
         // Escuchar eventos de llamadas API capturadas por el interceptor
         window.addEventListener('apiCallCaptured', (event: any) => {
             console.log('🔍 Componente: Evento recibido:', event.detail);
             this.addApiCall(event.detail);
         });
-        
+
         console.log('🔍 Componente: Listener de eventos configurado');
     }
 
@@ -2742,7 +2745,11 @@ export class SPConfigComponent implements OnInit, OnDestroy {
 
     // Actualizar datos del monitor
     refreshMonitorData(): void {
+        console.log('🔄 Refrescando datos del monitor en SPConfig...');
         this.loadMonitorData();
+        // Forzar actualización de la vista
+        this.apiCalls = [...this.apiCalls];
+        console.log(`✅ Monitor refrescado: ${this.apiCalls.length} llamadas`);
     }
 
     // Obtener llamadas por tipo

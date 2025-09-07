@@ -61,7 +61,8 @@ export const appRoutes: Routes = [
                 path: 'system/usuarios-v2',
                 data: { breadcrumb: 'Gestión de Usuarios V2 (Standalone)' },
                 loadComponent: () => import('@/pages/usuarios/usuariosV2.component').then(c => c.UsuariosV2Component)
-            },
+            }
+            ,
             {
                 path: 'system/labdb/spconfig',
                 data: { breadcrumb: 'Configuración del Sistema' },

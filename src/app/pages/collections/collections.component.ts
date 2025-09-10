@@ -313,9 +313,8 @@ import { ItemsComponent } from './items.component';
                             [rowsPerPageOptions]="[10, 25, 50]"
                             [globalFilterFields]="['idref', 'nombre']"
                             [loading]="loadingColld"
-                            [pDroppable]="true"
-                            [pDroppableType]="'colld'"
-                            [dropEffect]="'move'"
+                        [pDroppable]="true"
+                        [dropEffect]="'move'"
                             (onDrop)="onColldDrop($event)"
                         >
                             <ng-template #caption>
@@ -361,14 +360,12 @@ import { ItemsComponent } from './items.component';
                             <ng-template #body let-colld let-index="rowIndex">
                                 <tr [class.bg-blue-50]="colld === collectionSeleccionada"
                                     [pDraggable]="colld"
-                                    [pDraggableType]="'colld'"
                                     [dragEffect]="'move'"
                                     (onDragStart)="onColldDragStart($event, index)"
                                     (onDragEnd)="onColldDragEnd($event)">
                                     <td>
                                         <i class="pi pi-bars text-gray-400 cursor-move"
                                            [pDraggable]="colld"
-                                           [pDraggableType]="'colld'"
                                            [dragEffect]="'move'"></i>
                                     </td>
                                     <!-- Ref ID - SOLO LECTURA -->

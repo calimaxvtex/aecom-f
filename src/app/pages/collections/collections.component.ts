@@ -313,9 +313,8 @@ import { ItemsComponent } from './items.component';
                             [rowsPerPageOptions]="[10, 25, 50]"
                             [globalFilterFields]="['idref', 'nombre']"
                             [loading]="loadingColld"
-                        [pDroppable]="true"
-                        [dropEffect]="'move'"
-                            (onDrop)="onColldDrop($event)"
+                            [reorderableRows]="true"
+                            (onRowReorder)="onColldRowReorder($event)"
                         >
                             <ng-template #caption>
                                 <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -357,16 +356,10 @@ import { ItemsComponent } from './items.component';
                                 </tr>
                             </ng-template>
 
-                            <ng-template #body let-colld let-index="rowIndex">
-                                <tr [class.bg-blue-50]="colld === collectionSeleccionada"
-                                    [pDraggable]="colld"
-                                    [dragEffect]="'move'"
-                                    (onDragStart)="onColldDragStart($event, index)"
-                                    (onDragEnd)="onColldDragEnd($event)">
+                            <ng-template #body let-colld>
+                                <tr [class.bg-blue-50]="colld === collectionSeleccionada" pReorderableRow>
                                     <td>
-                                        <i class="pi pi-bars text-gray-400 cursor-move"
-                                           [pDraggable]="colld"
-                                           [dragEffect]="'move'"></i>
+                                        <i class="pi pi-bars text-gray-400 cursor-move" pReorderableRowHandle></i>
                                     </td>
                                     <!-- Ref ID - SOLO LECTURA -->
                                     <td>{{colld.idref}}</td>
@@ -1011,31 +1004,20 @@ import { ItemsComponent } from './items.component';
             color: #374151 !important;
         }
 
-        :host ::ng-deep tr[pDraggable] {
+        :host ::ng-deep tr[pReorderableRow] {
             cursor: move !important;
         }
 
-        :host ::ng-deep tr[pDraggable]:hover {
+        :host ::ng-deep tr[pReorderableRow]:hover {
             background-color: #f9fafb !important;
         }
 
-        /* Estilos para elementos arrastrables */
-        :host ::ng-deep [pDraggable] {
+        :host ::ng-deep [pReorderableRowHandle] {
             cursor: move !important;
         }
 
-        :host ::ng-deep [pDraggable]:hover {
+        :host ::ng-deep [pReorderableRowHandle]:hover {
             opacity: 0.8 !important;
-        }
-
-        /* Estilos para zonas de soltar */
-        :host ::ng-deep [pDroppable] {
-            transition: background-color 0.2s ease !important;
-        }
-
-        :host ::ng-deep [pDroppable].p-draggable-enter {
-            background-color: #e0f2fe !important;
-            border: 2px dashed #0ea5e9 !important;
         }
 
         /* Estilos para la caja de resultado del reordenamiento */
@@ -1113,8 +1095,6 @@ export class CollectionsComponent implements OnInit {
 
     // Reordenamiento
     reorderResult = '';
-    draggedItem: any = null;
-    draggedItemIndex: number = -1;
 
     // Confirmaciones COLLD
     confirmMessage = '';
@@ -2071,41 +2051,17 @@ export class CollectionsComponent implements OnInit {
 
     // ========== FUNCIONALIDAD DE REORDENAMIENTO ==========
 
-    onColldDragStart(event: any, index: number) {
-        console.log('🚀 Inicio de arrastre COLLD:', event, 'índice:', index);
-        this.draggedItem = event;
-        this.draggedItemIndex = index;
-    }
+    onColldRowReorder(event: any) {
+        console.log('🔄 Reordenamiento de filas COLLD:', event);
 
-    onColldDragEnd(event: any) {
-        console.log('🏁 Fin de arrastre COLLD:', event);
-    }
+        // PrimeNG automáticamente reordena el array en event.value
+        this.colldItems = event.value;
+        this.filteredColldItems = [...this.colldItems];
 
-    onColldDrop(event: any) {
-        console.log('📦 Elemento COLLD soltado:', event);
+        // Mostrar el array reordenado en la caja de texto temporal
+        this.reorderResult = JSON.stringify(this.colldItems, null, 2);
 
-        if (this.draggedItem && this.draggedItemIndex !== -1) {
-            const draggedIndex = this.draggedItemIndex;
-            const dropIndex = event.index || 0;
-
-            // Reordenar el array
-            const colldItems = [...this.colldItems];
-            const draggedItem = colldItems.splice(draggedIndex, 1)[0];
-            colldItems.splice(dropIndex, 0, draggedItem);
-
-            // Actualizar arrays
-            this.colldItems = colldItems;
-            this.filteredColldItems = [...this.colldItems];
-
-            // Mostrar el array reordenado en la caja de texto temporal
-            this.reorderResult = JSON.stringify(this.colldItems, null, 2);
-
-            console.log('✅ Items COLLD reordenados:', this.colldItems);
-        }
-
-        // Limpiar variables de arrastre
-        this.draggedItem = null;
-        this.draggedItemIndex = -1;
+        console.log('✅ Items COLLD reordenados:', this.colldItems);
     }
 
     copyReorderResult() {

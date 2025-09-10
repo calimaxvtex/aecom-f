@@ -24,8 +24,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ButtonGroupModule } from 'primeng/buttongroup';
 
-// Importar módulos adicionales para funcionalidad de reordenamiento
-import { DragDropModule } from 'primeng/dragdrop';
+// Funcionalidad de reordenamiento movida a CollectionsComponent
 
 import { Item } from '@/features/productos/models/items.interface';
 import { Categoria } from '@/features/productos/models/categoria.interface';
@@ -58,8 +57,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
         FloatLabelModule,
         InputGroupModule,
         InputGroupAddonModule,
-        ButtonGroupModule,
-        DragDropModule
+        ButtonGroupModule
     ],
     template: `
         <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 p-6">
@@ -339,10 +337,6 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         dataKey="articulo"
                         selectionMode="multiple"
                         [metaKeySelection]="false"
-                        [pDroppable]="true"
-                        [pDroppableType]="'item'"
-                        [dropEffect]="'move'"
-                        (onDrop)="onRowDrop($event)"
                         (selectionChange)="onSelectionChange($event)"
                         (onSort)="onSort($event)"
                         >
@@ -353,7 +347,6 @@ import { ColldService } from '@/features/coll/services/colld.service';
                                 <th style="width: 50px">
                                     <p-checkbox [(ngModel)]="selectAll" [binary]="true" (onChange)="toggleSelectAll()" label=""></p-checkbox>
                                 </th>
-                                <th style="width: 50px">Orden</th>
                                 <th *ngIf="mostrarColumnaImagen" style="width: 80px">Imagen</th>
                                 <th pSortableColumn="nombre">
                                     Nombre
@@ -388,21 +381,10 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         </ng-template>
 
                         <!-- Body de la tabla -->
-                        <ng-template pTemplate="body" let-item let-index="rowIndex">
-                            <tr [class.bg-blue-50]="selectedItems.includes(item)"
-                                [pDraggable]="item"
-                                [pDraggableType]="'item'"
-                                [dragEffect]="'move'"
-                                (onDragStart)="onDragStart($event, index)"
-                                (onDragEnd)="onDragEnd($event)">
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.bg-blue-50]="selectedItems.includes(item)">
                                 <td>
                                     <p-checkbox [(ngModel)]="selectedItemsMap[item.articulo]" [binary]="true" (onChange)="onItemSelectionChange(item)"></p-checkbox>
-                                </td>
-                                <td>
-                                    <i class="pi pi-bars text-gray-400 cursor-move"
-                                       [pDraggable]="item"
-                                       [pDraggableType]="'item'"
-                                       [dragEffect]="'move'"></i>
                                 </td>
                                 <td *ngIf="mostrarColumnaImagen">
                                     <div class="flex justify-center">
@@ -480,32 +462,6 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         </div>
                     </ng-template>
                 </p-card>
-            </div>
-        </div>
-
-        <!-- Caja de texto temporal para mostrar resultado del reordenamiento -->
-        <div *ngIf="reorderResult" class="mt-6 p-4 bg-gray-100 border border-gray-300 rounded-lg reorder-result-box">
-            <h3 class="text-lg font-semibold mb-2">🔄 Resultado del Reordenamiento:</h3>
-            <textarea
-                [value]="reorderResult"
-                readonly
-                rows="10"
-                class="w-full p-3 border border-gray-300 rounded font-mono text-sm bg-white"
-                placeholder="Aquí aparecerá el array reordenado después de arrastrar las filas..."
-            ></textarea>
-            <div class="mt-2 flex gap-2">
-                <p-button
-                    label="Limpiar"
-                    icon="pi pi-times"
-                    styleClass="p-button-sm p-button-secondary"
-                    (onClick)="reorderResult = ''"
-                ></p-button>
-                <p-button
-                    label="Copiar al Portapapeles"
-                    icon="pi pi-copy"
-                    styleClass="p-button-sm p-button-primary"
-                    (onClick)="copyReorderResult()"
-                ></p-button>
             </div>
         </div>
 
@@ -678,54 +634,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
             color: #1f2937 !important;
         }
 
-        /* Estilos para el handle de reordenamiento */
-        :host ::ng-deep .pi-bars {
-            font-size: 1rem !important;
-            color: #6b7280 !important;
-            transition: color 0.2s ease !important;
-        }
-
-        :host ::ng-deep .pi-bars:hover {
-            color: #374151 !important;
-        }
-
-        :host ::ng-deep tr[pDraggable] {
-            cursor: move !important;
-        }
-
-        :host ::ng-deep tr[pDraggable]:hover {
-            background-color: #f9fafb !important;
-        }
-
-        /* Estilos para elementos arrastrables */
-        :host ::ng-deep [pDraggable] {
-            cursor: move !important;
-        }
-
-        :host ::ng-deep [pDraggable]:hover {
-            opacity: 0.8 !important;
-        }
-
-        /* Estilos para zonas de soltar */
-        :host ::ng-deep [pDroppable] {
-            transition: background-color 0.2s ease !important;
-        }
-
-        :host ::ng-deep [pDroppable].p-draggable-enter {
-            background-color: #e0f2fe !important;
-            border: 2px dashed #0ea5e9 !important;
-        }
-
-        /* Estilos para la caja de resultado del reordenamiento */
-        .reorder-result-box {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .reorder-result-box textarea {
-            resize: vertical;
-            min-height: 200px;
-        }
+        /* Estilos de reordenamiento movidos a CollectionsComponent */
     `]
 })
 export class ItemsComponent implements OnInit {
@@ -748,8 +657,7 @@ export class ItemsComponent implements OnInit {
     selectAll = false;
     selectedItemsMap: { [key: number]: boolean } = {};
 
-    // Reordenamiento
-    reorderResult = '';
+    // Reordenamiento movido a CollectionsComponent
 
     // Filtros
     filtroNombre = '';
@@ -1590,77 +1498,7 @@ export class ItemsComponent implements OnInit {
         this.filteredItems = [...this.items];
     }
 
-    // ========== FUNCIONALIDAD DE REORDENAMIENTO ==========
-
-    draggedItem: any = null;
-    draggedItemIndex: number = -1;
-
-    onDragStart(event: any, index: number) {
-        console.log('🚀 Inicio de arrastre:', event, 'índice:', index);
-        this.draggedItem = event;
-        this.draggedItemIndex = index;
-    }
-
-    onDragEnd(event: any) {
-        console.log('🏁 Fin de arrastre:', event);
-    }
-
-    onRowDrop(event: any) {
-        console.log('📦 Elemento soltado:', event);
-
-        if (this.draggedItem && this.draggedItemIndex !== -1) {
-            const draggedIndex = this.draggedItemIndex;
-            const dropIndex = event.index || 0;
-
-            // Reordenar el array
-            const items = [...this.items];
-            const draggedItem = items.splice(draggedIndex, 1)[0];
-            items.splice(dropIndex, 0, draggedItem);
-
-            // Actualizar arrays
-            this.items = items;
-            this.filteredItems = [...this.items];
-
-            // Mostrar el array reordenado en la caja de texto temporal
-            this.reorderResult = JSON.stringify(this.items, null, 2);
-
-            // Actualizar los checkboxes
-            this.updateSelectionMap();
-
-            console.log('✅ Items reordenados:', this.items);
-        }
-
-        // Limpiar variables de arrastre
-        this.draggedItem = null;
-        this.draggedItemIndex = -1;
-    }
-
-    updateSelectionMap() {
-        // Actualizar el mapa de selección después del reordenamiento
-        this.items.forEach(item => {
-            if (!(item.articulo in this.selectedItemsMap)) {
-                this.selectedItemsMap[item.articulo] = false;
-            }
-        });
-    }
-
-    copyReorderResult() {
-        navigator.clipboard.writeText(this.reorderResult).then(() => {
-            this.messageService.add({
-                severity: 'success',
-                summary: 'Copiado',
-                detail: 'Resultado del reordenamiento copiado al portapapeles',
-                life: 2000
-            });
-        }).catch(() => {
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'No se pudo copiar al portapapeles',
-                life: 3000
-            });
-        });
-    }
+    // Funcionalidad de reordenamiento movida a CollectionsComponent
 
     // ========== MÉTODOS DE GESTIÓN DE CACHE ==========
 

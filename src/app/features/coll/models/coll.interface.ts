@@ -20,12 +20,21 @@ export interface CollItem {
     id_tipoc: number;
 }
 
+// Respuesta cruda del backend (data como string JSON o array)
+export interface CollRawResponse {
+    statuscode: number;
+    mensaje: string;
+    data:  CollItem[]; // ← El backend puede devolver string JSON o array directo
+}
+
+// Respuesta procesada (data siempre como array)
 export interface CollResponse {
     statuscode: number;
     mensaje: string;
     data: CollItem[];
 }
 
+export interface CollRawArrayResponse extends Array<CollRawResponse> {}
 export interface CollArrayResponse extends Array<CollResponse> {}
 
 export interface CollSingleResponse {
@@ -103,14 +112,31 @@ export interface ColldItem {
     fecha_m: string;
 }
 
+// Respuesta cruda del backend (data como string JSON)
+export interface ColldRawResponse {
+    statuscode: number;
+    mensaje: string;
+    data: string; // ← El backend devuelve data como string JSON
+}
+
+// Respuesta procesada (data como array ya parseado)
 export interface ColldResponse {
     statuscode: number;
     mensaje: string;
-    data: ColldItem[];
+    data: ColldItem[]; // ← Después del parsing, data es array
 }
 
-export interface ColldArrayResponse extends Array<ColldResponse> {}
+// Array de respuestas crudas del backend
+export interface ColldRawArrayResponse extends Array<
+ColldRawResponse
+> {}
 
+// Array de respuestas procesadas
+export interface ColldArrayResponse extends Array<
+    ColldResponse// 🔹 el back puede mandar string o array
+> {}
+
+// Respuesta individual (para un solo registro)
 export interface ColldSingleResponse {
     statuscode: number;
     mensaje: string;

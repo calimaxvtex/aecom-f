@@ -19,5 +19,10 @@ export default [
     { path: 'empty', data: { breadcrumb: 'Empty' }, component: Empty },
     { path: 'help', data: { breadcrumb: 'Help' }, component: Help },
     { path: 'invoice', data: { breadcrumb: 'Invoice' }, component: Invoice },
+    {
+        path: 'productos-test-nuevo',
+        data: { breadcrumb: 'Test Productos Nuevo' },
+        loadComponent: () => import('./productos-test-nuevo/productos-test-nuevo.component').then(c => c.ProductosTestNuevoComponent)
+    },
     { path: '**', redirectTo: '/notfound' }
 ] as Routes;

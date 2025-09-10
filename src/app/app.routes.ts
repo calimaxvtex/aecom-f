@@ -66,6 +66,11 @@ export const appRoutes: Routes = [
                 path: 'collections',
                 data: { breadcrumb: 'Administración de Colecciones' },
                 loadComponent: () => import('@/pages/collections/collections.component').then(c => c.CollectionsComponent)
+            },
+            {
+                path: 'system/test/items-test',
+                data: { breadcrumb: 'Items Test Page' },
+                loadComponent: () => import('@/pages/test/items-test/items-test.component').then(c => c.ItemsTestComponent)
             }
         ]
     },

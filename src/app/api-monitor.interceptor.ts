@@ -18,10 +18,52 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     console.log('🔍 Interceptor: === INTERCEPTOR EJECUTADO ===');
-    console.log('🔍 Interceptor: URL:', req.url);
+    console.log('🔍 Interceptor: URL completa:', req.url);
+    console.log('🔍 Interceptor: URL con parámetros:', req.urlWithParams);
+    console.log('🔍 Interceptor: Método:', req.method);
+    console.log('🔍 Interceptor: Headers:', req.headers);
+    console.log('🔍 Interceptor: Body enviado:', req.body);
+    console.log('🔍 Interceptor: Content-Type:', req.headers.get('Content-Type'));
+    console.log('🔍 Interceptor: Authorization:', req.headers.get('Authorization') ? '[PRESENTE]' : '[NO PRESENTE]');
 
-    // Solo pasar la petición al siguiente interceptor
-    return next.handle(req);
+    // Capturar el tiempo de inicio para medir duración
+    this.startTime = Date.now();
+
+    // Pasar la petición y capturar respuesta
+    return next.handle(req).pipe(
+      tap({
+        next: (event) => {
+          if (event instanceof HttpResponse) {
+            const duration = Date.now() - this.startTime;
+            console.log('🔍 Interceptor: === RESPUESTA RECIBIDA ===');
+            console.log('🔍 Interceptor: URL:', req.url);
+            console.log('🔍 Interceptor: Status:', event.status);
+            console.log('🔍 Interceptor: Duración:', duration + 'ms');
+            console.log('🔍 Interceptor: Headers:', event.headers);
+            console.log('🔍 Interceptor: === RESPUESTA CRUDA (SIN PROCESAR) ===');
+            console.log('🔍 Interceptor: Tipo de respuesta:', typeof event.body);
+            console.log('🔍 Interceptor: Respuesta cruda:', event.body);
+            console.log('🔍 Interceptor: JSON stringified:', JSON.stringify(event.body, null, 2));
+            console.log('🔍 Interceptor: === FIN RESPUESTA CRUDA ===');
+
+            // Capturar la llamada API con la respuesta cruda
+            const requestInfo = this.extractRequestInfo(req);
+            this.captureApiCall(requestInfo, event, null);
+          }
+        },
+        error: (error) => {
+          const duration = Date.now() - this.startTime;
+          console.log('🔍 Interceptor: === ERROR EN RESPUESTA ===');
+          console.log('🔍 Interceptor: URL:', req.url);
+          console.log('🔍 Interceptor: Duración:', duration + 'ms');
+          console.log('🔍 Interceptor: Error:', error);
+
+          // Capturar el error
+          const requestInfo = this.extractRequestInfo(req);
+          this.captureApiCall(requestInfo, null, error);
+        }
+      })
+    );
   }
 
   private extractRequestInfo(req: HttpRequest<any>): any {

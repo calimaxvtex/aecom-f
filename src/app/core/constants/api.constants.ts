@@ -1,5 +1,6 @@
 export const API_CONFIG = {
     BASE_URL: 'http://localhost:3000',
+   // BASE_URL: 'http://10.10.250.168:3012',
     ENDPOINTS: {
         MENU: {CRUD: '/api/menu/v1'},
         SPCONFIG: {GET: '/api/spconfig/v1'},

@@ -20,13 +20,70 @@ src/app/
 │       ├── services/       # Servicios específicos
 │       └── components/     # Componentes de la feature
 ├── pages/                  # Páginas principales
+│   ├── test/              # 📍 PÁGINAS DE PRUEBA (NUEVA)
+│   │   └── [test-page]/   # Páginas de testing y prototipos
 │   └── [page-name]/
 │       └── [page-name].component.ts
 ├── shared/                 # Componentes compartidos
 └── types/                  # Tipos globales
 ```
 
-### **1.2 Convención de Nombres**
+### **1.2 📍 REGLA CRÍTICA: Carpeta de Pruebas**
+
+**Se establece la carpeta `src/app/pages/test/` como ubicación estándar para:**
+- ✅ **Páginas de prueba** y prototipos
+- ✅ **Testing de componentes** nuevos
+- ✅ **Validación de integraciones** de API
+- ✅ **Experimentación** con nuevas funcionalidades
+- ✅ **Documentación visual** de componentes
+
+#### **Estructura recomendada:**
+```
+src/app/pages/test/
+├── [feature-name]-test/
+│   ├── [feature-name]-test.component.ts
+│   ├── [feature-name]-test.component.html
+│   └── [feature-name]-test.component.scss
+├── integration-tests/
+│   └── [api-integration]-test.component.ts
+└── prototypes/
+    └── [new-feature]-prototype.component.ts
+```
+
+#### **Convenciones para páginas de test:**
+- **Nomenclatura**: `[feature]-test.component.ts`
+- **Rutas**: `/test/[feature]-test`
+- **Componentes standalone**: Siempre usar `standalone: true`
+- **Documentación**: Incluir comentarios detallados del propósito
+- **Limpieza**: Eliminar tests obsoletos periódicamente
+
+#### **Ejemplo de implementación:**
+```typescript
+// ✅ RECOMENDADO: src/app/pages/test/items-test.component.ts
+@Component({
+    selector: 'app-items-test',
+    standalone: true,
+    imports: [CommonModule, TableModule, ButtonModule],
+    template: `
+        <!-- Página de prueba para ItemsService -->
+        <h2>🧪 Items Service Test Page</h2>
+        <p>Prueba de funcionalidades del ItemsService</p>
+        <!-- Contenido de prueba -->
+    `
+})
+export class ItemsTestComponent {
+    // Lógica de prueba del servicio
+}
+```
+
+#### **Beneficios:**
+- ✅ **Organización centralizada** de tests
+- ✅ **Fácil acceso** desde rutas `/test/*`
+- ✅ **Separación clara** entre producción y pruebas
+- ✅ **Mantenibilidad** simplificada
+- ✅ **Documentación viva** de funcionalidades
+
+### **1.3 Convención de Nombres**
 - **Componentes**: `[feature].component.ts`
 - **Servicios**: `[feature].service.ts`
 - **Interfaces**: `[feature].interface.ts`

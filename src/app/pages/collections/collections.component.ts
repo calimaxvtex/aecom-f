@@ -663,10 +663,6 @@ import { ItemsComponent } from './items.component';
             [resizable]="false"
             [closable]="true"
             appendTo="body"
-            [baseZIndex]="10000"
-            [dismissibleMask]="true"
-            [closeOnEscape]="true"
-            [showHeader]="true"
             styleClass="custom-modal"
         >
             <form [formGroup]="colldForm" (ngSubmit)="saveColld()">

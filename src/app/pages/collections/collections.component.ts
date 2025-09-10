@@ -19,8 +19,6 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
-// Importar módulos adicionales para funcionalidad de reordenamiento
-import { DragDropModule } from 'primeng/dragdrop';
 
 // Modelos y servicios
 import { CollItem, CollTypeItem, ColldItem, CreateColldRequest, UpdateColldRequest } from '@/features/coll/models/coll.interface';
@@ -52,7 +50,6 @@ import { ItemsComponent } from './items.component';
         SplitButtonModule,
         CardModule,  // Para las tarjetas de información
         TooltipModule,  // Para tooltips
-        DragDropModule, // Para funcionalidad de reordenamiento
         // Import del ItemsComponent
         ItemsComponent
     ],
@@ -61,18 +58,6 @@ import { ItemsComponent } from './items.component';
         <div class="card">
             <p-toast></p-toast>
 
-        <!-- Configuración global de tooltips -->
-        <div style="display: none;">
-            <p-tooltip
-                appendTo="body"
-                [hideDelay]="300"
-                [showDelay]="100"
-                [mouseTrack]="false"
-                [mouseTrackTop]="15"
-                [mouseTrackLeft]="15"
-                position="top">
-            </p-tooltip>
-        </div>
 
 
 
@@ -313,8 +298,6 @@ import { ItemsComponent } from './items.component';
                             [rowsPerPageOptions]="[10, 25, 50]"
                             [globalFilterFields]="['idref', 'nombre']"
                             [loading]="loadingColld"
-                            [reorderableRows]="true"
-                            (onRowReorder)="onColldRowReorder($event)"
                         >
                             <ng-template #caption>
                                 <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -347,7 +330,6 @@ import { ItemsComponent } from './items.component';
 
                             <ng-template #header>
                                 <tr>
-                                    <th style="width: 50px">Orden</th>
                                     <th pSortableColumn="refid" style="width: 100px">Ref ID <p-sortIcon field="refid"></p-sortIcon></th>
                                     <th pSortableColumn="url_img" style="width: 150px">Imagen</th>
                                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
@@ -357,10 +339,7 @@ import { ItemsComponent } from './items.component';
                             </ng-template>
 
                             <ng-template #body let-colld>
-                                <tr [class.bg-blue-50]="colld === collectionSeleccionada" pReorderableRow>
-                                    <td>
-                                        <i class="pi pi-bars text-gray-400 cursor-move" pReorderableRowHandle></i>
-                                    </td>
+                                <tr [class.bg-blue-50]="colld === collectionSeleccionada">
                                     <!-- Ref ID - SOLO LECTURA -->
                                     <td>{{colld.idref}}</td>
 
@@ -428,31 +407,6 @@ import { ItemsComponent } from './items.component';
             </p-tabs>
         </div>
 
-        <!-- Caja de texto temporal para mostrar resultado del reordenamiento -->
-        <div *ngIf="reorderResult" class="mt-6 p-4 bg-gray-100 border border-gray-300 rounded-lg reorder-result-box">
-            <h3 class="text-lg font-semibold mb-2">🔄 Resultado del Reordenamiento:</h3>
-            <textarea
-                [value]="reorderResult"
-                readonly
-                rows="10"
-                class="w-full p-3 border border-gray-300 rounded font-mono text-sm bg-white"
-                placeholder="Aquí aparecerá el array reordenado después de arrastrar las filas..."
-            ></textarea>
-            <div class="mt-2 flex gap-2">
-                <p-button
-                    label="Limpiar"
-                    icon="pi pi-times"
-                    styleClass="p-button-sm p-button-secondary"
-                    (onClick)="reorderResult = ''"
-                ></p-button>
-                <p-button
-                    label="Copiar al Portapapeles"
-                    icon="pi pi-copy"
-                    styleClass="p-button-sm p-button-primary"
-                    (onClick)="copyReorderResult()"
-                ></p-button>
-            </div>
-        </div>
 
         <!-- Modal Colección -->
         <p-dialog
@@ -993,43 +947,6 @@ import { ItemsComponent } from './items.component';
             box-shadow: none !important;
         }
 
-        /* Estilos para el handle de reordenamiento */
-        :host ::ng-deep .pi-bars {
-            font-size: 1rem !important;
-            color: #6b7280 !important;
-            transition: color 0.2s ease !important;
-        }
-
-        :host ::ng-deep .pi-bars:hover {
-            color: #374151 !important;
-        }
-
-        :host ::ng-deep tr[pReorderableRow] {
-            cursor: move !important;
-        }
-
-        :host ::ng-deep tr[pReorderableRow]:hover {
-            background-color: #f9fafb !important;
-        }
-
-        :host ::ng-deep [pReorderableRowHandle] {
-            cursor: move !important;
-        }
-
-        :host ::ng-deep [pReorderableRowHandle]:hover {
-            opacity: 0.8 !important;
-        }
-
-        /* Estilos para la caja de resultado del reordenamiento */
-        .reorder-result-box {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .reorder-result-box textarea {
-            resize: vertical;
-            min-height: 200px;
-        }
     `]
 })
 export class CollectionsComponent implements OnInit {
@@ -1093,8 +1010,6 @@ export class CollectionsComponent implements OnInit {
     colldForm!: FormGroup;
     isEditingColld = false;
 
-    // Reordenamiento
-    reorderResult = '';
 
     // Confirmaciones COLLD
     confirmMessage = '';
@@ -2049,38 +1964,6 @@ export class CollectionsComponent implements OnInit {
     }
 
 
-    // ========== FUNCIONALIDAD DE REORDENAMIENTO ==========
-
-    onColldRowReorder(event: any) {
-        console.log('🔄 Reordenamiento de filas COLLD:', event);
-
-        // PrimeNG automáticamente reordena el array en event.value
-        this.colldItems = event.value;
-        this.filteredColldItems = [...this.colldItems];
-
-        // Mostrar el array reordenado en la caja de texto temporal
-        this.reorderResult = JSON.stringify(this.colldItems, null, 2);
-
-        console.log('✅ Items COLLD reordenados:', this.colldItems);
-    }
-
-    copyReorderResult() {
-        navigator.clipboard.writeText(this.reorderResult).then(() => {
-            this.messageService.add({
-                severity: 'success',
-                summary: 'Copiado',
-                detail: 'Resultado del reordenamiento copiado al portapapeles',
-                life: 2000
-            });
-        }).catch(() => {
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'No se pudo copiar al portapapeles',
-                life: 3000
-            });
-        });
-    }
 
     // ========== MÉTODOS DE UTILIDAD ==========
 

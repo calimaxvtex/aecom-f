@@ -68,6 +68,11 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('@/pages/collections/collections.component').then(c => c.CollectionsComponent)
             },
             {
+                path: 'system/spconfig',
+                data: { breadcrumb: 'Administración de SPConfig' },
+                loadComponent: () => import('@/pages/spconfig/spconfig.component').then(c => c.SPConfigComponent)
+            },
+            {
                 path: 'system/test/items-test',
                 data: { breadcrumb: 'Items Test Page' },
                 loadComponent: () => import('@/pages/test/items-test/items-test.component').then(c => c.ItemsTestComponent)

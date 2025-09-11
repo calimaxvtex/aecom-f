@@ -22,23 +22,29 @@ export class AppMenu {
 
     model: MenuItem[] = [
         {
-            label: 'Dashboards',
-            icon: 'pi pi-home',
+            label: 'Contenido',
+            icon: 'pi pi-cog',
             items: [
                 {
-                    label: 'Analytics Dashboard',
-                    icon: 'pi pi-fw pi-chart-pie',
-                    routerLink: ['/dashboards/analytics']
+                    label: 'Tabloides',
+                    icon: 'pi pi-book',
+                    routerLink: ['/aec/banner/tab']
                 },
                 {
-                    label: 'Sales Dashboard',
-                    icon: 'pi pi-fw pi-home',
-                    routerLink: ['/dashboards/sales']
-                },
+                    label: 'Colecciones',
+                    icon: 'pi pi-list',
+                    routerLink: ['/collections']
+                }
+            ]
+        },
+        {
+            label: 'Administración',
+            icon: 'pi pi-cog',
+            items: [
                 {
-                    label: 'SaaS Dashboard',
-                    icon: 'pi pi-fw pi-bolt',
-                    routerLink: ['/dashboards/saas']
+                    label: 'SPConfig',
+                    icon: 'pi pi-settings',
+                    routerLink: ['system/spconfig']
                 }
             ]
         },

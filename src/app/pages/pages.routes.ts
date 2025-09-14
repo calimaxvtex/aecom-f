@@ -50,6 +50,11 @@ export default [
         loadComponent: () => import('./system/menu-admin/components/menu-admin-list').then(m => m.MenuAdminList)
     },
     {
+        path: 'system/catconceptos',
+        data: { breadcrumb: 'Catálogos de Conceptos', proy: 1 },
+        loadComponent: () => import('./system/catconceptos/catconceptos.component').then(c => c.CatconceptosComponent)
+    },
+    {
         path: 'adm-ecom/collections',
         data: { breadcrumb: 'Administración de Colecciones', proy: 1 },
         loadComponent: () => import('./adm-ecom/collections/collections.component').then(c => c.CollectionsComponent)

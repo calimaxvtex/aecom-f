@@ -415,13 +415,13 @@ import { ItemsComponent } from './items.component';
             [(visible)]="showCollectionModal"
             [header]="isEditingCollection ? 'Editar Colección' : 'Nueva Colección'"
             [modal]="true"
-            [style]="{width: '600px', maxHeight: '70vh'}"
+            [style]="{width: '700px', height: '75vh', minHeight: '650px'}"
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
         >
             <form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
-                <div class="grid grid-cols-1 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+                <div class="grid grid-cols-1 gap-4" style="max-height: 65vh; overflow-y: auto; padding: 0 8px 8px 0;">
                     <!-- Nombre -->
                     <div>
                         <p-floatLabel variant="on">
@@ -486,48 +486,56 @@ import { ItemsComponent } from './items.component';
                         </p-floatLabel>
                     </div>
 
-                    <!-- Fecha Inicio -->
-                    <div>
-                        <p-floatLabel variant="on">
-                            <p-inputMask
-                                formControlName="fecha_ini"
-                                mask="99/99/9999"
-                                placeholder="MM/DD/YYYY"
-                                class="w-full"
-                                [autoClear]="false"
-                                [unmask]="false"
-                            ></p-inputMask>
-                            <label>Fecha Inicio</label>
-                        </p-floatLabel>
-                    </div>
-
-                    <!-- SWSCHED entre las fechas -->
-                    <div class="flex justify-center py-2">
-                        <div class="flex items-center gap-2">
-                            <p-tag
-                                [value]="collectionForm.get('swsched')?.value ? 'Sí' : 'No'"
-                                [severity]="collectionForm.get('swsched')?.value ? 'success' : 'danger'"
-                                (click)="toggleSwsched()"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
-                                title="Clic para cambiar">
-                            </p-tag>
-                            <span>¿Programado?</span>
+                    <!-- Fecha Inicio, SWSCHED y Fecha Fin en el mismo renglón -->
+                    <div class="grid grid-cols-3 gap-4 items-end">
+                        <!-- Fecha Inicio -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-inputMask
+                                    formControlName="fecha_ini"
+                                    mask="99/99/9999"
+                                    placeholder="MM/DD/YYYY"
+                                    class="w-full"
+                                    [autoClear]="false"
+                                    [unmask]="false"
+                                ></p-inputMask>
+                                <label>Fecha Inicio</label>
+                            </p-floatLabel>
                         </div>
-                    </div>
 
-                    <!-- Fecha Fin (solo si swsched está activo) -->
-                    <div *ngIf="collectionForm.get('swsched')?.value">
-                        <p-floatLabel variant="on">
-                            <p-inputMask
-                                formControlName="fecha_fin"
-                                mask="99/99/9999"
-                                placeholder="MM/DD/YYYY"
-                                class="w-full"
-                                [autoClear]="false"
-                                [unmask]="false"
-                            ></p-inputMask>
-                            <label>Fecha Fin</label>
-                        </p-floatLabel>
+                        <!-- SWSCHED -->
+                        <div class="flex justify-center">
+                            <div class="flex flex-col items-center gap-1">
+                                <p-tag
+                                    [value]="collectionForm.get('swsched')?.value ? 'Sí' : 'No'"
+                                    [severity]="collectionForm.get('swsched')?.value ? 'success' : 'danger'"
+                                    (click)="toggleSwsched()"
+                                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                                    title="Clic para cambiar">
+                                </p-tag>
+                                <span class="text-xs text-gray-600 text-center">programado por sched</span>
+                            </div>
+                        </div>
+
+                        <!-- Fecha Fin (solo si swsched está activo) -->
+                        <div *ngIf="collectionForm.get('swsched')?.value; else fechaFinPlaceholder">
+                            <p-floatLabel variant="on">
+                                <p-inputMask
+                                    formControlName="fecha_fin"
+                                    mask="99/99/9999"
+                                    placeholder="MM/DD/YYYY"
+                                    class="w-full"
+                                    [autoClear]="false"
+                                    [unmask]="false"
+                                ></p-inputMask>
+                                <label>Fecha Fin</label>
+                            </p-floatLabel>
+                        </div>
+                        <ng-template #fechaFinPlaceholder>
+                            <div class="h-12 flex items-center justify-center">
+                                <span class="text-xs text-gray-400">Activar sched para fecha fin</span>
+                            </div>
+                        </ng-template>
                     </div>
 
                     <!-- Campos booleanos -->
@@ -540,7 +548,7 @@ import { ItemsComponent } from './items.component';
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
-                            <span>¿Tag?</span>
+                            <span>tag</span>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -551,7 +559,7 @@ import { ItemsComponent } from './items.component';
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
-                            <span>¿Modo búsqueda?</span>
+                            <span>srch</span>
                         </div>
 
                         <div class="flex items-center gap-2">

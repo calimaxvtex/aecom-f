@@ -15,6 +15,7 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputMaskModule } from 'primeng/inputmask';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
@@ -49,6 +50,7 @@ import { ItemsComponent } from './items.component';
         SelectButtonModule,
         InputMaskModule,
         ToggleSwitchModule,
+        FloatLabelModule,
         SplitButtonModule,
         CardModule,  // Para las tarjetas de información
         TooltipModule,  // Para tooltips
@@ -419,117 +421,148 @@ import { ItemsComponent } from './items.component';
             [closable]="true"
         >
             <form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
-                <div class="space-y-3" style="max-height: 50vh; overflow-y: auto;">
+                <div class="grid grid-cols-1 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
                     <!-- Nombre -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">Nombre *</label>
-                        <input
-                            pInputText
-                            formControlName="nombre"
-                            placeholder="tag-Collection"
-                            class="w-full"
-                        />
+                        <p-floatLabel variant="on">
+                            <input
+                                pInputText
+                                formControlName="nombre"
+                                placeholder="Ingrese el nombre de la colección"
+                                class="w-full"
+                                maxlength="100"
+                            />
+                            <label>Nombre *</label>
+                        </p-floatLabel>
                         <small *ngIf="collectionForm.get('nombre')?.invalid && collectionForm.get('nombre')?.touched"
-                               class="text-red-500">
+                               class="text-red-500 text-xs mt-1">
                             El nombre es obligatorio
                         </small>
                     </div>
 
                     <!-- Descripción -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">Descripción</label>
-                        <textarea
-                            pInputText
+                        <p-floatLabel variant="on">
+                            <textarea
+                                pInputTextarea
                             formControlName="descripcion"
                             placeholder="Descripción de la colección (opcional)"
                             class="w-full"
                             rows="2"
+                            maxlength="500"
                         ></textarea>
+                            <label>Descripción</label>
+                        </p-floatLabel>
                     </div>
 
                     <!-- URL Banner -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">URL Banner</label>
-                        <input
-                            pInputText
-                            formControlName="url_banner"
-                            placeholder="https://imagenes.calimaxjs.com/banner.jpg"
-                            class="w-full"
-                        />
+                        <p-floatLabel variant="on">
+                            <input
+                                pInputText
+                                formControlName="url_banner"
+                                placeholder="https://imagenes.calimaxjs.com/banner.jpg"
+                                class="w-full"
+                                maxlength="255"
+                            />
+                            <label>URL Banner</label>
+                        </p-floatLabel>
                     </div>
 
-                    <!-- Tipo de Colección (más pequeño) -->
+                    <!-- Tipo de Colección -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">Tipo de Colección *</label>
-                        <p-select
+                        <p-floatLabel variant="on">
+                            <p-select
                             formControlName="id_tipoc"
                             [options]="tipoCollOptions"
                             optionLabel="label"
                             optionValue="value"
-                            placeholder="Seleccionar tipo"
+                            placeholder="Seleccionar tipo de colección"
                             styleClass="w-full text-sm"
+                            appendTo="body"
+                            [style]="{'z-index': '9999'}"
                         ></p-select>
+                            <label>Tipo de Colección *</label>
+                        </p-floatLabel>
                     </div>
 
                     <!-- Fecha Inicio -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">Fecha Inicio</label>
-                        <p-inputMask
-                            formControlName="fecha_ini"
-                            mask="99/99/9999"
-                            placeholder="mm/dd/yyyy"
-                            class="w-full"
-                        ></p-inputMask>
+                        <p-floatLabel variant="on">
+                            <p-inputMask
+                                formControlName="fecha_ini"
+                                mask="99/99/9999"
+                                placeholder="MM/DD/YYYY"
+                                class="w-full"
+                                [autoClear]="false"
+                                [unmask]="false"
+                            ></p-inputMask>
+                            <label>Fecha Inicio</label>
+                        </p-floatLabel>
                     </div>
 
                     <!-- SWSCHED entre las fechas -->
                     <div class="flex justify-center py-2">
-                        <div class="flex flex-col items-center">
-                            <label class="block text-xs font-medium mb-1">Sched</label>
-                            <p-toggleSwitch
-                                formControlName="swsched"
-                                (onChange)="onSwschedChange($event)"
-                            ></p-toggleSwitch>
+                        <div class="flex items-center gap-2">
+                            <p-tag
+                                [value]="collectionForm.get('swsched')?.value ? 'Sí' : 'No'"
+                                [severity]="collectionForm.get('swsched')?.value ? 'success' : 'danger'"
+                                (click)="onSwschedChange({checked: !collectionForm.get('swsched')?.value})"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar">
+                            </p-tag>
+                            <span>¿Programado?</span>
                         </div>
                     </div>
 
                     <!-- Fecha Fin (solo si swsched está activo) -->
                     <div *ngIf="collectionForm.get('swsched')?.value">
-                        <label class="block text-sm font-medium mb-1">Fecha Fin</label>
-                        <p-inputMask
-                            formControlName="fecha_fin"
-                            mask="99/99/9999"
-                            placeholder="mm/dd/yyyy"
-                            class="w-full"
-                        ></p-inputMask>
+                        <p-floatLabel variant="on">
+                            <p-inputMask
+                                formControlName="fecha_fin"
+                                mask="99/99/9999"
+                                placeholder="MM/DD/YYYY"
+                                class="w-full"
+                                [autoClear]="false"
+                                [unmask]="false"
+                            ></p-inputMask>
+                            <label>Fecha Fin</label>
+                        </p-floatLabel>
                     </div>
 
-                    <!-- Toggle Switches: swtag, swsrc y Estado en la misma fila -->
-                    <div class="grid grid-cols-3 gap-4 items-end">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                {{collectionForm.get('swtag')?.value ? 'Tag ON' : 'Tag OFF'}}
-                            </label>
-                            <p-toggleSwitch
-                                formControlName="swtag"
-                            ></p-toggleSwitch>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                {{collectionForm.get('swsrc')?.value ? 'Modo búsqueda ON' : 'Modo búsqueda OFF'}}
-                            </label>
-                            <p-toggleSwitch
-                                formControlName="swsrc"
-                            ></p-toggleSwitch>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Estado</label>
+                    <!-- Campos booleanos -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="flex items-center gap-2">
                             <p-tag
-                                [value]="collectionForm.get('estado')?.value ? 'Activo' : 'Inactivo'"
+                                [value]="collectionForm.get('swtag')?.value ? 'Sí' : 'No'"
+                                [severity]="collectionForm.get('swtag')?.value ? 'success' : 'danger'"
+                                (click)="collectionForm.patchValue({swtag: !collectionForm.get('swtag')?.value})"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar">
+                            </p-tag>
+                            <span>¿Tag?</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <p-tag
+                                [value]="collectionForm.get('swsrc')?.value ? 'Sí' : 'No'"
+                                [severity]="collectionForm.get('swsrc')?.value ? 'success' : 'danger'"
+                                (click)="collectionForm.patchValue({swsrc: !collectionForm.get('swsrc')?.value})"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar">
+                            </p-tag>
+                            <span>¿Modo búsqueda?</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <p-tag
+                                [value]="collectionForm.get('estado')?.value ? 'Sí' : 'No'"
                                 [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
                                 (click)="collectionForm.patchValue({estado: !collectionForm.get('estado')?.value})"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
-                            ></p-tag>
+                                title="Clic para cambiar">
+                            </p-tag>
+                            <span>¿Activo?</span>
                         </div>
                     </div>
 
@@ -993,6 +1026,32 @@ import { ItemsComponent } from './items.component';
             box-shadow: none !important;
         }
 
+        /* Estilos para labels flotantes */
+        :host ::ng-deep .p-floatlabel {
+            width: 100%;
+        }
+
+        :host ::ng-deep .p-floatlabel label {
+            background: white;
+            padding: 0 4px;
+            font-size: 0.875rem;
+        }
+
+        :host ::ng-deep .p-floatlabel input:focus + label,
+        :host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label,
+        :host ::ng-deep .p-floatlabel textarea:focus + label,
+        :host ::ng-deep .p-floatlabel textarea:not(:placeholder-shown) + label,
+        :host ::ng-deep .p-floatlabel .p-select:focus + label,
+        :host ::ng-deep .p-floatlabel .p-select:not(.p-select-empty) + label {
+            color: #6366f1; /* Indigo */
+        }
+
+        /* Estilos para campos booleanos */
+        :host ::ng-deep .p-tag {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
     `]
 })
 export class CollectionsComponent implements OnInit {
@@ -1145,7 +1204,10 @@ export class CollectionsComponent implements OnInit {
 
     getCurrentDate(): string {
         const today = new Date();
-        return `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        const year = today.getFullYear();
+        return `${month}/${day}/${year}`;
     }
 
     initializeColldForms(): void {
@@ -1803,6 +1865,16 @@ export class CollectionsComponent implements OnInit {
         }
 
         this.showCollectionModal = true;
+
+        // Forzar actualización del valor de fecha después de que el modal se abra
+        setTimeout(() => {
+            const fechaIniValue = this.collectionForm.get('fecha_ini')?.value;
+            if (fechaIniValue) {
+                this.collectionForm.patchValue({
+                    fecha_ini: fechaIniValue
+                });
+            }
+        }, 100);
     }
 
     closeCollectionForm(): void {

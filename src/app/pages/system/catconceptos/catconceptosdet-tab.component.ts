@@ -630,11 +630,15 @@ export class CatconceptosdetTabComponent implements OnInit {
             };
 
             if (this.isEditingDetalle && this.detalleSeleccionado) {
-                // Actualizar
+                // Actualizar - usar clave y concepto del registro seleccionado
                 const updateData: UpdateCatConceptoDetRequest = {
                     clave: this.detalleSeleccionado.clave,
                     concepto: this.detalleSeleccionado.concepto,
-                    ...processedData
+                    descripcion: processedData.descripcion,
+                    folio: processedData.folio,
+                    valor1: processedData.valor1,
+                    valorcadena1: processedData.valorcadena1,
+                    swestado: processedData.swestado
                 };
 
                 this.catConceptosDetService.updateDetalle(updateData).subscribe({

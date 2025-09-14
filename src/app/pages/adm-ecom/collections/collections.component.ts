@@ -445,12 +445,12 @@ import { ItemsComponent } from './items.component';
                         <p-floatLabel variant="on">
                             <textarea
                                 pInputTextarea
-                            formControlName="descripcion"
-                            placeholder="Descripción de la colección (opcional)"
-                            class="w-full"
-                            rows="2"
-                            maxlength="500"
-                        ></textarea>
+                                formControlName="descripcion"
+                                placeholder="Descripción de la colección (opcional)"
+                                class="w-full"
+                                rows="2"
+                                maxlength="500"
+                            ></textarea>
                             <label>Descripción</label>
                         </p-floatLabel>
                     </div>
@@ -507,7 +507,7 @@ import { ItemsComponent } from './items.component';
                             <p-tag
                                 [value]="collectionForm.get('swsched')?.value ? 'Sí' : 'No'"
                                 [severity]="collectionForm.get('swsched')?.value ? 'success' : 'danger'"
-                                (click)="onSwschedChange({checked: !collectionForm.get('swsched')?.value})"
+                                (click)="toggleSwsched()"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
@@ -536,7 +536,7 @@ import { ItemsComponent } from './items.component';
                             <p-tag
                                 [value]="collectionForm.get('swtag')?.value ? 'Sí' : 'No'"
                                 [severity]="collectionForm.get('swtag')?.value ? 'success' : 'danger'"
-                                (click)="collectionForm.patchValue({swtag: !collectionForm.get('swtag')?.value})"
+                                (click)="toggleFormField('swtag')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
@@ -547,7 +547,7 @@ import { ItemsComponent } from './items.component';
                             <p-tag
                                 [value]="collectionForm.get('swsrc')?.value ? 'Sí' : 'No'"
                                 [severity]="collectionForm.get('swsrc')?.value ? 'success' : 'danger'"
-                                (click)="collectionForm.patchValue({swsrc: !collectionForm.get('swsrc')?.value})"
+                                (click)="toggleFormField('swsrc')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
@@ -558,7 +558,7 @@ import { ItemsComponent } from './items.component';
                             <p-tag
                                 [value]="collectionForm.get('estado')?.value ? 'Sí' : 'No'"
                                 [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
-                                (click)="collectionForm.patchValue({estado: !collectionForm.get('estado')?.value})"
+                                (click)="toggleFormField('estado')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
                             </p-tag>
@@ -1029,27 +1029,58 @@ import { ItemsComponent } from './items.component';
         /* Estilos para labels flotantes */
         :host ::ng-deep .p-floatlabel {
             width: 100%;
+            position: relative;
         }
 
         :host ::ng-deep .p-floatlabel label {
             background: white;
             padding: 0 4px;
             font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            position: absolute;
+            top: 50%;
+            left: 0.75rem;
+            transform: translateY(-50%);
+            z-index: 1;
         }
 
         :host ::ng-deep .p-floatlabel input:focus + label,
         :host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label,
         :host ::ng-deep .p-floatlabel textarea:focus + label,
         :host ::ng-deep .p-floatlabel textarea:not(:placeholder-shown) + label,
+        :host ::ng-deep .p-floatlabel .p-inputmask:focus + label,
+        :host ::ng-deep .p-floatlabel .p-inputmask:not(.p-inputmask-empty) + label,
         :host ::ng-deep .p-floatlabel .p-select:focus + label,
         :host ::ng-deep .p-floatlabel .p-select:not(.p-select-empty) + label {
+            top: 0;
+            left: 0.75rem;
+            transform: translateY(-50%) scale(0.85);
             color: #6366f1; /* Indigo */
+            font-weight: 600;
+        }
+
+        :host ::ng-deep .p-floatlabel input,
+        :host ::ng-deep .p-floatlabel textarea,
+        :host ::ng-deep .p-floatlabel .p-inputmask input,
+        :host ::ng-deep .p-floatlabel .p-select {
+            padding-top: 1rem;
+            padding-bottom: 0.5rem;
         }
 
         /* Estilos para campos booleanos */
         :host ::ng-deep .p-tag {
             font-size: 0.875rem;
             padding: 0.25rem 0.5rem;
+            font-weight: 500;
+        }
+
+        /* Mejorar apariencia de textarea */
+        :host ::ng-deep .p-floatlabel textarea {
+            min-height: 80px;
+            resize: vertical;
         }
 
     `]
@@ -1825,11 +1856,26 @@ export class CollectionsComponent implements OnInit {
         }
     }
 
-    onSwschedChange(event: any): void {
+    toggleFormField(fieldName: string): void {
+        const currentValue = this.collectionForm.get(fieldName)?.value;
+        const newValue = !currentValue;
+
+        // Cambiar el valor del formulario
+        this.collectionForm.patchValue({ [fieldName]: newValue });
+
         // Si se desactiva swsched, resetear fecha_fin
-        if (!event.checked) {
+        if (fieldName === 'swsched' && !newValue) {
             this.collectionForm.patchValue({ fecha_fin: this.getCurrentDate() });
         }
+    }
+
+    toggleSwsched(): void {
+        this.toggleFormField('swsched');
+    }
+
+    onSwschedChange(event: any): void {
+        // Método legacy para compatibilidad
+        this.toggleSwsched();
     }
 
     // ========== MÉTODOS DE FORMULARIO ==========

@@ -13,6 +13,11 @@ import {DomHandler} from "primeng/dom";
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: '[app-menuitem]',
     imports: [CommonModule, RouterModule, RippleModule, TooltipModule],
+    styles: [`
+        .layout-submenu-toggler-rotated {
+            transform: rotate(-180deg);
+        }
+    `],
     template: `
         <ng-container>
             <div *ngIf="root && item.visible !== false" class="layout-menuitem-root-text">
@@ -33,7 +38,7 @@ import {DomHandler} from "primeng/dom";
             >
                 <i [ngClass]="item.icon" class="layout-menuitem-icon"></i>
                 <span class="layout-menuitem-text">{{ item.label }}</span>
-                <i class="pi pi-fw pi-angle-down layout-submenu-toggler" *ngIf="item.items"></i>
+                <i class="pi pi-fw pi-angle-down layout-submenu-toggler" [ngClass]="{'layout-submenu-toggler-rotated': active}" *ngIf="item.items || (root && !item.routerLink)"></i>
             </a>
             <a
                 *ngIf="item.routerLink && !item.items && item.visible !== false"
@@ -261,7 +266,7 @@ export class AppMenuitem implements OnInit, OnDestroy {
         }
 
         // toggle active state
-        if (this.item.items) {
+        if (this.item.items || (this.root && !this.item.routerLink)) {
             this.active = !this.active;
 
             if (this.root && this.active && (this.isSlim() || this.isHorizontal() || this.isSlimPlus())) {

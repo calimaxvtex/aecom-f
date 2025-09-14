@@ -20,9 +20,44 @@ export default [
     { path: 'help', data: { breadcrumb: 'Help' }, component: Help },
     { path: 'invoice', data: { breadcrumb: 'Invoice' }, component: Invoice },
     {
-        path: 'productos-test-nuevo',
-        data: { breadcrumb: 'Test Productos Nuevo' },
-        loadComponent: () => import('./productos-test-nuevo/productos-test-nuevo.component').then(c => c.ProductosTestNuevoComponent)
+        path: 'system/amenu',
+        data: { breadcrumb: 'Administración de Menú', proy: 1 },
+        loadComponent: () => import('./system/amenu/amenu.component').then(c => c.AmenuComponent)
     },
-    { path: '**', redirectTo: '/notfound' }
+    {
+        path: 'test/route-service',
+        data: { breadcrumb: 'RouteService Test', proy: 1 },
+        loadComponent: () => import('./test/route-test/route-test.component').then(c => c.RouteTestComponent)
+    },
+    {
+        path: 'system/spconfig',
+        data: { breadcrumb: 'Configuración del Sistema', proy: 1 },
+        loadComponent: () => import('./system/spconfig/spconfig.component').then(c => c.SPConfigComponent)
+    },
+    {
+        path: 'adm-ecom/tabadm',
+        data: { breadcrumb: 'Administración de Tabloides', proy: 1 },
+        loadComponent: () => import('./adm-ecom/tabadm/tabadm.component').then(c => c.TabAdmComponent)
+    },
+    {
+        path: 'system/usuarios',
+        data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
+        loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)
+    },
+    {
+        path: 'system/menu',
+        data: { breadcrumb: 'Administración de Menú', proy: 1 },
+        loadComponent: () => import('./system/menu-admin/components/menu-admin-list').then(m => m.MenuAdminList)
+    },
+    {
+        path: 'adm-ecom/collections',
+        data: { breadcrumb: 'Administración de Colecciones', proy: 1 },
+        loadComponent: () => import('./adm-ecom/collections/collections.component').then(c => c.CollectionsComponent)
+    },
+    {
+        path: 'adm-ecom/test/items-test',
+        data: { breadcrumb: 'Items Test Page', proy: 1 },
+        loadComponent: () => import('./adm-ecom/test/items-test/items-test.component').then(c => c.ItemsTestComponent)
+    }
+    //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

@@ -7,28 +7,27 @@ import { appRoutes } from './app/app.routes';
 import Material from '@primeuix/themes/material';
 import { definePreset } from '@primeuix/themes';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { ApiMonitorInterceptor } from './app/api-monitor.interceptor';
 import { SimpleTestInterceptor } from './app/simple-test.interceptor';
 import { ApiConfigService } from './app/core/services/api/api-config.service';
 // import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
 
-console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);
-console.log('🔍 App Config: SimpleTestInterceptor importado:', SimpleTestInterceptor);
+// console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);
+// console.log('🔍 App Config: SimpleTestInterceptor importado:', SimpleTestInterceptor);
 
 // Función factory para inicializar los endpoints
 function initializeApiConfig(apiConfigService: ApiConfigService) {
     return (): Promise<any> => {
-        console.log('🚀 Inicializando configuración de API...');
+        // console.log('🚀 Inicializando configuración de API...');
         return new Promise((resolve, reject) => {
             apiConfigService.getspConfis().subscribe({
                 next: (response) => {
-                    console.log('✅ Endpoints cargados exitosamente:', response.controllers?.length || 0);
+                    console.log('✅ Endpoints cargados:', response.controllers?.length || 0);
                     resolve(response);
                 },
                 error: (error) => {
-                    console.error('❌ Error cargando endpoints:', error);
-                    // No rechazamos para no bloquear el inicio de la app
-                    // pero sí logueamos el error
+                    console.error('❌ Error cargando endpoints:', error instanceof Error ? error.message : String(error));
                     resolve(null);
                 }
             });
@@ -90,6 +89,7 @@ export const appConfig: ApplicationConfig = {
         // Servicios globales de PrimeNG necesarios para tablas, diálogos, etc.
         ConfirmationService,
         MessageService,
+        DialogService,
 
         // 🔥 APP_INITIALIZER para cargar endpoints al inicio
         {

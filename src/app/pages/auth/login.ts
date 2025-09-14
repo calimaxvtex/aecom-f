@@ -13,6 +13,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { AppConfigurator } from '@/layout/components/app.configurator';
 import { SessionService } from '@/core/services/session.service';
+import { MenuLoaderService } from '@/core/services/menu/menu-loader.service';
 
 @Component({
     selector: 'app-login',
@@ -84,11 +85,20 @@ export class Login {
     private router = inject(Router);
     private messageService = inject(MessageService);
     private sessionService = inject(SessionService);
+    private menuLoaderService = inject(MenuLoaderService);
 
     constructor() {
         this.loginForm = this.fb.group({
-            usuario: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]], // Solo números
-            password: ['', [Validators.required, Validators.minLength(1)]]
+            usuario: ['', [Validators.required]], // Simplificado temporalmente
+            password: ['', [Validators.required]] // Simplificado temporalmente
+        });
+
+        // Debug: Monitorear cambios en el formulario
+        this.loginForm.valueChanges.subscribe(value => {
+            console.log('🔍 Form values:', value);
+            console.log('🔍 Form valid:', this.loginForm.valid);
+            console.log('🔍 Usuario errors:', this.loginForm.get('usuario')?.errors);
+            console.log('🔍 Password errors:', this.loginForm.get('password')?.errors);
         });
     }
 
@@ -191,7 +201,10 @@ export class Login {
                 
                 // Establecer sesión usando SessionService
                 this.sessionService.setSession(loginData);
-                
+
+                // Actualizar menú dinámico después del login
+                this.updateMenuAfterLogin();
+
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Login Exitoso',
@@ -222,6 +235,17 @@ export class Login {
                 detail: 'Error procesando respuesta del servidor',
                 life: 5000
             });
+        }
+    }
+
+    /**
+     * Actualizar menú dinámico después de login exitoso
+     */
+    private async updateMenuAfterLogin(): Promise<void> {
+        try {
+            await this.menuLoaderService.updateMenuOnLogin();
+        } catch (error) {
+            // Usar menú cacheado si falla
         }
     }
 }

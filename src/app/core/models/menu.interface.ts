@@ -33,8 +33,8 @@ export interface MenuCrudSingleResponse {
 export interface MenuApiItem {
     icon: string;
     label: string;
-    items: MenuApiItem[];
-    routerLink: string;
+    items?: MenuApiItem[];  // Hacer opcional
+    routerLink?: string;    // Hacer opcional
     visible: boolean;
     disable: boolean;
     separator: boolean;
@@ -45,6 +45,15 @@ export interface MenuApiResponse {
     statuscode: number;
     mensaje: string;
     data: MenuApiItem[];
+}
+
+// Interface para respuesta HTTP cruda (puede ser array o objeto)
+export interface MenuHttpResponse {
+    statuscode?: number;
+    mensaje?: string;
+    data?: MenuApiItem[];
+    executionId?: string;
+    procedureName?: string;
 }
 
 // Interface para el formulario

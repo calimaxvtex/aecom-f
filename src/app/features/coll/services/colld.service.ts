@@ -420,6 +420,50 @@ export class ColldService {
     }
 
     /**
+     * Actualiza el orden de múltiples items de colección
+     */
+    updateItemsOrder(collId: number, items: {id_colld: number, orden: number}[]): Observable<ColldSingleResponse> {
+        return from(this.apiConfigService.waitForEndpoints()).pipe(
+            switchMap(() => {
+                const endpoint = this.apiConfigService.getEndpointById(this.SERVICE_ID);
+                if (!endpoint) {
+                    throw new Error(`Endpoint para servicio COLLD (ID: ${this.SERVICE_ID}) no encontrado`);
+                }
+
+                const payload: any = {
+                    action: 'UPR', // Update
+                    id_coll: collId,  // ID de la colección padre
+                    items: items,
+                    ...this.getSessionData() // REGLA CRÍTICA: Inyección de sesión
+                };
+
+                console.log('📦 Payload para actualizar orden con id_coll:', payload);
+
+                return this.http.post<ColldArrayResponse>(endpoint.url, payload).pipe(
+                    map((responseArray: ColldArrayResponse) => {
+                        console.log('📥 Respuesta actualización orden:', responseArray);
+
+                        // Tomar el primer elemento del array si existe
+                        if (Array.isArray(responseArray) && responseArray.length > 0) {
+                            return {
+                                statuscode: responseArray[0].statuscode,
+                                mensaje: responseArray[0].mensaje,
+                                data: responseArray[0].data
+                            };
+                        }
+                        // Si no es array, devolver directamente
+                        return responseArray as any;
+                    }),
+                    catchError((error) => {
+                        console.error('❌ Error en updateItemsOrder:', error);
+                        return throwError(() => error);
+                    })
+                );
+            })
+        );
+    }
+
+    /**
      * Obtiene detalles de colección por ID de colección padre
      */
     getColldByCollId(collId: number, params?: ColldPaginationParams): Observable<ColldResponse> {

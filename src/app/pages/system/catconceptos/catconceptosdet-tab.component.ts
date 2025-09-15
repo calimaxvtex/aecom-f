@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, ViewChild, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -40,32 +40,10 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
         ToastModule,
         TagModule,
         FloatLabelModule,
-        SelectModule,
         TooltipModule
     ],
     providers: [MessageService],
     template: `
-        <!-- Selector de clave padre -->
-        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-            <label class="block text-sm font-medium mb-2">Filtrar por Concepto Padre:</label>
-            <p-select
-                [options]="conceptosPadre"
-                optionLabel="clave"
-                optionValue="clave"
-                placeholder="Seleccionar concepto padre"
-                (onChange)="onConceptoPadreChange($event)"
-                class="w-full max-w-md"
-                appendTo="body"
-                [style]="{'z-index': '9999'}"
-            ></p-select>
-        </div>
-
-        <!-- Header -->
-        <div class="mb-4">
-            <h2 class="text-2xl font-bold mb-2">📋 Gestión de Detalles de Conceptos</h2>
-            <p class="text-gray-600">Administra los detalles específicos de cada concepto</p>
-        </div>
-
         <!-- Tabla con consulta unificada -->
         <p-table
             #dtDetalles
@@ -76,7 +54,7 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
             responsiveLayout="scroll"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} detalles"
             [rowsPerPageOptions]="[10, 25, 50]"
-            [globalFilterFields]="['descripcion', 'nombre_concepto']"
+            [globalFilterFields]="['descripcion', 'valorcadena1', 'nombre_concepto']"
             selectionMode="single"
             [(selection)]="detalleSeleccionado"
             (onRowSelect)="onDetalleSelect($event)"
@@ -109,7 +87,7 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
                             raised
                             icon="pi pi-plus"
                             pTooltip="Agregar Detalle"
-                            [disabled]="!queryParams.clave"
+                            [disabled]="!conceptoSeleccionado || savingDetalle"
                         ></button>
                     </div>
                 </div>
@@ -118,9 +96,9 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
             <!-- Headers -->
             <ng-template #header>
                 <tr>
-                    <th pSortableColumn="clave" style="min-width: 120px">Concepto <p-sortIcon field="clave"></p-sortIcon></th>
                     <th pSortableColumn="concepto" style="width: 100px">N° <p-sortIcon field="concepto"></p-sortIcon></th>
                     <th pSortableColumn="descripcion" style="min-width: 200px">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+                    <th pSortableColumn="valorcadena1" style="min-width: 150px">Valor Cadena <p-sortIcon field="valorcadena1"></p-sortIcon></th>
                     <th pSortableColumn="folio" style="width: 80px">Folio <p-sortIcon field="folio"></p-sortIcon></th>
                     <th pSortableColumn="valor1" style="width: 100px">Valor 1 <p-sortIcon field="valor1"></p-sortIcon></th>
                     <th pSortableColumn="swestado" style="width: 100px">Estado <p-sortIcon field="swestado"></p-sortIcon></th>
@@ -130,96 +108,133 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
 
             <!-- Body -->
             <ng-template #body let-detalle>
-                <!-- Concepto Padre -->
-                <td>
-                    <div class="flex flex-col">
-                        <span class="font-medium">{{ detalle.clave }}</span>
-                        <span class="text-xs text-gray-500">{{ detalle.nombre_concepto }}</span>
-                    </div>
-                </td>
+                <tr>
+                    <!-- Número de Concepto -->
+                    <td class="text-center font-mono">{{ detalle.concepto }}</td>
 
-                <!-- Número de Concepto -->
-                <td class="text-center font-mono">{{ detalle.concepto }}</td>
+                    <!-- Descripción -->
+                    <td>
+                        <span
+                            *ngIf="editingCell !== detalle.clave + '_' + detalle.concepto + '_descripcion'"
+                            (click)="editInlineDetalle(detalle, 'descripcion'); $event.stopPropagation()"
+                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                            title="Clic para editar"
+                        >
+                            {{ detalle.descripcion }}
+                        </span>
+                        <div
+                            *ngIf="editingCell === detalle.clave + '_' + detalle.concepto + '_descripcion'"
+                            class="inline-edit-container"
+                        >
+                            <input
+                                pInputText
+                                type="text"
+                                [(ngModel)]="detalle.descripcion"
+                                (keyup.enter)="saveInlineEditDetalle(detalle, 'descripcion')"
+                                (keyup.escape)="cancelInlineEdit()"
+                                class="p-inputtext-sm flex-1"
+                                #input
+                                (focus)="input.select()"
+                                autofocus
+                                placeholder="Descripción del detalle"
+                            />
+                            <button
+                                pButton
+                                icon="pi pi-check"
+                                (click)="saveInlineEditDetalle(detalle, 'descripcion')"
+                                class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                pTooltip="Guardar (Enter)"
+                            ></button>
+                            <button
+                                pButton
+                                icon="pi pi-undo"
+                                (click)="cancelInlineEdit()"
+                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                pTooltip="Deshacer (Escape)"
+                            ></button>
+                        </div>
+                    </td>
 
-                <!-- Descripción -->
-                <td>
-                    <span
-                        *ngIf="editingCell !== detalle.clave + '_' + detalle.concepto + '_descripcion'"
-                        (click)="editInlineDetalle(detalle, 'descripcion'); $event.stopPropagation()"
-                        class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                        title="Clic para editar"
-                    >
-                        {{ detalle.descripcion }}
-                    </span>
-                    <div
-                        *ngIf="editingCell === detalle.clave + '_' + detalle.concepto + '_descripcion'"
-                        class="inline-edit-container"
-                    >
-                        <input
-                            pInputText
-                            type="text"
-                            [(ngModel)]="detalle.descripcion"
-                            (keyup.enter)="saveInlineEditDetalle(detalle, 'descripcion')"
-                            (keyup.escape)="cancelInlineEdit()"
-                            class="p-inputtext-sm flex-1"
-                            #input
-                            (focus)="input.select()"
-                            autofocus
-                            placeholder="Descripción del detalle"
-                        />
-                        <button
-                            pButton
-                            icon="pi pi-check"
-                            (click)="saveInlineEditDetalle(detalle, 'descripcion')"
-                            class="p-button-sm p-button-success p-button-text inline-action-btn"
-                            pTooltip="Guardar (Enter)"
-                        ></button>
-                        <button
-                            pButton
-                            icon="pi pi-undo"
-                            (click)="cancelInlineEdit()"
-                            class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                            pTooltip="Deshacer (Escape)"
-                        ></button>
-                    </div>
-                </td>
+                    <!-- Valor Cadena -->
+                    <td>
+                        <span
+                            *ngIf="editingCell !== detalle.clave + '_' + detalle.concepto + '_valorcadena1'"
+                            (click)="editInlineDetalle(detalle, 'valorcadena1'); $event.stopPropagation()"
+                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                            title="Clic para editar"
+                        >
+                            {{ detalle.valorcadena1 || '—' }}
+                        </span>
+                        <div
+                            *ngIf="editingCell === detalle.clave + '_' + detalle.concepto + '_valorcadena1'"
+                            class="inline-edit-container"
+                        >
+                            <input
+                                pInputText
+                                type="text"
+                                [(ngModel)]="detalle.valorcadena1"
+                                (keyup.enter)="saveInlineEditDetalle(detalle, 'valorcadena1')"
+                                (keyup.escape)="cancelInlineEdit()"
+                                class="p-inputtext-sm flex-1"
+                                #input
+                                (focus)="input.select()"
+                                autofocus
+                                placeholder="Valor cadena del detalle"
+                            />
+                            <button
+                                pButton
+                                icon="pi pi-check"
+                                (click)="saveInlineEditDetalle(detalle, 'valorcadena1')"
+                                class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                pTooltip="Guardar (Enter)"
+                            ></button>
+                            <button
+                                pButton
+                                icon="pi pi-undo"
+                                (click)="cancelInlineEdit()"
+                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                pTooltip="Deshacer (Escape)"
+                            ></button>
+                        </div>
+                    </td>
 
-                <!-- Folio -->
-                <td class="text-center">{{ detalle.folio }}</td>
+                    <!-- Folio -->
+                    <td class="text-center">{{ detalle.folio }}</td>
 
-                <!-- Valor 1 -->
-                <td class="text-center">{{ detalle.valor1 }}</td>
+                    <!-- Valor 1 -->
+                    <td class="text-center">{{ detalle.valor1 }}</td>
 
-                <!-- Estado -->
-                <td>
-                    <p-tag
-                        [value]="getEstadoLabel(detalle.swestado)"
-                        [severity]="getEstadoSeverity(detalle.swestado)"
-                        (click)="toggleEstadoDetalle(detalle); $event.stopPropagation()"
-                        class="cursor-pointer hover:opacity-80 transition-opacity"
-                        title="Clic para cambiar"
-                    ></p-tag>
-                </td>
+                    <!-- Estado -->
+                    <td>
+                        <p-tag
+                            [value]="getEstadoLabel(detalle.swestado)"
+                            [severity]="getEstadoSeverity(detalle.swestado)"
+                            (click)="toggleEstadoDetalle(detalle); $event.stopPropagation()"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Clic para cambiar"
+                        ></p-tag>
+                    </td>
 
-                <!-- Acciones -->
-                <td (click)="$event.stopPropagation()">
-                    <div class="flex gap-1">
-                        <button
-                            pButton
-                            icon="pi pi-pencil"
-                            (click)="openDetalleForm(detalle)"
-                            class="p-button-sm p-button-text p-button-warning"
-                            pTooltip="Editar Detalle"
-                        ></button>
-                        <button
-                            pButton
-                            icon="pi pi-trash"
-                            (click)="eliminarDetalle(detalle)"
-                            class="p-button-sm p-button-text p-button-danger"
-                            pTooltip="Eliminar Detalle"
-                        ></button>
-                    </div>
-                </td>
+                    <!-- Acciones -->
+                    <td (click)="$event.stopPropagation()">
+                        <div class="flex gap-1">
+                            <button
+                                pButton
+                                icon="pi pi-pencil"
+                                (click)="openDetalleForm(detalle)"
+                                class="p-button-sm p-button-text p-button-warning"
+                                pTooltip="Editar Detalle"
+                            ></button>
+                            <button
+                                pButton
+                                icon="pi pi-trash"
+                                (click)="eliminarDetalle(detalle)"
+                                class="p-button-sm p-button-text p-button-danger"
+                                pTooltip="Eliminar Detalle"
+                            ></button>
+                        </div>
+                    </td>
+                </tr>
             </ng-template>
         </p-table>
 
@@ -235,30 +250,32 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
         >
             <form [formGroup]="detalleForm" (ngSubmit)="saveDetalle()">
                 <div class="grid grid-cols-1 gap-4">
-                    <!-- Concepto padre (solo mostrar, no editable) -->
-                    <div *ngIf="isEditingDetalle" class="p-3 bg-gray-50 rounded">
+                    <!-- Información del concepto padre (siempre mostrar) -->
+                    <div class="p-3 bg-blue-50 rounded">
                         <label class="block text-sm font-medium mb-1">Concepto Padre:</label>
                         <div class="flex items-center gap-2">
-                            <span class="font-medium">{{ detalleSeleccionado?.clave }}</span>
-                            <span class="text-sm text-gray-600">({{ detalleSeleccionado?.nombre_concepto }})</span>
+                            <span class="font-medium">{{ conceptoSeleccionado?.clave }}</span>
+                            <span class="text-sm text-gray-600">({{ conceptoSeleccionado?.nombre }})</span>
                         </div>
                     </div>
 
-                    <!-- Selector de concepto padre (solo en creación) -->
-                    <div *ngIf="!isEditingDetalle">
+                    <!-- Concepto (opcional - customizable) -->
+                    <div>
                         <p-floatLabel variant="on">
-                            <p-select
-                                formControlName="clave"
-                                [options]="conceptosPadre"
-                                optionLabel="clave"
-                                optionValue="clave"
-                                placeholder="Seleccionar concepto padre"
+                            <input
+                                pInputText
+                                id="concepto"
+                                formControlName="concepto"
+                                placeholder="Dejar vacío para auto-asignar"
                                 class="w-full"
-                                appendTo="body"
-                                [style]="{'z-index': '9999'}"
-                            ></p-select>
-                            <label>Concepto Padre *</label>
+                                type="number"
+                                min="1"
+                            />
+                            <label for="concepto">Concepto (opcional)</label>
                         </p-floatLabel>
+                        <small class="text-gray-500 text-xs mt-1 block">
+                            Si está vacío, el sistema asignará automáticamente el siguiente número
+                        </small>
                     </div>
 
                     <!-- Descripción -->
@@ -266,12 +283,12 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
                         <p-floatLabel variant="on">
                             <input
                                 pInputText
+                                id="descripcion"
                                 formControlName="descripcion"
-                                placeholder="Descripción del detalle"
                                 class="w-full"
                                 maxlength="255"
                             />
-                            <label>Descripción *</label>
+                            <label for="descripcion">Descripción *</label>
                         </p-floatLabel>
                     </div>
 
@@ -281,12 +298,12 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
                             <p-floatLabel variant="on">
                                 <input
                                     pInputText
+                                    id="folio"
                                     formControlName="folio"
-                                    placeholder="0"
                                     class="w-full"
                                     type="number"
                                 />
-                                <label>Folio</label>
+                                <label for="folio">Folio</label>
                             </p-floatLabel>
                         </div>
 
@@ -294,12 +311,12 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
                             <p-floatLabel variant="on">
                                 <input
                                     pInputText
+                                    id="valor1"
                                     formControlName="valor1"
-                                    placeholder="0"
                                     class="w-full"
                                     type="number"
                                 />
-                                <label>Valor 1</label>
+                                <label for="valor1">Valor 1</label>
                             </p-floatLabel>
                         </div>
 
@@ -307,12 +324,12 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
                             <p-floatLabel variant="on">
                                 <input
                                     pInputText
+                                    id="valorcadena1"
                                     formControlName="valorcadena1"
-                                    placeholder="Valor cadena"
                                     class="w-full"
                                     maxlength="100"
                                 />
-                                <label>Valor Cadena</label>
+                                <label for="valorcadena1">Valor Cadena</label>
                             </p-floatLabel>
                         </div>
                     </div>
@@ -443,17 +460,32 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
         /* Estilos para labels flotantes */
         :host ::ng-deep .p-floatlabel {
             width: 100%;
+            margin-top: 1rem; /* Más espacio superior para labels */
+            min-height: 3rem; /* Altura mínima para evitar cortes */
         }
 
         :host ::ng-deep .p-floatlabel label {
             background: white;
             padding: 0 4px;
             font-size: 0.875rem;
+            top: -0.75rem; /* Posición más alta para evitar cortes */
+            left: 0.75rem; /* Pequeño offset para alineación */
+            z-index: 1;
+        }
+
+        :host ::ng-deep .p-floatlabel input {
+            padding-top: 1rem; /* Espacio superior para el label */
+            padding-bottom: 0.5rem;
         }
 
         :host ::ng-deep .p-floatlabel input:focus + label,
         :host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label {
             color: #6366f1; /* Indigo */
+        }
+
+        /* Asegurar que el modal tenga suficiente altura */
+        :host ::ng-deep .p-dialog .p-dialog-content {
+            padding-top: 1.5rem !important;
         }
 
         /* Estilos para campos booleanos */
@@ -464,11 +496,13 @@ import { CatConcepto } from '../../../features/catconceptos/models/catconceptos.
         }
     `]
 })
-export class CatconceptosdetTabComponent implements OnInit {
+export class CatconceptosdetTabComponent implements OnInit, OnChanges {
     // Datos
     detalles: CatConceptoDet[] = [];
     detalleSeleccionado: CatConceptoDet | null = null;
-    conceptosPadre: CatConcepto[] = [];
+
+    // @Input desde el tab 1
+    @Input() conceptoSeleccionado: CatConcepto | null = null;
 
     // Estados
     loadingDetalles = false;
@@ -505,14 +539,27 @@ export class CatconceptosdetTabComponent implements OnInit {
     ngOnInit(): void {
         console.log('📋 CatconceptosdetTabComponent inicializado');
         this.initializeForms();
-        this.cargarConceptosPadre();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['conceptoSeleccionado']) {
+            console.log('🔄 Concepto seleccionado cambió:', this.conceptoSeleccionado);
+            if (this.conceptoSeleccionado) {
+                this.queryParams.clave = this.conceptoSeleccionado.clave;
+                this.cargarDetalles();
+            } else {
+                // Limpiar detalles cuando no hay selección
+                this.detalles = [];
+                this.queryParams = {};
+            }
+        }
     }
 
     // ========== INICIALIZACIÓN ==========
 
     initializeForms(): void {
         this.detalleForm = this.fb.group({
-            clave: ['', [Validators.required]],
+            concepto: [''], // Opcional - backend lo asigna automáticamente si está vacío
             descripcion: ['', [Validators.required, Validators.maxLength(255)]],
             folio: [0],
             valor1: [0],
@@ -523,25 +570,13 @@ export class CatconceptosdetTabComponent implements OnInit {
 
     // ========== CARGA DE DATOS ==========
 
-    cargarConceptosPadre(): void {
-        this.catConceptosService.getAllConceptos().subscribe({
-            next: (response) => {
-                this.conceptosPadre = response.data;
-                console.log('✅ Conceptos padre cargados:', this.conceptosPadre.length);
-            },
-            error: (error) => {
-                console.error('❌ Error cargando conceptos padre:', error);
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al cargar conceptos padre',
-                    life: 5000
-                });
-            }
-        });
-    }
-
     cargarDetalles(): void {
+        if (!this.conceptoSeleccionado) {
+            console.log('ℹ️ No hay concepto seleccionado, no se cargan detalles');
+            this.detalles = [];
+            return;
+        }
+
         this.loadingDetalles = true;
         console.log('📊 Consultando detalles con parámetros:', this.queryParams);
 
@@ -554,41 +589,46 @@ export class CatconceptosdetTabComponent implements OnInit {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Datos Actualizados',
-                    detail: `${this.detalles.length} detalles cargados`
+                    detail: `${this.detalles.length} detalles cargados para ${this.conceptoSeleccionado?.clave}`
                 });
             },
             error: (error) => {
                 console.error('❌ Error consultando detalles:', error);
                 this.loadingDetalles = false;
 
+                // Mostrar mensaje de error específico del backend
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar detalles';
+
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al cargar los detalles',
+                    summary: 'Error al cargar detalles',
+                    detail: errorMessage,
                     life: 5000
                 });
             }
         });
     }
 
-    onConceptoPadreChange(event: any): void {
-        const claveSeleccionada = event.value;
-        console.log('🔄 Concepto padre cambiado:', claveSeleccionada);
-
-        this.queryParams.clave = claveSeleccionada;
-        this.cargarDetalles();
-    }
-
     // ========== FORMULARIO CRUD ==========
 
     openDetalleForm(detalle?: CatConceptoDet): void {
+        // Solo permitir crear si hay un concepto seleccionado
+        if (!detalle && !this.conceptoSeleccionado) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Selección requerida',
+                detail: 'Debes seleccionar un concepto primero para crear detalles'
+            });
+            return;
+        }
+
         this.isEditingDetalle = !!detalle;
 
         if (detalle) {
             console.log('✏️ Editando detalle:', detalle);
             this.detalleSeleccionado = detalle;
             this.detalleForm.patchValue({
-                clave: detalle.clave,
+                concepto: detalle.concepto, // Mostrar el concepto actual en edición
                 descripcion: detalle.descripcion,
                 folio: detalle.folio,
                 valor1: detalle.valor1,
@@ -596,9 +636,13 @@ export class CatconceptosdetTabComponent implements OnInit {
                 swestado: detalle.swestado === 1
             });
         } else {
-            console.log('➕ Creando nuevo detalle');
+            console.log('➕ Creando nuevo detalle para:', this.conceptoSeleccionado?.clave);
             this.detalleForm.reset({
-                clave: this.queryParams.clave || '',
+                concepto: '', // Vacío para auto-asignación
+                descripcion: '',
+                folio: 0,
+                valor1: 0,
+                valorcadena1: '',
                 swestado: true
             });
             this.detalleSeleccionado = null;
@@ -615,13 +659,14 @@ export class CatconceptosdetTabComponent implements OnInit {
     }
 
     saveDetalle(): void {
-        if (this.detalleForm.valid) {
+        if (this.detalleForm.valid && this.conceptoSeleccionado) {
             this.savingDetalle = true;
             const formData = this.detalleForm.value;
 
             // Convertir valores booleanos
             const processedData: CreateCatConceptoDetRequest = {
-                clave: formData.clave,
+                clave: this.conceptoSeleccionado.clave, // Usar la clave del concepto seleccionado
+                ...(formData.concepto && { concepto: Number(formData.concepto) }), // Incluir solo si tiene valor
                 descripcion: formData.descripcion,
                 folio: formData.folio || 0,
                 valor1: formData.valor1 || 0,
@@ -630,10 +675,10 @@ export class CatconceptosdetTabComponent implements OnInit {
             };
 
             if (this.isEditingDetalle && this.detalleSeleccionado) {
-                // Actualizar - usar clave y concepto del registro seleccionado
+                // Actualizar - usar clave y concepto (puede haber cambiado)
                 const updateData: UpdateCatConceptoDetRequest = {
                     clave: this.detalleSeleccionado.clave,
-                    concepto: this.detalleSeleccionado.concepto,
+                    concepto: formData.concepto ? Number(formData.concepto) : this.detalleSeleccionado.concepto,
                     descripcion: processedData.descripcion,
                     folio: processedData.folio,
                     valor1: processedData.valor1,
@@ -648,7 +693,7 @@ export class CatconceptosdetTabComponent implements OnInit {
                     error: (error) => this.handleSaveError(error, 'actualizar')
                 });
             } else {
-                // Crear
+                // Crear - usar la clave del concepto seleccionado
                 this.catConceptosDetService.createDetalle(processedData).subscribe({
                     next: (response) => {
                         this.handleSaveSuccess('Detalle creado correctamente');
@@ -675,13 +720,36 @@ export class CatconceptosdetTabComponent implements OnInit {
         console.error(`❌ Error al ${operation} detalle:`, error);
 
         let errorMessage = `Error al ${operation} el detalle`;
-        if (error && error.mensaje) {
-            errorMessage = error.mensaje;
+
+        // Extraer mensaje de error del backend con diferentes formatos posibles
+        if (error) {
+            // Formato directo del backend
+            if (error.mensaje) {
+                errorMessage = error.mensaje;
+            }
+            // Formato de error HTTP
+            else if (error.error && error.error.mensaje) {
+                errorMessage = error.error.mensaje;
+            }
+            // Formato alternativo de error HTTP
+            else if (error.error && error.error.message) {
+                errorMessage = error.error.message;
+            }
+            // Formato de error de Angular HttpClient
+            else if (error.message) {
+                errorMessage = error.message;
+            }
+            // Último recurso: convertir a string
+            else if (typeof error === 'string') {
+                errorMessage = error;
+            }
         }
+
+        console.log('📤 Mensaje de error final:', errorMessage);
 
         this.messageService.add({
             severity: 'error',
-            summary: 'Error',
+            summary: `Error al ${operation}`,
             detail: errorMessage,
             life: 5000
         });
@@ -733,10 +801,24 @@ export class CatconceptosdetTabComponent implements OnInit {
                 this.editingCell = null;
                 this.originalValue = null;
 
+                // Extraer mensaje de error del backend
+                let errorMessage = `Error al actualizar ${this.getFieldLabel(field)}`;
+                if (error) {
+                    if (error.mensaje) {
+                        errorMessage = error.mensaje;
+                    } else if (error.error && error.error.mensaje) {
+                        errorMessage = error.error.mensaje;
+                    } else if (error.error && error.error.message) {
+                        errorMessage = error.error.message;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                }
+
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
-                    detail: `Error al actualizar ${this.getFieldLabel(field)}`,
+                    summary: 'Error al actualizar',
+                    detail: errorMessage,
                     life: 5000
                 });
             }
@@ -789,10 +871,13 @@ export class CatconceptosdetTabComponent implements OnInit {
                 // Revertir cambio local
                 detalle.swestado = estadoAnterior;
 
+                // Mostrar mensaje de error específico del backend
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cambiar estado';
+
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al cambiar el estado',
+                    summary: 'Error al cambiar estado',
+                    detail: errorMessage,
                     life: 5000
                 });
             }
@@ -829,10 +914,13 @@ export class CatconceptosdetTabComponent implements OnInit {
                 error: (error) => {
                     console.error('❌ Error al eliminar detalle:', error);
 
+                    // Mostrar mensaje de error específico del backend
+                    const errorMessage = error instanceof Error ? error.message : 'Error desconocido al eliminar detalle';
+
                     this.messageService.add({
                         severity: 'error',
-                        summary: 'Error',
-                        detail: 'Error al eliminar el detalle',
+                        summary: 'Error al eliminar detalle',
+                        detail: errorMessage,
                         life: 5000
                     });
 

@@ -70,31 +70,38 @@ interface IconCategory {
             
             <!-- Pestañas por categorías -->
             <p-tabs>
-                <p-tabPanel header="Todos" *ngIf="searchText">
-                    <div class="icon-grid">
-                        <div *ngFor="let icon of filteredIcons" 
-                             class="icon-item"
-                             [class.selected]="_value === icon.class"
-                             (click)="selectIcon(icon.class)"
-                             [title]="icon.name + ' - ' + icon.keywords.join(', ')">
-                            <i [class]="icon.class"></i>
-                            <span class="icon-name">{{icon.name}}</span>
+                <p-tablist>
+                    <p-tab value="todos" *ngIf="searchText">Todos</p-tab>
+                    <p-tab *ngFor="let category of categories" [value]="category.name">{{category.label}}</p-tab>
+                </p-tablist>
+
+                <p-tabpanels>
+                    <p-tabpanel value="todos" *ngIf="searchText">
+                        <div class="icon-grid">
+                            <div *ngFor="let icon of filteredIcons"
+                                 class="icon-item"
+                                 [class.selected]="_value === icon.class"
+                                 (click)="selectIcon(icon.class)"
+                                 [title]="icon.name + ' - ' + icon.keywords.join(', ')">
+                                <i [class]="icon.class"></i>
+                                <span class="icon-name">{{icon.name}}</span>
+                            </div>
                         </div>
-                    </div>
-                </p-tabPanel>
-                
-                <p-tabPanel *ngFor="let category of categories" [header]="category.label">
-                    <div class="icon-grid">
-                        <div *ngFor="let icon of category.icons" 
-                             class="icon-item"
-                             [class.selected]="_value === icon.class"
-                             (click)="selectIcon(icon.class)"
-                             [title]="icon.name + ' - ' + icon.keywords.join(', ')">
-                            <i [class]="icon.class"></i>
-                            <span class="icon-name">{{icon.name}}</span>
+                    </p-tabpanel>
+
+                    <p-tabpanel *ngFor="let category of categories" [value]="category.name">
+                        <div class="icon-grid">
+                            <div *ngFor="let icon of category.icons"
+                                 class="icon-item"
+                                 [class.selected]="_value === icon.class"
+                                 (click)="selectIcon(icon.class)"
+                                 [title]="icon.name + ' - ' + icon.keywords.join(', ')">
+                                <i [class]="icon.class"></i>
+                                <span class="icon-name">{{icon.name}}</span>
+                            </div>
                         </div>
-                    </div>
-                </p-tabPanel>
+                    </p-tabpanel>
+                </p-tabpanels>
             </p-tabs>
         </div>
     `,

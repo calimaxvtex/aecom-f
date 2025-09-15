@@ -55,9 +55,11 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
           const duration = Date.now() - this.startTime;
           console.error('❌ Interceptor: Error en API -', req.url, error instanceof Error ? error.message : String(error));
 
-          // Capturar el error
+          // Capturar el error PERO permitir que llegue a los componentes
           const requestInfo = this.extractRequestInfo(req);
           this.captureApiCall(requestInfo, null, error);
+
+          // IMPORTANTE: No hacer throw aquí, dejar que el error llegue a los componentes
         }
       })
     );

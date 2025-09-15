@@ -102,6 +102,13 @@ export class CatConceptosDetService {
                             // Tomar el primer elemento del array (patrón del proyecto)
                             if (response.length > 0) {
                                 const firstItem = response[0];
+
+                                // ⚠️ CRÍTICO: Verificar errores del backend
+                                if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                    console.log('❌ Backend devolvió error en array:', firstItem);
+                                    throw new Error(firstItem.mensaje || 'Error del servidor');
+                                }
+
                                 return {
                                     statuscode: firstItem.statuscode || 200,
                                     mensaje: firstItem.mensaje || 'OK',
@@ -111,6 +118,12 @@ export class CatConceptosDetService {
                         }
 
                         // Si la respuesta es un objeto directo
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
+                        }
+
                         return {
                             statuscode: response.statuscode || 200,
                             mensaje: response.mensaje || 'OK',
@@ -119,7 +132,12 @@ export class CatConceptosDetService {
                     }),
                     catchError(error => {
                         console.error('❌ Error en queryDetalles:', error);
-                        return throwError(() => new Error('Error al consultar detalles de conceptos'));
+
+                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+                        const errorMessage = error instanceof Error ? error.message : 'Error al consultar detalles de conceptos';
+                        console.log('📤 Enviando error al componente:', errorMessage);
+
+                        return throwError(() => new Error(errorMessage));
                     })
                 );
             })
@@ -150,11 +168,24 @@ export class CatConceptosDetService {
                         // Procesar respuesta (similar al patrón de otros servicios)
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+
+                            // ⚠️ CRÍTICO: Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ Backend devolvió error en array:', firstItem);
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Detalle creado correctamente',
                                 data: firstItem.data || detalle as CatConceptoDet
                             } as CatConceptoDetSingleResponse;
+                        }
+
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
                         }
 
                         return {
@@ -165,7 +196,12 @@ export class CatConceptosDetService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al crear detalle:', error);
-                        return throwError(() => new Error('Error al crear el detalle de concepto'));
+
+                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+                        const errorMessage = error instanceof Error ? error.message : 'Error al crear el detalle de concepto';
+                        console.log('📤 Enviando error al componente:', errorMessage);
+
+                        return throwError(() => new Error(errorMessage));
                     })
                 );
             })
@@ -195,11 +231,24 @@ export class CatConceptosDetService {
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+
+                            // ⚠️ CRÍTICO: Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ Backend devolvió error en array:', firstItem);
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Detalle actualizado correctamente',
                                 data: firstItem.data || detalle as CatConceptoDet
                             } as CatConceptoDetSingleResponse;
+                        }
+
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
                         }
 
                         return {
@@ -210,7 +259,12 @@ export class CatConceptosDetService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al actualizar detalle:', error);
-                        return throwError(() => new Error('Error al actualizar el detalle de concepto'));
+
+                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+                        const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el detalle de concepto';
+                        console.log('📤 Enviando error al componente:', errorMessage);
+
+                        return throwError(() => new Error(errorMessage));
                     })
                 );
             })
@@ -241,11 +295,24 @@ export class CatConceptosDetService {
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+
+                            // ⚠️ CRÍTICO: Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ Backend devolvió error en array:', firstItem);
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Detalle eliminado correctamente',
                                 data: {} as CatConceptoDet // No hay data en delete
                             } as CatConceptoDetSingleResponse;
+                        }
+
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
                         }
 
                         return {
@@ -256,7 +323,12 @@ export class CatConceptosDetService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al eliminar detalle:', error);
-                        return throwError(() => new Error('Error al eliminar el detalle de concepto'));
+
+                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+                        const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el detalle de concepto';
+                        console.log('📤 Enviando error al componente:', errorMessage);
+
+                        return throwError(() => new Error(errorMessage));
                     })
                 );
             })

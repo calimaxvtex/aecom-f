@@ -396,17 +396,184 @@ if (firstItem.statuscode && firstItem.statuscode !== 200) {
 
 ### **5. Manejo de Errores Completo**
 ```typescript
-// ⚠️ PATRÓN OBLIGATORIO en catchError
+// ⚠️ PATRÓN OBLIGATORIO en catchError - PRESERVAR MENSAJES DEL BACKEND
 catchError(error => {
     console.error('❌ Error completo:', error);
-    
-    const errorMessage = error.message || error.error?.message || error.error?.mensaje || 'Error genérico';
-    
-    return throwError(() => ({ 
-        message: errorMessage,
-        originalError: error 
-    }));
+
+    // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+    const errorMessage = error instanceof Error ? error.message : 'Error genérico';
+    console.log('📤 Enviando error al componente:', errorMessage);
+
+    return throwError(() => new Error(errorMessage));
 })
+```
+
+---
+
+## 🚨 **MANEJO DE ERRORES DEL BACKEND - GUÍA COMPLETA**
+
+### **⚠️ PROBLEMA IDENTIFICADO**
+Durante la implementación del módulo `CatConceptos`, se descubrió que los errores del backend no se estaban mostrando correctamente al usuario. El problema fue **multicapa**:
+
+1. **Servicios no verificaban statuscode** → Trataban errores como éxitos
+2. **catchError reemplazaba mensajes** → Perdía información específica del backend
+3. **Componentes usaban mensajes genéricos** → Usuario veía "Error genérico" en lugar del mensaje real
+
+### **✅ SOLUCIÓN COMPLETA OBLIGATORIA**
+
+#### **1. Servicio - Verificación de Errores del Backend**
+```typescript
+// TODOS los métodos deben verificar statuscode en map()
+if (Array.isArray(response) && response.length > 0) {
+    const firstItem = response[0];
+
+    // ⚠️ CRÍTICO: Verificar errores del backend
+    if (firstItem.statuscode && firstItem.statuscode !== 200) {
+        console.log('❌ Backend devolvió error en array:', firstItem);
+        throw new Error(firstItem.mensaje || 'Error del servidor');
+    }
+
+    return { /* respuesta exitosa */ };
+}
+
+// Verificar también respuestas directas
+if (response.statuscode && response.statuscode !== 200) {
+    console.log('❌ Backend devolvió error directo:', response);
+    throw new Error(response.mensaje || 'Error del servidor');
+}
+```
+
+#### **2. Servicio - Preservación de Mensajes en catchError**
+```typescript
+// ⚠️ NUNCA reemplazar mensajes específicos del backend
+catchError(error => {
+    console.error('❌ Error en operación:', error);
+
+    // PRESERVAR mensaje original del backend
+    const errorMessage = error instanceof Error ? error.message : 'Error genérico';
+    console.log('📤 Enviando error al componente:', errorMessage);
+
+    return throwError(() => new Error(errorMessage));
+})
+```
+
+#### **3. Componente - Mostrar Mensajes Específicos**
+```typescript
+// EN TODOS los subscribe() de operaciones
+.subscribe({
+    next: (response) => {
+        // Éxito
+        this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: response.mensaje
+        });
+    },
+    error: (error) => {
+        // ⚠️ CRÍTICO: Usar mensaje específico del backend
+        console.error('❌ Error en componente:', error);
+
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Error en operación',
+            detail: errorMessage,  // ← MENSAJE ESPECÍFICO DEL BACKEND
+            life: 5000
+        });
+
+        // Revertir cambios locales si es necesario
+    }
+});
+```
+
+### **📋 CHECKLIST OBLIGATORIO PARA MANEJO DE ERRORES**
+
+#### **En Servicios:**
+- [ ] `map()` verifica `firstItem.statuscode !== 200` y lanza `Error(firstItem.mensaje)`
+- [ ] `map()` verifica `response.statuscode !== 200` en respuestas directas
+- [ ] `catchError` usa `error instanceof Error ? error.message : 'fallback'`
+- [ ] `catchError` incluye `console.log('📤 Enviando error al componente:', errorMessage)`
+- [ ] NO reemplazar mensajes específicos con genéricos
+
+#### **En Componentes:**
+- [ ] Error handlers usan `error instanceof Error ? error.message : 'fallback'`
+- [ ] `messageService.add()` usa `detail: errorMessage` (no mensajes hardcodeados)
+- [ ] Revertir cambios locales en caso de error
+- [ ] Mostrar toasts con `life: 5000` para errores
+
+### **🎯 EJEMPLOS DE MANEJO CORRECTO**
+
+#### **Servicio Correcto:**
+```typescript
+return this.http.post(url, payload).pipe(
+    map(response => {
+        if (Array.isArray(response) && response.length > 0) {
+            const firstItem = response[0];
+            if (firstItem.statuscode !== 200) {
+                throw new Error(firstItem.mensaje || 'Error del servidor');
+            }
+            return { statuscode: 200, mensaje: firstItem.mensaje, data: firstItem.data };
+        }
+        return response;
+    }),
+    catchError(error => {
+        const errorMessage = error instanceof Error ? error.message : 'Error genérico';
+        console.log('📤 Enviando error al componente:', errorMessage);
+        return throwError(() => new Error(errorMessage));
+    })
+);
+```
+
+#### **Componente Correcto:**
+```typescript
+this.service.operation(data).subscribe({
+    next: (response) => {
+        this.messageService.add({
+            severity: 'success',
+            summary: 'Operación exitosa',
+            detail: response.mensaje
+        });
+    },
+    error: (error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Error en operación',
+            detail: errorMessage,
+            life: 5000
+        });
+        // Revertir cambios si es necesario
+    }
+});
+```
+
+### **🚨 ERRORES COMUNES A EVITAR**
+
+1. **❌ NO verificar statuscode:**
+```typescript
+// MAL: Trata errores como éxitos
+return { statuscode: firstItem.statuscode || 200, mensaje: firstItem.mensaje };
+```
+
+2. **❌ Reemplazar mensajes en catchError:**
+```typescript
+// MAL: Pierde información del backend
+catchError(() => throwError(() => new Error('Error genérico')));
+```
+
+3. **❌ Mensajes hardcodeados en componentes:**
+```typescript
+// MAL: Usuario no sabe qué pasó
+detail: 'Error al guardar'
+```
+
+### **📊 FLUJO COMPLETO DE ERRORES**
+
+```
+Backend Error → Servicio detecta → Preserva mensaje → Componente recibe → Usuario ve mensaje específico
+     ↓              ↓                ↓                  ↓                    ↓
+statuscode:400   throw Error()    catchError()    error.message       Toast específico
+mensaje:"X"      message:"X"       message:"X"      "X"                "X"
 ```
 
 ---

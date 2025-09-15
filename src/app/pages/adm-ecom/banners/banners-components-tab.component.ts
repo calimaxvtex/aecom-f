@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, ViewChild, Output, EventEmitter, inject } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, ViewChild, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -15,11 +15,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
 // Servicios y modelos
-import { CatConceptosService } from '../../../features/catconceptos/services/catconceptos.service';
-import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from '../../../features/catconceptos/models/catconceptos.interface';
+import { CompService } from '../../../features/comp/services/comp.service';
+import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '../../../features/comp/models/comp.interface';
 
 @Component({
-    selector: 'app-catconceptos-tab',
+    selector: 'app-banners-components-tab',
     standalone: true,
     imports: [
         CommonModule,
@@ -44,10 +44,10 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
             [rows]="10"
             [showCurrentPageReport]="true"
             responsiveLayout="scroll"
-            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} conceptos"
+            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} components"
             [rowsPerPageOptions]="[10, 25, 50]"
             [globalFilterFields]="['clave', 'nombre']"
-            dataKey="id_c"
+            dataKey="id_comp"
             [sortMode]="'multiple'"
             [filterDelay]="300"
         >
@@ -84,10 +84,13 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
             <!-- Headers -->
             <ng-template #header>
                 <tr>
-                    <th pSortableColumn="id_c" style="width: 80px">ID <p-sortIcon field="id_c"></p-sortIcon></th>
+                    <th pSortableColumn="id_comp" style="width: 80px">ID <p-sortIcon field="id_comp"></p-sortIcon></th>
                     <th pSortableColumn="clave" style="min-width: 150px">Clave <p-sortIcon field="clave"></p-sortIcon></th>
                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
-                    <th pSortableColumn="swestado" style="width: 100px">Estado <p-sortIcon field="swestado"></p-sortIcon></th>
+                    <th pSortableColumn="descripcion" style="min-width: 200px">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+                    <th pSortableColumn="tipo_comp" style="min-width: 150px">Tipo Componente <p-sortIcon field="tipo_comp"></p-sortIcon></th>
+                    <th style="width: 100px">Único</th>
+                    <th style="width: 100px">Habilitado</th>
                     <th style="width: 150px">Acciones</th>
                 </tr>
             </ng-template>
@@ -96,16 +99,16 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
             <ng-template #body let-concepto>
                 <tr
                     (click)="onRowClick(concepto)"
-                    [class.bg-blue-50]="conceptoSeleccionado?.id_c === concepto.id_c"
+                    [class.bg-blue-50]="conceptoSeleccionado?.id_comp === concepto.id_comp"
                     class="cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                     <!-- ID -->
-                    <td>{{ concepto.id_c }}</td>
+                    <td>{{ concepto.id_comp }}</td>
 
                     <!-- Clave -->
                     <td>
                         <span
-                            *ngIf="editingCell !== concepto.id_c + '_clave'"
+                            *ngIf="editingCell !== concepto.id_comp + '_clave'"
                             (click)="editInlineConcepto(concepto, 'clave'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
@@ -113,7 +116,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                             {{ concepto.clave }}
                         </span>
                         <div
-                            *ngIf="editingCell === concepto.id_c + '_clave'"
+                            *ngIf="editingCell === concepto.id_comp + '_clave'"
                             class="inline-edit-container"
                         >
                             <input
@@ -148,7 +151,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                     <!-- Nombre -->
                     <td>
                         <span
-                            *ngIf="editingCell !== concepto.id_c + '_nombre'"
+                            *ngIf="editingCell !== concepto.id_comp + '_nombre'"
                             (click)="editInlineConcepto(concepto, 'nombre'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
@@ -156,7 +159,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                             {{ concepto.nombre }}
                         </span>
                         <div
-                            *ngIf="editingCell === concepto.id_c + '_nombre'"
+                            *ngIf="editingCell === concepto.id_comp + '_nombre'"
                             class="inline-edit-container"
                         >
                             <input
@@ -186,6 +189,76 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                                 pTooltip="Deshacer (Escape)"
                             ></button>
                         </div>
+                    </td>
+
+                    <!-- Descripción -->
+                    <td>
+                        <span
+                            *ngIf="editingCell !== concepto.id_comp + '_descripcion'"
+                            (click)="editInlineConcepto(concepto, 'descripcion'); $event.stopPropagation()"
+                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                            title="Clic para editar"
+                        >
+                            {{ concepto.descripcion || '—' }}
+                        </span>
+                        <div
+                            *ngIf="editingCell === concepto.id_comp + '_descripcion'"
+                            class="inline-edit-container"
+                        >
+                            <input
+                                pInputText
+                                type="text"
+                                [(ngModel)]="concepto.descripcion"
+                                (keyup.enter)="saveInlineEditConcepto(concepto, 'descripcion')"
+                                (keyup.escape)="cancelInlineEdit()"
+                                class="p-inputtext-sm flex-1"
+                                #input
+                                (focus)="input.select()"
+                                autofocus
+                                placeholder="Descripción del componente"
+                            />
+                            <button
+                                pButton
+                                icon="pi pi-check"
+                                (click)="saveInlineEditConcepto(concepto, 'descripcion')"
+                                class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                pTooltip="Guardar (Enter)"
+                            ></button>
+                            <button
+                                pButton
+                                icon="pi pi-undo"
+                                (click)="cancelInlineEdit()"
+                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                pTooltip="Deshacer (Escape)"
+                            ></button>
+                        </div>
+                    </td>
+
+                    <!-- Tipo Componente -->
+                    <td class="text-center">
+                        {{ concepto.tipo_comp }}
+                    </td>
+
+                    <!-- Único -->
+                    <td class="text-center">
+                        <p-tag
+                            [value]="concepto.isUnico ? 'Si' : 'No'"
+                            [severity]="concepto.isUnico ? 'success' : 'danger'"
+                            (click)="toggleIsUnico(concepto); $event.stopPropagation()"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Clic para cambiar"
+                        ></p-tag>
+                    </td>
+
+                    <!-- Habilitado -->
+                    <td class="text-center">
+                        <p-tag
+                            [value]="concepto.swEnable ? 'Si' : 'No'"
+                            [severity]="concepto.swEnable ? 'success' : 'danger'"
+                            (click)="toggleSwEnable(concepto); $event.stopPropagation()"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Clic para cambiar"
+                        ></p-tag>
                     </td>
 
                     <!-- Estado -->
@@ -407,14 +480,18 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
         }
     `]
 })
-export class CatconceptosTabComponent implements OnInit, OnChanges {
+export class BannersComponentsTabComponent implements OnInit, OnChanges {
+    // Input para recibir el filtro de canal
+    @Input() canalFiltro: string = '';
+
     // Output para comunicar la selección al componente padre
-    @Output() conceptoSeleccionadoChange = new EventEmitter<CatConcepto | null>();
-    @Output() conceptoClick = new EventEmitter<CatConcepto>();
-    @Output() conceptoDobleClick = new EventEmitter<CatConcepto>();
+    @Output() conceptoSeleccionadoChange = new EventEmitter<Componente | null>();
+    @Output() conceptoClick = new EventEmitter<Componente>();
+    @Output() conceptoDobleClick = new EventEmitter<Componente>();
+
     // Datos
-    conceptos: CatConcepto[] = [];
-    conceptoSeleccionado: CatConcepto | null = null;
+    conceptos: Componente[] = [];
+    conceptoSeleccionado: Componente | null = null;
 
     // Estados
     loadingConceptos = false;
@@ -434,15 +511,15 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
     originalValue: any = null;
 
     // Confirmación
-    conceptoToDelete: CatConcepto | null = null;
+    conceptoToDelete: Componente | null = null;
 
     // Control de doble click
     private lastClickTime: number = 0;
-    private lastClickedConcepto: CatConcepto | null = null;
+    private lastClickedConcepto: Componente | null = null;
     private readonly DOUBLE_CLICK_DELAY = 300; // ms
 
     // Servicios
-    private catConceptosService = inject(CatConceptosService);
+    private componentsService = inject(CompService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
 
@@ -456,8 +533,11 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        // Resetear estado de doble click cuando sea necesario
-        // Esto ayuda si hay algún estado que se quede "pegado"
+        // Detectar cambios en el filtro de canal y recargar conceptos
+        if (changes['canalFiltro']) {
+            console.log('🔄 Filtro de canal cambió:', this.canalFiltro);
+            this.cargarConceptos();
+        }
     }
 
     // ========== INICIALIZACIÓN ==========
@@ -474,9 +554,15 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
     cargarConceptos(): void {
         this.loadingConceptos = true;
-        console.log('📊 Cargando conceptos...');
+        console.log('📊 Cargando conceptos con filtro de canal:', this.canalFiltro);
 
-        this.catConceptosService.getAllConceptos().subscribe({
+        // Si hay filtro de canal, aplicar filtro
+        const filtros: any = {};
+        if (this.canalFiltro) {
+            filtros.canal = this.canalFiltro;
+        }
+
+        this.componentsService.getAllComponentes({ filters: filtros }).subscribe({
             next: (response) => {
                 console.log('✅ Conceptos cargados:', response.data);
                 this.conceptos = response.data;
@@ -507,7 +593,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
     // ========== FORMULARIO CRUD ==========
 
-    openConceptoForm(concepto?: CatConcepto): void {
+    openConceptoForm(concepto?: Componente): void {
         this.isEditingConcepto = !!concepto;
 
         if (concepto) {
@@ -515,7 +601,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
             this.conceptoForm.patchValue({
                 clave: concepto.clave,
                 nombre: concepto.nombre,
-                swestado: concepto.swestado === 1
+                swestado: concepto.swEnable === 1
             });
         } else {
             console.log('➕ Creando nuevo concepto');
@@ -539,19 +625,19 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
             const formData = this.conceptoForm.value;
 
             // Convertir valores booleanos
-            const processedData: CreateCatConceptoRequest = {
+            const processedData: CreateComponenteRequest = {
                 ...formData,
                 swestado: formData.swestado ? 1 : 0
             };
 
             if (this.isEditingConcepto && this.conceptoSeleccionado) {
                 // Actualizar
-                const updateData: UpdateCatConceptoRequest = {
-                    id_c: this.conceptoSeleccionado.id_c,
+                const updateData: UpdateComponenteRequest = {
+                    id_comp: this.conceptoSeleccionado.id_comp,
                     ...processedData
                 };
 
-                this.catConceptosService.updateConcepto(updateData).subscribe({
+                this.componentsService.updateComponente(updateData).subscribe({
                     next: (response) => {
                         this.handleSaveSuccess('Concepto actualizado correctamente');
                     },
@@ -559,7 +645,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
                 });
             } else {
                 // Crear
-                this.catConceptosService.createConcepto(processedData).subscribe({
+                this.componentsService.createComponente(processedData).subscribe({
                     next: (response) => {
                         this.handleSaveSuccess('Concepto creado correctamente');
                     },
@@ -601,13 +687,13 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
     // ========== EDICIÓN INLINE ==========
 
-    editInlineConcepto(concepto: CatConcepto, field: string): void {
-        this.editingCell = concepto.id_c + '_' + field;
+    editInlineConcepto(concepto: Componente, field: string): void {
+        this.editingCell = concepto.id_comp + '_' + field;
         this.originalValue = (concepto as any)[field];
         console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
     }
 
-    saveInlineEditConcepto(concepto: CatConcepto, field: string): void {
+    saveInlineEditConcepto(concepto: Componente, field: string): void {
         console.log('💾 Guardando inline:', field, 'Nuevo valor:', (concepto as any)[field]);
 
         if ((concepto as any)[field] === this.originalValue) {
@@ -616,12 +702,12 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
             return;
         }
 
-        const updateData: UpdateCatConceptoRequest = {
-            id_c: concepto.id_c,
+        const updateData: UpdateComponenteRequest = {
+            id_comp: concepto.id_comp,
             [field]: (concepto as any)[field]
         };
 
-        this.catConceptosService.updateConcepto(updateData).subscribe({
+        this.componentsService.updateComponente(updateData).subscribe({
             next: (response) => {
                 console.log('✅ Campo actualizado:', response);
 
@@ -664,10 +750,72 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         this.originalValue = null;
     }
 
+    // ========== TOGGLE DE CAMPOS ==========
+
+    toggleIsUnico(componente: Componente): void {
+        const nuevoValor = componente.isUnico === 1 ? 0 : 1;
+        const valorAnterior = componente.isUnico;
+
+        componente.isUnico = nuevoValor;
+
+        this.componentsService.updateComponente({
+            id_comp: componente.id_comp,
+            isUnico: nuevoValor
+        }).subscribe({
+            next: (response) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Campo Actualizado',
+                    detail: `Campo "Único" actualizado correctamente`
+                });
+            },
+            error: (error) => {
+                // Revertir cambio
+                componente.isUnico = valorAnterior;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al actualizar campo "Único"',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    toggleSwEnable(componente: Componente): void {
+        const nuevoValor = componente.swEnable === 1 ? 0 : 1;
+        const valorAnterior = componente.swEnable;
+
+        componente.swEnable = nuevoValor;
+
+        this.componentsService.updateComponente({
+            id_comp: componente.id_comp,
+            swEnable: nuevoValor
+        }).subscribe({
+            next: (response) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Campo Actualizado',
+                    detail: `Campo "Habilitado" actualizado correctamente`
+                });
+            },
+            error: (error) => {
+                // Revertir cambio
+                componente.swEnable = valorAnterior;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al actualizar campo "Habilitado"',
+                    life: 5000
+                });
+            }
+        });
+    }
+
     // ========== TOGGLE DE ESTADO ==========
 
-    toggleEstadoConcepto(concepto: CatConcepto): void {
-        const nuevoEstado = concepto.swestado === 1 ? 0 : 1;
+    toggleEstadoConcepto(concepto: Componente): void {
+        const nuevoEstado = concepto.swEnable === 1 ? 0 : 1;
 
         if (nuevoEstado === 0) {
             // Confirmar desactivación
@@ -679,16 +827,16 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         }
     }
 
-    private procesarCambioEstado(concepto: CatConcepto, nuevoEstado: number): void {
-        const estadoAnterior = concepto.swestado;
-        concepto.swestado = nuevoEstado;
+    private procesarCambioEstado(concepto: Componente, nuevoEstado: number): void {
+        const estadoAnterior = concepto.swEnable;
+        concepto.swEnable = nuevoEstado;
 
-        const updateData: UpdateCatConceptoRequest = {
-            id_c: concepto.id_c,
-            swestado: nuevoEstado
+        const updateData: UpdateComponenteRequest = {
+            id_comp: concepto.id_comp,
+            swEnable: nuevoEstado
         };
 
-        this.catConceptosService.updateConcepto(updateData).subscribe({
+        this.componentsService.updateComponente(updateData).subscribe({
             next: (response) => {
                 console.log('✅ Estado actualizado:', response);
 
@@ -702,7 +850,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
                 console.error('❌ Error al cambiar estado:', error);
 
                 // Revertir cambio local
-                concepto.swestado = estadoAnterior;
+                concepto.swEnable = estadoAnterior;
 
                 // Mostrar mensaje de error específico del backend
                 const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cambiar estado';
@@ -719,7 +867,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
     // ========== ELIMINACIÓN ==========
 
-    eliminarConcepto(concepto: CatConcepto): void {
+    eliminarConcepto(concepto: Componente): void {
         this.conceptoToDelete = concepto;
         this.showConfirmDeleteConcepto = true;
     }
@@ -728,7 +876,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         if (this.conceptoToDelete) {
             this.deletingConcepto = true;
 
-            this.catConceptosService.deleteConcepto(this.conceptoToDelete.id_c).subscribe({
+            this.componentsService.deleteComponente(this.conceptoToDelete.id_comp).subscribe({
                 next: (response) => {
                     console.log('✅ Concepto eliminado:', response);
 
@@ -769,14 +917,14 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
     // ========== UTILIDADES ==========
 
 
-    onRowClick(concepto: CatConcepto): void {
+    onRowClick(concepto: Componente): void {
         const currentTime = Date.now();
         const timeDiff = currentTime - this.lastClickTime;
 
         console.log('👆 Click en concepto:', concepto, 'timeDiff:', timeDiff);
 
         // Verificar si es un doble click
-        if (timeDiff < this.DOUBLE_CLICK_DELAY && this.lastClickedConcepto?.id_c === concepto.id_c) {
+        if (timeDiff < this.DOUBLE_CLICK_DELAY && this.lastClickedConcepto?.id_comp === concepto.id_comp) {
             console.log('🎯 Doble click detectado!');
             this.handleDoubleClick(concepto);
         } else {
@@ -792,7 +940,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         this.lastClickedConcepto = concepto;
     }
 
-    private handleDoubleClick(concepto: CatConcepto): void {
+    private handleDoubleClick(concepto: Componente): void {
         console.log('🚀 Procesando doble click para concepto:', concepto);
         // Seleccionar el concepto
         this.conceptoSeleccionado = concepto;

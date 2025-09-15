@@ -9,7 +9,7 @@ export interface CatConceptoDet {
     descripcion: string;     // Descripción específica del detalle
     folio: number;
     valor1: number;
-    valorcadena1: string;
+    valorcadena1: string;    // Campo existente para valor de cadena
     swestado: number;
     nombre_concepto?: string; // Campo adicional del JOIN (opcional)
 }
@@ -45,7 +45,7 @@ export interface CreateCatConceptoDetRequest {
     descripcion: string;     // Obligatorio
     folio?: number;          // Opcional, default 0
     valor1?: number;         // Opcional, default 0
-    valorcadena1?: string;   // Opcional, default ""
+    valorcadena1?: string;   // Campo existente para valor de cadena
     swestado?: number;       // Opcional, default 1
     // NOTA: 'concepto' se asigna automáticamente en backend
 }
@@ -56,7 +56,7 @@ export interface UpdateCatConceptoDetRequest {
     descripcion?: string;    // Campos a actualizar
     folio?: number;
     valor1?: number;
-    valorcadena1?: string;
+    valorcadena1?: string;   // Campo existente para valor de cadena
     swestado?: number;
 }
 

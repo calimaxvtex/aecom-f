@@ -1,3 +1,4 @@
+
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, throwError, from, of, switchMap } from 'rxjs';
@@ -367,7 +368,7 @@ export class CompService {
     /**
      * Obtiene componentes por canal
      */
-    getComponentesByCanal(canal: number): Observable<ComponenteResponse> {
+    getComponentesByCanal(canal: string): Observable<ComponenteResponse> {
         return this.getAllComponentes({
             filters: { canal }
         });
@@ -376,7 +377,7 @@ export class CompService {
     /**
      * Obtiene componentes por tipo
      */
-    getComponentesByTipo(tipo_comp: number): Observable<ComponenteResponse> {
+    getComponentesByTipo(tipo_comp: string): Observable<ComponenteResponse> {
         return this.getAllComponentes({
             filters: { tipo_comp }
         });
@@ -559,7 +560,7 @@ export class CompService {
     /**
      * Obtiene configuración por defecto para un tipo de componente
      */
-    getConfiguracionPorDefecto(tipo_comp: number): Observable<any> {
+    getConfiguracionPorDefecto(tipo_comp: string): Observable<any> {
         console.log('⚙️ Obteniendo configuración por defecto para tipo:', tipo_comp);
 
         return this.getCompUrl().pipe(

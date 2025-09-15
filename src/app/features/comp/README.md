@@ -8,7 +8,8 @@ Sistema para gestión de componentes reutilizables de página y aplicación web.
 ```
 comp/
 ├── models/
-│   └── comp.interface.ts          # Interfaces TypeScript
+│   ├── comp.interface.ts          # Interfaces TypeScript
+│   └── index.ts                   # Exportaciones
 ├── services/
 │   └── comp.service.ts           # Servicio principal
 └── README.md                     # Esta documentación
@@ -25,16 +26,16 @@ interface Componente {
     clave: string;            // Clave única (ej: "CARR_HOME")
     nombre: string;           // Nombre descriptivo
     descripcion: string;      // Descripción detallada
-    canal: number;            // ID del canal (1: web, 2: mobile, etc.)
-    tipo_comp: number;        // Tipo de componente (1: carrusel, 2: banner, etc.)
-    isUnico: number;          // 0: múltiple, 1: único por página
-    tiempo: number;           // Tiempo en ms para autoplay/cambio
+    canal: string;            // Canal del componente
+    tipo_comp: string;        // Tipo de componente
+    isUnico: number;          // 0: múltiple, 1: único
+    tiempo: number;           // Tiempo en ms para carruseles/autoplay
     visibles: number;         // Número de elementos visibles
     swEnable: number;         // 0: deshabilitado, 1: habilitado
-    usr_a: string;           // Usuario que creó
-    usr_m: string | null;    // Usuario que modificó
-    fecha_a: string;         // Fecha de creación (ISO)
-    fecha_m: string;         // Fecha de modificación (ISO)
+    usr_a: string;
+    usr_m: string | null;
+    fecha_a: string;         // ISO date string
+    fecha_m: string;         // ISO date string
 }
 ```
 
@@ -58,7 +59,7 @@ this.compService.getAllComponentes({
     sort: 'nombre',
     order: 'asc',
     filters: {
-        canal: 1,
+        canal: 'web',
         swEnable: 1
     }
 }).subscribe(response => {
@@ -74,8 +75,8 @@ const nuevoComponente: CreateComponenteRequest = {
     clave: 'BANNER_PROMO',
     nombre: 'Banner Promocional',
     descripcion: 'Banner principal de promociones',
-    canal: 1,
-    tipo_comp: 2,
+    canal: 'web',
+    tipo_comp: 'banner',
     tiempo: 3000,
     visibles: 1
 };
@@ -129,10 +130,10 @@ this.compService.getComponentesActivos();
 this.compService.getComponenteByClave('CARR_HOME');
 
 // Por canal
-this.compService.getComponentesByCanal(1);
+this.compService.getComponentesByCanal('web');
 
 // Por tipo
-this.compService.getComponentesByTipo(1);
+this.compService.getComponentesByTipo('banner');
 
 // Componentes únicos
 this.compService.getComponentesUnicos();
@@ -164,7 +165,7 @@ this.compService.validarClaveUnica('NUEVA_CLAVE').subscribe(esValida => {
 });
 
 // Configuración por defecto
-this.compService.getConfiguracionPorDefecto(1).subscribe(config => {
+this.compService.getConfiguracionPorDefecto('banner').subscribe(config => {
     console.log('Configuración por defecto:', config);
 });
 ```
@@ -182,8 +183,8 @@ this.compService.getConfiguracionPorDefecto(1).subscribe(config => {
             "clave": "CARR_HOME",
             "nombre": "Carrusel Principal",
             "descripcion": "Carrusel principal del home page",
-            "canal": 1,
-            "tipo_comp": 1,
+            "canal": "web",
+            "tipo_comp": "carrusel",
             "isUnico": 0,
             "tiempo": 5000,
             "visibles": 5,
@@ -234,8 +235,8 @@ private getSessionData(): any {
     "clave": "string (única)",
     "nombre": "string",
     "descripcion": "string",
-    "canal": "number",
-    "tipo_comp": "number"
+    "canal": "string",
+    "tipo_comp": "string"
 }
 ```
 
@@ -287,8 +288,8 @@ interface ComponenteFilters {
     clave?: string;
     nombre?: string;
     descripcion?: string;
-    canal?: number;
-    tipo_comp?: number;
+    canal?: string;
+    tipo_comp?: string;
     isUnico?: number;
     swEnable?: number;
     usr_a?: string;
@@ -314,8 +315,8 @@ interface ComponentePaginationParams {
 interface ComponenteStats {
     total_componentes: number;
     componentes_activos: number;
-    componentes_por_tipo: { [tipo: number]: number };
-    componentes_por_canal: { [canal: number]: number };
+    componentes_por_tipo: { [tipo: string]: number };
+    componentes_por_canal: { [canal: string]: number };
     componentes_creados_hoy: number;
     componentes_modificados_hoy: number;
 }

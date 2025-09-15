@@ -3,44 +3,49 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, throwError, from, of, switchMap } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api/api-config.service';
 import { SessionService } from '../../../core/services/session.service';
+import { CompService } from '../../comp/services/comp.service';
 import {
-    CatConcepto,
-    CatConceptoRawResponse,
-    CatConceptoResponse,
-    CatConceptoRawArrayResponse,
-    CatConceptoArrayResponse,
-    CatConceptoSingleResponse,
-    CreateCatConceptoRequest,
-    UpdateCatConceptoRequest,
-    CatConceptoPaginationParams
-} from '../models/catconceptos.interface';
+    Banner,
+    BannerRawArrayResponse,
+    BannerResponse,
+    BannerSingleResponse,
+    CreateBannerRequest,
+    UpdateBannerRequest,
+    BannerPaginationParams,
+    BannerFilters,
+    BannerStatsResponse,
+    BannerAdvancedFilters,
+    BannerRawResponseItem
+} from '../models/banner.interface';
 
 @Injectable({
     providedIn: 'root'
 })
-export class CatConceptosService {
+export class BannerService {
     private http = inject(HttpClient);
     private apiConfigService = inject(ApiConfigService);
     private sessionService = inject(SessionService);
+    private compService = inject(CompService); // Servicio padre (dependencia)
 
-    // ID del endpoint de catconceptos en la configuración
-    private readonly CATCONCEPTOS_ENDPOINT_ID = 16;
+    // ID del endpoint de banners en la configuración
+    private readonly BANNER_ENDPOINT_ID = 19;
 
     constructor() {
-        console.log('🏗️ CatConceptosService inicializado');
-        console.log('🔗 Usando endpoint ID:', this.CATCONCEPTOS_ENDPOINT_ID);
+        console.log('🏗️ BannerService inicializado');
+        console.log('🔗 Usando endpoint ID:', this.BANNER_ENDPOINT_ID);
+        console.log('👨‍👦 Servicio hijo dependiente de CompService');
     }
 
-    // Método para obtener la URL del endpoint de catconceptos
-    private getCatConceptosUrl(): Observable<string> {
+    // Método para obtener la URL del endpoint de banners
+    private getBannerUrl(): Observable<string> {
         return from(this.apiConfigService.waitForEndpoints()).pipe(
             switchMap(() => {
-                const endpoint = this.apiConfigService.getEndpointById(this.CATCONCEPTOS_ENDPOINT_ID);
+                const endpoint = this.apiConfigService.getEndpointById(this.BANNER_ENDPOINT_ID);
                 if (!endpoint) {
-                    return throwError(() => new Error(`Endpoint catconceptos (ID: ${this.CATCONCEPTOS_ENDPOINT_ID}) no encontrado`));
+                    return throwError(() => new Error(`Endpoint banners (ID: ${this.BANNER_ENDPOINT_ID}) no encontrado`));
                 }
 
-                console.log('🔗 URL de catconceptos obtenida:', endpoint.url);
+                console.log('🔗 URL de banners obtenida:', endpoint.url);
                 return of(endpoint.url);
             })
         );
@@ -59,14 +64,14 @@ export class CatConceptosService {
     }
 
     /**
-     * Obtiene todos los conceptos
+     * Obtiene todos los banners
      */
-    getAllConceptos(params?: CatConceptoPaginationParams): Observable<CatConceptoResponse> {
-        console.log('📊 === CONFIGURACIÓN DE ENDPOINT CATCONCEPTOS ===');
-        console.log('📊 Método llamado: getAllConceptos');
-        console.log('📊 Endpoint ID:', this.CATCONCEPTOS_ENDPOINT_ID);
+    getAllBanners(params?: BannerPaginationParams): Observable<BannerResponse> {
+        console.log('📊 === CONFIGURACIÓN DE ENDPOINT BANNERS ===');
+        console.log('📊 Método llamado: getAllBanners');
+        console.log('📊 Endpoint ID:', this.BANNER_ENDPOINT_ID);
 
-        return this.getCatConceptosUrl().pipe(
+        return this.getBannerUrl().pipe(
             switchMap(url => {
                 console.log('🔗 === CONEXIÓN HTTP ===');
                 console.log('🔗 URL destino:', url);
@@ -98,7 +103,7 @@ export class CatConceptosService {
                 console.log('🔗 Body enviado:', body);
                 console.log('🔗 === FIN CONEXIÓN ===');
 
-                return this.http.post<CatConceptoRawArrayResponse>(url, body).pipe(
+                return this.http.post<BannerRawArrayResponse>(url, body).pipe(
                     map((response: any) => {
                         console.log('🔍 === RESPUESTA CRUDA DEL BACKEND (SIN TIPOS) ===');
                         console.log('🔍 URL que respondió:', url);
@@ -137,7 +142,7 @@ export class CatConceptosService {
                                     statuscode: firstItem.statuscode || 200,
                                     mensaje: firstItem.mensaje || 'OK',
                                     data: firstItem.data || []
-                                } as CatConceptoResponse;
+                                } as BannerResponse;
                             }
                         }
 
@@ -152,13 +157,13 @@ export class CatConceptosService {
                             statuscode: response.statuscode || 200,
                             mensaje: response.mensaje || 'OK',
                             data: response.data || []
-                        } as CatConceptoResponse;
+                        } as BannerResponse;
                     }),
                     catchError(error => {
-                        console.error('❌ Error en getAllConceptos:', error);
+                        console.error('❌ Error en getAllBanners:', error);
 
                         // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener conceptos';
+                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener banners';
                         console.log('📤 Enviando error al componente:', errorMessage);
 
                         return throwError(() => new Error(errorMessage));
@@ -169,24 +174,24 @@ export class CatConceptosService {
     }
 
     /**
-     * Crea un nuevo concepto
+     * Crea un nuevo banner
      */
-    createConcepto(concepto: CreateCatConceptoRequest): Observable<CatConceptoSingleResponse> {
-        console.log('➕ Creando concepto:', concepto);
+    createBanner(banner: CreateBannerRequest): Observable<BannerSingleResponse> {
+        console.log('➕ Creando banner:', banner);
 
-        return this.getCatConceptosUrl().pipe(
+        return this.getBannerUrl().pipe(
             switchMap(url => {
                 const payload = {
                     action: 'IN' as const, // Insert según convenciones del proyecto
-                    ...concepto,
+                    ...banner,
                     ...this.getSessionData()
                 };
 
-                console.log('📤 Payload para crear concepto:', payload);
+                console.log('📤 Payload para crear banner:', payload);
 
-                return this.http.post<CatConceptoRawArrayResponse>(url, payload).pipe(
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de crear concepto:', response);
+                        console.log('✅ Respuesta de crear banner:', response);
 
                         // Procesar respuesta (similar al patrón de otros servicios)
                         if (Array.isArray(response) && response.length > 0) {
@@ -200,9 +205,9 @@ export class CatConceptosService {
 
                             return {
                                 statuscode: firstItem.statuscode || 200,
-                                mensaje: firstItem.mensaje || 'Concepto creado correctamente',
-                                data: firstItem.data || concepto as CatConcepto
-                            } as CatConceptoSingleResponse;
+                                mensaje: firstItem.mensaje || 'Banner creado correctamente',
+                                data: firstItem.data || banner as Banner
+                            } as BannerSingleResponse;
                         }
 
                         // Verificar error en respuesta directa
@@ -213,15 +218,15 @@ export class CatConceptosService {
 
                         return {
                             statuscode: response.statuscode || 200,
-                            mensaje: response.mensaje || 'Concepto creado correctamente',
-                            data: response.data || concepto as CatConcepto
-                        } as CatConceptoSingleResponse;
+                            mensaje: response.mensaje || 'Banner creado correctamente',
+                            data: response.data || banner as Banner
+                        } as BannerSingleResponse;
                     }),
                     catchError(error => {
-                        console.error('❌ Error al crear concepto:', error);
+                        console.error('❌ Error al crear banner:', error);
 
                         // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al crear el concepto';
+                        const errorMessage = error instanceof Error ? error.message : 'Error al crear el banner';
                         console.log('📤 Enviando error al componente:', errorMessage);
 
                         return throwError(() => new Error(errorMessage));
@@ -232,24 +237,24 @@ export class CatConceptosService {
     }
 
     /**
-     * Actualiza un concepto existente
+     * Actualiza un banner existente
      */
-    updateConcepto(concepto: UpdateCatConceptoRequest): Observable<CatConceptoSingleResponse> {
-        console.log('✏️ Actualizando concepto:', concepto);
+    updateBanner(banner: UpdateBannerRequest): Observable<BannerSingleResponse> {
+        console.log('✏️ Actualizando banner:', banner);
 
-        return this.getCatConceptosUrl().pipe(
+        return this.getBannerUrl().pipe(
             switchMap(url => {
                 const payload = {
                     action: 'UP' as const, // Update según convenciones del proyecto
-                    ...concepto,
+                    ...banner,
                     ...this.getSessionData()
                 };
 
-                console.log('📤 Payload para actualizar concepto:', payload);
+                console.log('📤 Payload para actualizar banner:', payload);
 
-                return this.http.post<CatConceptoRawArrayResponse>(url, payload).pipe(
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de actualizar concepto:', response);
+                        console.log('✅ Respuesta de actualizar banner:', response);
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
@@ -262,9 +267,9 @@ export class CatConceptosService {
 
                             return {
                                 statuscode: firstItem.statuscode || 200,
-                                mensaje: firstItem.mensaje || 'Concepto actualizado correctamente',
-                                data: firstItem.data || concepto as CatConcepto
-                            } as CatConceptoSingleResponse;
+                                mensaje: firstItem.mensaje || 'Banner actualizado correctamente',
+                                data: firstItem.data || banner as Banner
+                            } as BannerSingleResponse;
                         }
 
                         // Verificar error en respuesta directa
@@ -275,15 +280,15 @@ export class CatConceptosService {
 
                         return {
                             statuscode: response.statuscode || 200,
-                            mensaje: response.mensaje || 'Concepto actualizado correctamente',
-                            data: response.data || concepto as CatConcepto
-                        } as CatConceptoSingleResponse;
+                            mensaje: response.mensaje || 'Banner actualizado correctamente',
+                            data: response.data || banner as Banner
+                        } as BannerSingleResponse;
                     }),
                     catchError(error => {
-                        console.error('❌ Error al actualizar concepto:', error);
+                        console.error('❌ Error al actualizar banner:', error);
 
                         // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el concepto';
+                        const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el banner';
                         console.log('📤 Enviando error al componente:', errorMessage);
 
                         return throwError(() => new Error(errorMessage));
@@ -294,24 +299,24 @@ export class CatConceptosService {
     }
 
     /**
-     * Elimina un concepto
+     * Elimina un banner
      */
-    deleteConcepto(id: number): Observable<CatConceptoSingleResponse> {
-        console.log('🗑️ Eliminando concepto ID:', id);
+    deleteBanner(id: number): Observable<BannerSingleResponse> {
+        console.log('🗑️ Eliminando banner ID:', id);
 
-        return this.getCatConceptosUrl().pipe(
+        return this.getBannerUrl().pipe(
             switchMap(url => {
                 const payload = {
                     action: 'DL' as const, // Delete según convenciones del proyecto
-                    id_c: id,
+                    id_mb: id,
                     ...this.getSessionData()
                 };
 
-                console.log('📤 Payload para eliminar concepto:', payload);
+                console.log('📤 Payload para eliminar banner:', payload);
 
-                return this.http.post<CatConceptoRawArrayResponse>(url, payload).pipe(
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de eliminar concepto:', response);
+                        console.log('✅ Respuesta de eliminar banner:', response);
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
@@ -324,9 +329,9 @@ export class CatConceptosService {
 
                             return {
                                 statuscode: firstItem.statuscode || 200,
-                                mensaje: firstItem.mensaje || 'Concepto eliminado correctamente',
-                                data: {} as CatConcepto // No hay data en delete
-                            } as CatConceptoSingleResponse;
+                                mensaje: firstItem.mensaje || 'Banner eliminado correctamente',
+                                data: {} as Banner // No hay data en delete
+                            } as BannerSingleResponse;
                         }
 
                         // Verificar error en respuesta directa
@@ -337,15 +342,15 @@ export class CatConceptosService {
 
                         return {
                             statuscode: response.statuscode || 200,
-                            mensaje: response.mensaje || 'Concepto eliminado correctamente',
-                            data: {} as CatConcepto
-                        } as CatConceptoSingleResponse;
+                            mensaje: response.mensaje || 'Banner eliminado correctamente',
+                            data: {} as Banner
+                        } as BannerSingleResponse;
                     }),
                     catchError(error => {
-                        console.error('❌ Error al eliminar concepto:', error);
+                        console.error('❌ Error al eliminar banner:', error);
 
                         // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el concepto';
+                        const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el banner';
                         console.log('📤 Enviando error al componente:', errorMessage);
 
                         return throwError(() => new Error(errorMessage));
@@ -356,24 +361,24 @@ export class CatConceptosService {
     }
 
     /**
-     * Obtiene un concepto específico por ID
+     * Obtiene un banner específico por ID
      */
-    getConceptoById(id: number): Observable<CatConceptoSingleResponse> {
-        console.log('🔍 Obteniendo concepto por ID:', id);
+    getBannerById(id: number): Observable<BannerSingleResponse> {
+        console.log('🔍 Obteniendo banner por ID:', id);
 
-        return this.getCatConceptosUrl().pipe(
+        return this.getBannerUrl().pipe(
             switchMap(url => {
                 const payload = {
                     action: 'SL' as const, // Query según convenciones del proyecto
-                    id_c: id,
+                    id_mb: id,
                     ...this.getSessionData()
                 };
 
-                console.log('📤 Payload para obtener concepto:', payload);
+                console.log('📤 Payload para obtener banner:', payload);
 
-                return this.http.post<CatConceptoRawArrayResponse>(url, payload).pipe(
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de obtener concepto:', response);
+                        console.log('✅ Respuesta de obtener banner:', response);
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
@@ -384,14 +389,14 @@ export class CatConceptosService {
                                 throw new Error(firstItem.mensaje || 'Error del servidor');
                             }
 
-                            const conceptos = firstItem.data || [];
-                            const concepto = conceptos.find((c: CatConcepto) => c.id_c === id);
+                            const banners = firstItem.data || [];
+                            const banner = banners.find((b: Banner) => b.id_mb === id);
 
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'OK',
-                                data: concepto || {} as CatConcepto
-                            } as CatConceptoSingleResponse;
+                                data: banner || {} as Banner
+                            } as BannerSingleResponse;
                         }
 
                         // Verificar error en respuesta directa
@@ -403,14 +408,14 @@ export class CatConceptosService {
                         return {
                             statuscode: response.statuscode || 200,
                             mensaje: response.mensaje || 'OK',
-                            data: response.data || {} as CatConcepto
-                        } as CatConceptoSingleResponse;
+                            data: response.data || {} as Banner
+                        } as BannerSingleResponse;
                     }),
                     catchError(error => {
-                        console.error('❌ Error al obtener concepto:', error);
+                        console.error('❌ Error al obtener banner:', error);
 
                         // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener el concepto';
+                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener el banner';
                         console.log('📤 Enviando error al componente:', errorMessage);
 
                         return throwError(() => new Error(errorMessage));
@@ -423,26 +428,157 @@ export class CatConceptosService {
     // ========== MÉTODOS DE UTILIDAD ==========
 
     /**
-     * Obtiene los conceptos activos (swestado = 1)
+     * Obtiene banners por componente
      */
-    getConceptosActivos(): Observable<CatConceptoResponse> {
-        return this.getAllConceptos({
-            filters: { swestado: 1 }
+    getBannersByComponente(idComp: number): Observable<BannerResponse> {
+        return this.getAllBanners({
+            filters: { id_comp: idComp }
         });
     }
 
     /**
-     * Obtiene conceptos por clave
+     * Obtiene banners activos
      */
-    getConceptoByClave(clave: string): Observable<CatConceptoSingleResponse> {
-        return this.getAllConceptos({
-            filters: { clave }
-        }).pipe(
-            map(response => ({
-                statuscode: response.statuscode,
-                mensaje: response.mensaje,
-                data: response.data[0] || {} as CatConcepto
-            }))
+    getBannersActivos(): Observable<BannerResponse> {
+        return this.getAllBanners({
+            filters: { swEnable: 1 }
+        });
+    }
+
+    /**
+     * Obtiene banners programados (con fechas)
+     */
+    getBannersProgramados(): Observable<BannerResponse> {
+        return this.getAllBanners({
+            filters: { swsched: 1 }
+        });
+    }
+
+    /**
+     * Actualiza el orden de un banner
+     */
+    updateBannerOrder(id: number, orden: number): Observable<BannerSingleResponse> {
+        console.log('🔄 Actualizando orden del banner:', { id, orden });
+
+        return this.updateBanner({
+            id_mb: id,
+            orden: orden
+        });
+    }
+
+    /**
+     * Activa/desactiva un banner
+     */
+    toggleBannerStatus(id: number, activo: boolean): Observable<BannerSingleResponse> {
+        console.log('🔄 Cambiando estado del banner:', { id, activo });
+
+        return this.updateBanner({
+            id_mb: id,
+            swEnable: activo ? 1 : 0
+        });
+    }
+
+    // ========== MÉTODOS DE CONFIGURACIÓN ==========
+
+    /**
+     * Obtiene estadísticas de banners
+     */
+    getEstadisticas(): Observable<BannerStatsResponse> {
+        console.log('📊 Obteniendo estadísticas de banners');
+
+        return this.getBannerUrl().pipe(
+            switchMap(url => {
+                const payload = {
+                    action: 'SL',
+                    getStats: true,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // ⚠️ CRÍTICO: Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ Backend devolvió error en array:', firstItem);
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'OK',
+                                data: firstItem.stats || {} as any
+                            } as BannerStatsResponse;
+                        }
+
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
+                        }
+
+                        return {
+                            statuscode: response.statuscode || 200,
+                            mensaje: response.mensaje || 'OK',
+                            data: response.stats || {} as any
+                        } as BannerStatsResponse;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error al obtener estadísticas:', error);
+
+                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener estadísticas';
+                        console.log('📤 Enviando error al componente:', errorMessage);
+
+                        return throwError(() => new Error(errorMessage));
+                    })
+                );
+            })
         );
+    }
+
+    // ========== MÉTODOS DE VALIDACIÓN ==========
+
+    /**
+     * Valida si el orden ya existe para un componente
+     */
+    validarOrdenUnico(idComp: number, orden: number, excludeId?: number): Observable<boolean> {
+        console.log('✅ Validando orden único:', { idComp, orden, excludeId });
+
+        return this.getBannerUrl().pipe(
+            switchMap(url => {
+                const payload = {
+                    action: 'SL',
+                    validarOrden: orden,
+                    id_comp: idComp,
+                    excludeId: excludeId || 0,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<BannerRawArrayResponse>(url, payload).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+                            return firstItem.valido !== false; // Si no viene false, asumimos true
+                        }
+                        return response.valido !== false;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error al validar orden:', error);
+                        return of(false);
+                    })
+                );
+            })
+        );
+    }
+
+    /**
+     * Valida las fechas de un banner
+     */
+    validarFechas(fechaIni: string, fechaFin: string): boolean {
+        const ini = new Date(fechaIni);
+        const fin = new Date(fechaFin);
+        return ini <= fin;
     }
 }

@@ -8,8 +8,8 @@ export interface Componente {
     clave: string;
     nombre: string;
     descripcion: string;
-    canal: number;
-    tipo_comp: number;
+    canal: string;
+    tipo_comp: string;
     isUnico: number; // 0: múltiple, 1: único
     tiempo: number; // tiempo en ms para carruseles/autoplay
     visibles: number; // número de elementos visibles
@@ -50,8 +50,8 @@ export interface CreateComponenteRequest {
     clave: string;
     nombre: string;
     descripcion: string;
-    canal: number;
-    tipo_comp: number;
+    canal: string;
+    tipo_comp: string;
     isUnico?: number; // opcional, default 0
     tiempo?: number; // opcional, default 5000
     visibles?: number; // opcional, default 5
@@ -67,8 +67,8 @@ export interface ComponenteFilters {
     clave?: string;
     nombre?: string;
     descripcion?: string;
-    canal?: number;
-    tipo_comp?: number;
+    canal?: string;
+    tipo_comp?: string;
     isUnico?: number;
     swEnable?: number;
     usr_a?: string;
@@ -140,8 +140,8 @@ export interface ComponenteAdvancedFilters extends ComponenteFilters {
 export interface ComponenteStats {
     total_componentes: number;
     componentes_activos: number;
-    componentes_por_tipo: { [tipo: number]: number };
-    componentes_por_canal: { [canal: number]: number };
+    componentes_por_tipo: { [tipo: string]: number };
+    componentes_por_canal: { [canal: string]: number };
     componentes_creados_hoy: number;
     componentes_modificados_hoy: number;
 }
@@ -159,7 +159,7 @@ export interface ComponenteStatsResponse {
 
 // Reglas de validación por tipo de componente
 export interface ValidacionTipoComponente {
-    tipo_comp: number;
+    tipo_comp: string;
     campos_requeridos: string[];
     campos_opcionales: string[];
     validaciones: {
@@ -171,7 +171,7 @@ export interface ValidacionTipoComponente {
 
 // Configuración por defecto para nuevos componentes
 export interface ComponenteDefaultConfig {
-    tipo_comp: number;
+    tipo_comp: string;
     valores_default: {
         [campo: string]: any;
     };

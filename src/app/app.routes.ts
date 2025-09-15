@@ -71,7 +71,21 @@ export const appRoutes: Routes = [
                 path: 'system/test/items-test',
                 data: { breadcrumb: 'Items Test Page' },
                 loadComponent: () => import('@/pages/test/items-test/items-test.component').then(c => c.ItemsTestComponent)
-            }
+            },            {
+                path: 'system/labdb/spconfig',
+                data: { breadcrumb: 'Configuración del Sistema' },
+                loadComponent: () => import('@/pages/spconfig/spconfig.component').then(c => c.SPConfigComponent)
+            },
+            {
+                path: 'system/catalogo/proy',
+                data: { breadcrumb: 'Catálogo de Proyectos', swproy: 1 },
+                loadComponent: () => import('@/pages/proy/proy.component').then(c => c.ProyComponent)
+            },
+            {
+                path: 'test/proy-test',
+                data: { breadcrumb: 'Test Proyectos Service' },
+                loadComponent: () => import('@/pages/test/proy-test/proy-test.component').then(c => c.ProyTestComponent)
+            },
         ]
     },
     { path: 'auth', loadChildren: () => import('@/pages/auth/auth.routes') },

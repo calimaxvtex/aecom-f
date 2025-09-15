@@ -2,6 +2,9 @@
 
 ## 📋 **Funcionalidades Implementadas**
 
+> **🔧 Para aspectos técnicos, ver [TECHNICAL_SUMMARY.md](TECHNICAL_SUMMARY.md)**  
+> **📋 Para reglas del proyecto, ver [guidelines/PROJECT_RULES.md](guidelines/PROJECT_RULES.md)**
+
 ---
 
 ## 🎯 **1. Sistema de Administración de Menú**
@@ -448,6 +451,15 @@ El sistema **AECOM-F** implementa un conjunto completo de funcionalidades para l
 - ✅ **Código** limpio y mantenible
 
 **El sistema está listo para producción y uso en entornos reales.**
+
+---
+
+## 📚 **Documentación Relacionada**
+
+- **[Resumen Técnico](TECHNICAL_SUMMARY.md)** - Arquitectura y métricas técnicas
+- **[Especificaciones CRUD](specifications/CRUD_TABLE_SPECIFICATIONS.md)** - Patrones de componentes
+- **[Especificaciones de Servicios](specifications/CRUD_SERVICE_SPECIFICATIONS.md)** - Patrones de servicios
+- **[Reglas del Proyecto](guidelines/PROJECT_RULES.md)** - Convenciones y estándares
 
 ---
 

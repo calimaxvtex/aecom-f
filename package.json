@@ -20,6 +20,7 @@
         "@angular/platform-browser": "^20",
         "@angular/platform-browser-dynamic": "^20",
         "@angular/router": "^20",
+        "@primeng/themes": "^20.1.2",
         "@primeuix/themes": "^1.2.1",
         "@tailwindcss/postcss": "^4.1.11",
         "@types/pako": "^2.0.4",

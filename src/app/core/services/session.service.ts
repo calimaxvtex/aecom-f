@@ -25,7 +25,7 @@ export class SessionService {
      * Establecer datos de sesión después de login exitoso
      */
     setSession(userData: any): void {
-        console.log('🔐 Estableciendo sesión con datos:', userData);
+        // console.log('🔐 Estableciendo sesión con datos:', userData);
         
         const sessionData: SessionData = {
             usuario: userData.usuario || userData.id,
@@ -42,8 +42,8 @@ export class SessionService {
 
         // Actualizar BehaviorSubject
         this.sessionSubject.next(sessionData);
-        
-        console.log('✅ Sesión establecida:', sessionData);
+
+        // console.log('✅ Sesión establecida:', sessionData);
     }
 
     /**
@@ -95,7 +95,7 @@ export class SessionService {
      * Cerrar sesión
      */
     logout(): void {
-        console.log('🚪 Cerrando sesión...');
+        // console.log('🚪 Cerrando sesión...');
         
         // Limpiar localStorage
         localStorage.removeItem('currentUser');
@@ -105,7 +105,7 @@ export class SessionService {
         // Limpiar BehaviorSubject
         this.sessionSubject.next(null);
         
-        console.log('✅ Sesión cerrada');
+        // console.log('✅ Sesión cerrada');
     }
 
     /**
@@ -119,7 +119,7 @@ export class SessionService {
             if (sessionData && isLoggedIn) {
                 const session: SessionData = JSON.parse(sessionData);
                 this.sessionSubject.next(session);
-                console.log('🔄 Sesión cargada desde localStorage:', session);
+                // console.log('🔄 Sesión cargada desde localStorage:', session);
             }
         } catch (error) {
             console.error('❌ Error cargando sesión desde localStorage:', error);

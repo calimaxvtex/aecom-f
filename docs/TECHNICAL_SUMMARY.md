@@ -6,86 +6,7 @@
 **Versión:** 1.0.0  
 **Estado:** ✅ **FUNCIONAL Y EN PRODUCCIÓN**
 
----
-
-## 🎯 **Funcionalidades Implementadas**
-
-### ✅ **Sistema de Administración de Menú (100% Completo)**
-
-#### **CRUD Operations**
-- ✅ **CREATE** - Crear nuevos items de menú
-- ✅ **READ** - Listar todos los items con paginación
-- ✅ **UPDATE** - Editar items existentes (inline y modal)
-- ✅ **DELETE** - Eliminar items con confirmación
-
-#### **Formularios Reactivos**
-- ✅ **Validaciones** completas con Angular Validators
-- ✅ **FormBuilder** para gestión de formularios
-- ✅ **ControlValueAccessor** para componentes personalizados
-- ✅ **Manejo de errores** y mensajes de validación
-
-#### **Interfaz de Usuario**
-- ✅ **4 tabs principales** organizados
-- ✅ **PrimeNG Table** con sorting y filtrado
-- ✅ **Modales** para edición de items
-- ✅ **Confirmaciones** estilizadas para eliminación
-- ✅ **Tooltips** contextuales para ayuda
-
-### ✅ **Gestión de Jerarquías (100% Completo)**
-
-#### **Selector de Padre Inteligente**
-- ✅ **Vista jerárquica** con indentación visual
-- ✅ **Filtrado** de padres disponibles
-- ✅ **Validación** de relaciones padre-hijo
-- ✅ **Cálculo automático** de niveles
-
-#### **Reglas de Negocio**
-- ✅ **Separadores** sin ruta ni icono
-- ✅ **Items con hijos** sin routerLink
-- ✅ **Niveles automáticos** basados en padre
-- ✅ **Validaciones** de consistencia
-
-### ✅ **Explorador de Rutas (100% Completo)**
-
-#### **Descubrimiento Automático**
-- ✅ **RouteDiscoveryService** para extraer rutas
-- ✅ **Integración** con Angular Router
-- ✅ **Filtrado** por tipo de ruta
-- ✅ **Selector visual** de rutas disponibles
-
-#### **Funcionalidades**
-- ✅ **Búsqueda** en tiempo real
-- ✅ **Categorización** por tipo
-- ✅ **Vista previa** de rutas
-- ✅ **Integración** con formulario
-
-### ✅ **Explorador de Iconos (100% Completo)**
-
-#### **Catálogo de Iconos**
-- ✅ **157+ iconos** de PrimeIcons
-- ✅ **Categorización** por tipo
-- ✅ **Búsqueda** en tiempo real
-- ✅ **Filtrado** por categoría
-
-#### **Funcionalidades**
-- ✅ **Copia al portapapeles** con un click
-- ✅ **Vista previa** en tiempo real
-- ✅ **Integración** con formulario
-- ✅ **Interfaz** intuitiva y responsive
-
-### ✅ **Configuración de API (100% Completo)**
-
-#### **Gestión de Configuración**
-- ✅ **Modo mock/real** configurable
-- ✅ **URL base** configurable
-- ✅ **Pruebas** de conectividad
-- ✅ **Estado visual** de conexión
-
-#### **Endpoints Disponibles**
-- ✅ **GET** `/api/menu/v1` - Obtener items
-- ✅ **POST** `/api/menu/v1` - Operaciones universales
-- ✅ **PATCH** `/api/menu/v1/:id` - Actualización parcial
-- ✅ **PUT** `/api/menu/v1/:id` - Actualización completa
+> **📋 Para funcionalidades detalladas, ver [FEATURES_SUMMARY.md](FEATURES_SUMMARY.md)**
 
 ---
 
@@ -103,7 +24,7 @@ RxJS               // Programación reactiva
 
 ### **Estructura de Componentes**
 ```
-src/app/features/menu-admin/
+src/app/pages/system/menu-admin/
 ├── components/
 │   ├── menu-admin-list.ts      # 🎯 Componente principal (1,200+ líneas)
 │   ├── icon-explorer.ts        # 🎨 Explorador de iconos (300+ líneas)
@@ -298,6 +219,15 @@ El proyecto **AECOM-F** está en un estado **excelente** con:
 - ✅ **Documentación** completa
 
 **El sistema está listo para producción y uso en entornos reales.**
+
+---
+
+## 📚 **Documentación Relacionada**
+
+- **[Funcionalidades Detalladas](FEATURES_SUMMARY.md)** - Lista completa de características
+- **[Especificaciones CRUD](specifications/CRUD_TABLE_SPECIFICATIONS.md)** - Patrones de componentes
+- **[Especificaciones de Servicios](specifications/CRUD_SERVICE_SPECIFICATIONS.md)** - Patrones de servicios
+- **[Reglas del Proyecto](guidelines/PROJECT_RULES.md)** - Convenciones y estándares
 
 ---
 

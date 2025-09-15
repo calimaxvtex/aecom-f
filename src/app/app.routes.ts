@@ -23,9 +23,9 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('@/pages/documentation/documentation').then((c) => c.Documentation)
             },
             {
-                path: 'pages',
+                path: '',
                 data: { breadcrumb: 'Pages' },
-                loadChildren: () => import('@/pages/pages.routes')
+                loadChildren: () => import('@/pages/pages.routes').then(m => m.default)
             },
             {
                 path: 'apps',
@@ -47,48 +47,10 @@ export const appRoutes: Routes = [
                 data: { breadcrumb: 'User Management' },
                 loadChildren: () => import('@/pages/usermanagement/usermanagement.routes')
             },
-            {
-                path: 'menu-admin',
-                data: { breadcrumb: 'Administración de Menú' },
-                loadComponent: () => import('@/features/menu-admin/components/menu-admin-list').then(m => m.MenuAdminList)
-            },
-            {
-                path: 'system/usuarios',
-                data: { breadcrumb: 'Gestión de Usuarios' },
-                loadComponent: () => import('@/pages/usuarios/usuarios.component').then(c => c.UsuariosComponent)
-            },
-            {
-                path: 'aec/banner/tab',
-                data: { breadcrumb: 'Administración de Tabloides' },
-                loadComponent: () => import('@/pages/tabadm/tabadm.component').then(c => c.TabAdmComponent)
-            },
-            {
-                path: 'collections',
-                data: { breadcrumb: 'Administración de Colecciones' },
-                loadComponent: () => import('@/pages/collections/collections.component').then(c => c.CollectionsComponent)
-            },
-            {
-                path: 'system/test/items-test',
-                data: { breadcrumb: 'Items Test Page' },
-                loadComponent: () => import('@/pages/test/items-test/items-test.component').then(c => c.ItemsTestComponent)
-            },            {
-                path: 'system/labdb/spconfig',
-                data: { breadcrumb: 'Configuración del Sistema' },
-                loadComponent: () => import('@/pages/spconfig/spconfig.component').then(c => c.SPConfigComponent)
-            },
-            {
-                path: 'system/catalogo/proy',
-                data: { breadcrumb: 'Catálogo de Proyectos', swproy: 1 },
-                loadComponent: () => import('@/pages/proy/proy.component').then(c => c.ProyComponent)
-            },
-            {
-                path: 'test/proy-test',
-                data: { breadcrumb: 'Test Proyectos Service' },
-                loadComponent: () => import('@/pages/test/proy-test/proy-test.component').then(c => c.ProyTestComponent)
-            },
         ]
     },
-    { path: 'auth', loadChildren: () => import('@/pages/auth/auth.routes') },
+    { path: '',
+         loadChildren: () => import('@/pages/auth/auth.routes') },
     {
         path: 'landing',
         loadComponent: () => import('@/pages/landing/landing').then((c) => c.Landing)
@@ -99,11 +61,14 @@ export const appRoutes: Routes = [
     },
     {
         path: 'test-endpoints',
-        loadComponent: () => import('@/pages/test-endpoints/test-endpoints').then((c) => c.TestEndpoints)
+        loadComponent: () => import('@/pages/adm-ecom/test-endpoints/test-endpoints').then((c) => c.TestEndpoints)
     },
     {
         path: 'test-coll',
         loadComponent: () => import('@/features/coll/test-coll.component').then((c) => c.TestCollComponent)
     },
-    { path: '**', redirectTo: '/notfound' }
+    //{ path: '**', redirectTo: '/notfound' },
+    {        path: '**',
+        loadComponent: () => import('@/pages/notfound/notfound').then((c) => c.Notfound)
+    }
 ];

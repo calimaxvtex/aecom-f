@@ -3,7 +3,7 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpResponse, Htt
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-console.log('🔍 Interceptor: Archivo api-monitor.interceptor.ts cargado');
+// console.log('🔍 Interceptor: Archivo api-monitor.interceptor.ts cargado');
 
 @Injectable()
 export class ApiMonitorInterceptor implements HttpInterceptor {
@@ -12,19 +12,19 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
   private apiCalls: any[] = [];
 
   constructor() {
-    console.log('🔍 Interceptor: ApiMonitorInterceptor instanciado');
-    console.log('🔍 Interceptor: Constructor ejecutado correctamente');
+    // console.log('🔍 Interceptor: ApiMonitorInterceptor instanciado');
+    // console.log('🔍 Interceptor: Constructor ejecutado correctamente');
   }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    console.log('🔍 Interceptor: === INTERCEPTOR EJECUTADO ===');
-    console.log('🔍 Interceptor: URL completa:', req.url);
-    console.log('🔍 Interceptor: URL con parámetros:', req.urlWithParams);
-    console.log('🔍 Interceptor: Método:', req.method);
-    console.log('🔍 Interceptor: Headers:', req.headers);
-    console.log('🔍 Interceptor: Body enviado:', req.body);
-    console.log('🔍 Interceptor: Content-Type:', req.headers.get('Content-Type'));
-    console.log('🔍 Interceptor: Authorization:', req.headers.get('Authorization') ? '[PRESENTE]' : '[NO PRESENTE]');
+    // console.log('🔍 Interceptor: === INTERCEPTOR EJECUTADO ===');
+    // console.log('🔍 Interceptor: URL completa:', req.url);
+    // console.log('🔍 Interceptor: URL con parámetros:', req.urlWithParams);
+    // console.log('🔍 Interceptor: Método:', req.method);
+    // console.log('🔍 Interceptor: Headers:', req.headers);
+    // console.log('🔍 Interceptor: Body enviado:', req.body);
+    // console.log('🔍 Interceptor: Content-Type:', req.headers.get('Content-Type'));
+    // console.log('🔍 Interceptor: Authorization:', req.headers.get('Authorization') ? '[PRESENTE]' : '[NO PRESENTE]');
 
     // Capturar el tiempo de inicio para medir duración
     this.startTime = Date.now();
@@ -35,16 +35,16 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
         next: (event) => {
           if (event instanceof HttpResponse) {
             const duration = Date.now() - this.startTime;
-            console.log('🔍 Interceptor: === RESPUESTA RECIBIDA ===');
-            console.log('🔍 Interceptor: URL:', req.url);
-            console.log('🔍 Interceptor: Status:', event.status);
-            console.log('🔍 Interceptor: Duración:', duration + 'ms');
-            console.log('🔍 Interceptor: Headers:', event.headers);
-            console.log('🔍 Interceptor: === RESPUESTA CRUDA (SIN PROCESAR) ===');
-            console.log('🔍 Interceptor: Tipo de respuesta:', typeof event.body);
-            console.log('🔍 Interceptor: Respuesta cruda:', event.body);
-            console.log('🔍 Interceptor: JSON stringified:', JSON.stringify(event.body, null, 2));
-            console.log('🔍 Interceptor: === FIN RESPUESTA CRUDA ===');
+            // console.log('🔍 Interceptor: === RESPUESTA RECIBIDA ===');
+            // console.log('🔍 Interceptor: URL:', req.url);
+            // console.log('🔍 Interceptor: Status:', event.status);
+            // console.log('🔍 Interceptor: Duración:', duration + 'ms');
+            // console.log('🔍 Interceptor: Headers:', event.headers);
+            // console.log('🔍 Interceptor: === RESPUESTA CRUDA (SIN PROCESAR) ===');
+            // console.log('🔍 Interceptor: Tipo de respuesta:', typeof event.body);
+            // console.log('🔍 Interceptor: Respuesta cruda:', event.body);
+            // console.log('🔍 Interceptor: JSON stringified:', JSON.stringify(event.body, null, 2));
+            // console.log('🔍 Interceptor: === FIN RESPUESTA CRUDA ===');
 
             // Capturar la llamada API con la respuesta cruda
             const requestInfo = this.extractRequestInfo(req);
@@ -53,14 +53,13 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
         },
         error: (error) => {
           const duration = Date.now() - this.startTime;
-          console.log('🔍 Interceptor: === ERROR EN RESPUESTA ===');
-          console.log('🔍 Interceptor: URL:', req.url);
-          console.log('🔍 Interceptor: Duración:', duration + 'ms');
-          console.log('🔍 Interceptor: Error:', error);
+          console.error('❌ Interceptor: Error en API -', req.url, error instanceof Error ? error.message : String(error));
 
-          // Capturar el error
+          // Capturar el error PERO permitir que llegue a los componentes
           const requestInfo = this.extractRequestInfo(req);
           this.captureApiCall(requestInfo, null, error);
+
+          // IMPORTANTE: No hacer throw aquí, dejar que el error llegue a los componentes
         }
       })
     );
@@ -101,10 +100,10 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
       duracion: duration
     };
 
-    console.log('🔍 Interceptor: === CAPTURANDO LLAMADA API ===');
-    console.log('🔍 Interceptor: Duración:', duration + 'ms');
-    console.log('🔍 Interceptor: Status Code:', apiCall.statusCode);
-    console.log('🔍 Interceptor: Llamada capturada:', apiCall);
+    // console.log('🔍 Interceptor: === CAPTURANDO LLAMADA API ===');
+    // console.log('🔍 Interceptor: Duración:', duration + 'ms');
+    // console.log('🔍 Interceptor: Status Code:', apiCall.statusCode);
+    // console.log('🔍 Interceptor: Llamada capturada:', apiCall);
 
     // Agregar al array local
     this.apiCalls.push(apiCall);
@@ -116,28 +115,22 @@ export class ApiMonitorInterceptor implements HttpInterceptor {
     }
 
     // Guardar en localStorage
-    console.log('🔍 Interceptor: Guardando en localStorage, total llamadas:', this.apiCalls.length);
-    localStorage.setItem('apiMonitor', JSON.stringify(this.apiCalls));
-    console.log('✅ Interceptor: Datos guardados en localStorage');
-
-    // Verificar que se guardó correctamente
-    const savedData = localStorage.getItem('apiMonitor');
-    console.log('🔍 Interceptor: Verificación - Datos en localStorage:', savedData ? JSON.parse(savedData).length + ' llamadas' : 'null');
+    try {
+      localStorage.setItem('apiMonitor', JSON.stringify(this.apiCalls));
+    } catch (e) {
+      console.warn('⚠️ Interceptor: Error guardando en localStorage');
+    }
 
     // Notificar al componente (si está disponible)
     this.notifyComponent(apiCall);
   }
 
   private notifyComponent(apiCall: any): void {
-    console.log('🔍 Interceptor: Notificando al componente...');
-
-    // Buscar el componente SPConfig en el DOM y notificar
+    // Notificar al componente (si está disponible)
     const event = new CustomEvent('apiCallCaptured', {
       detail: apiCall
     });
     window.dispatchEvent(event);
-
-    console.log('🔍 Interceptor: Evento enviado:', event);
   }
 
   private generateId(): string {

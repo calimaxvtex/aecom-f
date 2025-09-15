@@ -12,11 +12,16 @@ import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { CardModule } from 'primeng/card';
 import { MessageService } from 'primeng/api';
 
 // Servicios y modelos
 import { CompService } from '../../../features/comp/services/comp.service';
 import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '../../../features/comp/models/comp.interface';
+import { CatConceptosDetService } from '../../../features/catconceptos/services/catconceptosdet.service';
+import { CatConceptoDet } from '../../../features/catconceptos/models/catconceptosdet.interface';
 
 @Component({
     selector: 'app-banners-components-tab',
@@ -32,10 +37,33 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
         ToastModule,
         TagModule,
         FloatLabelModule,
-        TooltipModule
+        TooltipModule,
+        SelectModule,
+        SelectButtonModule,
+        CardModule
     ],
     providers: [MessageService],
     template: `
+        <!-- Filtro superior -->
+        <div class="mb-4">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 max-w-md">
+                    <p-floatLabel variant="on">
+                        <p-selectButton
+                            [(ngModel)]="canalFiltroSeleccionado"
+                            [options]="canalesOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            (onChange)="onCanalFiltroChange($event)"
+                            class="w-full"
+                            multiple="false"
+                        ></p-selectButton>
+                        <label>Filtro por Canal</label>
+                    </p-floatLabel>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabla CRUD -->
         <p-table
             #dtConceptos
@@ -44,7 +72,7 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
             [rows]="10"
             [showCurrentPageReport]="true"
             responsiveLayout="scroll"
-            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} components"
+            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes"
             [rowsPerPageOptions]="[10, 25, 50]"
             [globalFilterFields]="['clave', 'nombre']"
             dataKey="id_comp"
@@ -58,7 +86,7 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                         pInputText
                         type="text"
                         (input)="onGlobalFilter(dtConceptos, $event)"
-                        placeholder="Buscar conceptos..."
+                        placeholder="Buscar componentes..."
                         class="w-full sm:w-80 order-1 sm:order-0"
                     />
                     <div class="flex gap-2 order-0 sm:order-1">
@@ -68,14 +96,14 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                             raised
                             icon="pi pi-refresh"
                             [loading]="loadingConceptos"
-                            pTooltip="Actualizar"
+                            pTooltip="Actualizar lista"
                         ></button>
                         <button
                             (click)="openConceptoForm()"
                             pButton
                             raised
                             icon="pi pi-plus"
-                            pTooltip="Agregar Concepto"
+                            pTooltip="Agregar componente"
                         ></button>
                     </div>
                 </div>
@@ -84,12 +112,13 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
             <!-- Headers -->
             <ng-template #header>
                 <tr>
-                    <th pSortableColumn="id_comp" style="width: 80px">ID <p-sortIcon field="id_comp"></p-sortIcon></th>
+                    <th style="width: 80px">ID</th>
                     <th pSortableColumn="clave" style="min-width: 150px">Clave <p-sortIcon field="clave"></p-sortIcon></th>
                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
                     <th pSortableColumn="descripcion" style="min-width: 200px">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
-                    <th pSortableColumn="tipo_comp" style="min-width: 150px">Tipo Componente <p-sortIcon field="tipo_comp"></p-sortIcon></th>
+                    <th style="min-width: 150px">Tipo Componente</th>
                     <th style="width: 100px">Único</th>
+                    <th style="width: 100px">Visible</th>
                     <th style="width: 100px">Habilitado</th>
                     <th style="width: 150px">Acciones</th>
                 </tr>
@@ -236,7 +265,36 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
 
                     <!-- Tipo Componente -->
                     <td class="text-center">
-                        {{ concepto.tipo_comp }}
+                        <span
+                            *ngIf="editingCell !== concepto.id_comp + '_tipo_comp'"
+                            (click)="editInlineConcepto(concepto, 'tipo_comp'); $event.stopPropagation()"
+                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                            title="Clic para editar"
+                        >
+                            {{ getTipoCompLabel(concepto.tipo_comp) }}
+                        </span>
+                        <div
+                            *ngIf="editingCell === concepto.id_comp + '_tipo_comp'"
+                            class="inline-edit-container"
+                        >
+                            <select
+                                [(ngModel)]="concepto.tipo_comp"
+                                (change)="saveInlineEditConcepto(concepto, 'tipo_comp')"
+                                class="p-inputtext p-inputtext-sm flex-1"
+                                style="padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem;"
+                            >
+                                <option *ngFor="let tipo of tiposCompOptions" [value]="tipo.value">
+                                    {{ tipo.label }}
+                                </option>
+                            </select>
+                            <button
+                                pButton
+                                icon="pi pi-undo"
+                                (click)="cancelInlineEdit()"
+                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                pTooltip="Deshacer (Escape)"
+                            ></button>
+                        </div>
                     </td>
 
                     <!-- Único -->
@@ -246,7 +304,18 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                             [severity]="concepto.isUnico ? 'success' : 'danger'"
                             (click)="toggleIsUnico(concepto); $event.stopPropagation()"
                             class="cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Clic para cambiar"
+                            pTooltip="Clic para cambiar"
+                        ></p-tag>
+                    </td>
+
+                    <!-- Visible -->
+                    <td class="text-center">
+                        <p-tag
+                            [value]="concepto.visibles > 0 ? 'Si' : 'No'"
+                            [severity]="concepto.visibles > 0 ? 'info' : 'secondary'"
+                            (click)="toggleVisible(concepto); $event.stopPropagation()"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            pTooltip="Clic para cambiar"
                         ></p-tag>
                     </td>
 
@@ -257,20 +326,10 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                             [severity]="concepto.swEnable ? 'success' : 'danger'"
                             (click)="toggleSwEnable(concepto); $event.stopPropagation()"
                             class="cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Clic para cambiar"
+                            pTooltip="Clic para cambiar"
                         ></p-tag>
                     </td>
 
-                    <!-- Estado -->
-                    <td>
-                        <p-tag
-                            [value]="getEstadoLabel(concepto.swestado)"
-                            [severity]="getEstadoSeverity(concepto.swestado)"
-                            (click)="toggleEstadoConcepto(concepto); $event.stopPropagation()"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Clic para cambiar"
-                        ></p-tag>
-                    </td>
 
                     <!-- Acciones -->
                     <td (click)="$event.stopPropagation()">
@@ -280,14 +339,14 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                                 icon="pi pi-pencil"
                                 (click)="openConceptoForm(concepto)"
                                 class="p-button-sm p-button-text p-button-warning"
-                                pTooltip="Editar Concepto"
+                                pTooltip="Editar componente"
                             ></button>
                             <button
                                 pButton
                                 icon="pi pi-trash"
                                 (click)="eliminarConcepto(concepto)"
                                 class="p-button-sm p-button-text p-button-danger"
-                                pTooltip="Eliminar Concepto"
+                                pTooltip="Eliminar componente"
                             ></button>
                         </div>
                     </td>
@@ -298,35 +357,54 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
         <!-- Modal de formulario CRUD -->
         <p-dialog
             [(visible)]="showConceptoModal"
-            [header]="isEditingConcepto ? 'Editar Concepto' : 'Nuevo Concepto'"
+            [header]="isEditingConcepto ? 'Editar Componente' : 'Nuevo Componente'"
             [modal]="true"
-            [style]="{width: '600px'}"
+            [style]="{width: '700px'}"
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
         >
             <form [formGroup]="conceptoForm" (ngSubmit)="saveConcepto()">
-                <div class="grid grid-cols-1 gap-4">
-                    <!-- Campos del formulario con labels flotantes -->
-                    <div>
-                        <p-floatLabel variant="in">
-                            <input
-                                pInputText
-                                formControlName="clave"
-                                placeholder="Ej: CIUDAD, ESTADO, PAIS"
-                                class="w-full"
-                                maxlength="50"
-                            />
-                            <label>Clave *</label>
-                        </p-floatLabel>
+                <!-- Campos principales -->
+                <div class="grid grid-cols-1 gap-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Clave -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    formControlName="clave"
+                                    placeholder="Ej: BANNER, HEADER, FOOTER"
+                                    class="w-full"
+                                    maxlength="50"
+                                />
+                                <label>Clave *</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Canal -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-select
+                                    formControlName="canal"
+                                    [options]="canalesFormOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Seleccionar canal"
+                                    class="w-full"
+                                ></p-select>
+                                <label>Canal *</label>
+                            </p-floatLabel>
+                        </div>
                     </div>
 
+                    <!-- Nombre -->
                     <div>
                         <p-floatLabel variant="on">
                             <input
                                 pInputText
                                 formControlName="nombre"
-                                placeholder="Nombre descriptivo del concepto"
+                                placeholder="Nombre descriptivo del componente"
                                 class="w-full"
                                 maxlength="100"
                             />
@@ -334,21 +412,119 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                         </p-floatLabel>
                     </div>
 
-                    <!-- Campo booleano -->
-                    <div class="flex items-center gap-2">
-                        <p-tag
-                            [value]="conceptoForm.get('swestado')?.value ? 'Sí' : 'No'"
-                            [severity]="conceptoForm.get('swestado')?.value ? 'success' : 'danger'"
-                            (click)="toggleFormField('swestado')"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Clic para cambiar">
-                        </p-tag>
-                        <span>¿Activo?</span>
+                    <!-- Descripción -->
+                    <div>
+                        <p-floatLabel variant="on">
+                            <textarea
+                                formControlName="descripcion"
+                                placeholder="Descripción detallada del componente"
+                                class="w-full p-inputtext"
+                                rows="3"
+                                maxlength="255"
+                                style="resize: vertical; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                            ></textarea>
+                            <label>Descripción</label>
+                        </p-floatLabel>
+                    </div>
+
+                    <!-- Tipo Componente -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-select
+                                    formControlName="tipo_comp"
+                                    [options]="tiposCompOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Seleccionar tipo"
+                                    class="w-full"
+                                ></p-select>
+                                <label>Tipo Componente *</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Visible (número) -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    type="number"
+                                    formControlName="visibles"
+                                    placeholder="Elementos visibles"
+                                    class="w-full"
+                                    min="0"
+                                    max="50"
+                                />
+                                <label>Elementos Visibles</label>
+                            </p-floatLabel>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de estado -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold mb-3">Estado del Componente</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <p-tag
+                                [value]="conceptoForm.get('isUnico')?.value ? 'Único' : 'Múltiple'"
+                                [severity]="conceptoForm.get('isUnico')?.value ? 'warning' : 'info'"
+                                (click)="toggleFormField('isUnico')"
+                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
+                                pTooltip="Componente único o múltiple"
+                            ></p-tag>
+                            <label class="text-sm text-gray-600 block">Único</label>
+                        </div>
+
+                        <div class="text-center">
+                            <p-tag
+                                [value]="conceptoForm.get('visibles')?.value > 0 ? 'Visible' : 'Oculto'"
+                                [severity]="conceptoForm.get('visibles')?.value > 0 ? 'success' : 'secondary'"
+                                (click)="toggleFormField('visibles')"
+                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
+                                pTooltip="Elementos visibles"
+                            ></p-tag>
+                            <label class="text-sm text-gray-600 block">Visible</label>
+                        </div>
+
+                        <div class="text-center">
+                            <p-tag
+                                [value]="conceptoForm.get('swEnable')?.value ? 'Habilitado' : 'Deshabilitado'"
+                                [severity]="conceptoForm.get('swEnable')?.value ? 'success' : 'danger'"
+                                (click)="toggleFormField('swEnable')"
+                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
+                                pTooltip="Estado del componente"
+                            ></p-tag>
+                            <label class="text-sm text-gray-600 block">Habilitado</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección informativa -->
+                <div *ngIf="isEditingConcepto && conceptoSeleccionado" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-lg font-semibold mb-3">Información del Registro</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="font-medium text-gray-700">Creado por:</label>
+                            <p class="text-gray-600">{{ conceptoSeleccionado.usr_a }}</p>
+                        </div>
+                        <div>
+                            <label class="font-medium text-gray-700">Fecha creación:</label>
+                            <p class="text-gray-600">{{ conceptoSeleccionado.fecha_a | date:'dd/MM/yyyy HH:mm' }}</p>
+                        </div>
+                        <div *ngIf="conceptoSeleccionado.usr_m">
+                            <label class="font-medium text-gray-700">Modificado por:</label>
+                            <p class="text-gray-600">{{ conceptoSeleccionado.usr_m }}</p>
+                        </div>
+                        <div *ngIf="conceptoSeleccionado.fecha_m">
+                            <label class="font-medium text-gray-700">Última modificación:</label>
+                            <p class="text-gray-600">{{ conceptoSeleccionado.fecha_m | date:'dd/MM/yyyy HH:mm' }}</p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Botones -->
-                <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+                <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
                     <button
                         pButton
                         type="button"
@@ -383,7 +559,7 @@ import { Componente, CreateComponenteRequest, UpdateComponenteRequest } from '..
                  
 
                 <div>
-                    <h4 class="font-semibold text-xl mb-1">¿Eliminar Concepto?</h4>
+                    <h4 class="font-semibold text-xl mb-1">¿Eliminar Componente?</h4>
                   
                     <p class="text-sm text-red-600 mt-2 font-medium">
                          Esta acción no se puede deshacer.
@@ -513,6 +689,14 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     // Confirmación
     conceptoToDelete: Componente | null = null;
 
+    // Filtro por canal
+    canalFiltroSeleccionado: string = '';
+    canalesOptions: { label: string; value: string }[] = [];
+    canalesFormOptions: { label: string; value: string }[] = [];
+
+    // Tipos de componente
+    tiposCompOptions: { label: string; value: string }[] = [];
+
     // Control de doble click
     private lastClickTime: number = 0;
     private lastClickedConcepto: Componente | null = null;
@@ -520,6 +704,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     // Servicios
     private componentsService = inject(CompService);
+    private catConceptosDetService = inject(CatConceptosDetService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
 
@@ -527,15 +712,16 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     @ViewChild('dtConceptos') dtConceptos!: Table;
 
     ngOnInit(): void {
-        console.log('🏷️ CatconceptosTabComponent inicializado');
+        console.log('🏷️ BannersComponentsTabComponent inicializado');
         this.initializeForms();
+        this.cargarOpcionesCatalogo();
         this.cargarConceptos();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        // Detectar cambios en el filtro de canal y recargar conceptos
+        // Detectar cambios en el filtro de canal del padre y recargar componentes
         if (changes['canalFiltro']) {
-            console.log('🔄 Filtro de canal cambió:', this.canalFiltro);
+            console.log('🔄 Filtro de canal del padre cambió:', this.canalFiltro);
             this.cargarConceptos();
         }
     }
@@ -546,7 +732,12 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         this.conceptoForm = this.fb.group({
             clave: ['', [Validators.required, Validators.maxLength(50)]],
             nombre: ['', [Validators.required, Validators.maxLength(100)]],
-            swestado: [true]
+            descripcion: ['', [Validators.maxLength(255)]],
+            canal: ['', [Validators.required]],
+            tipo_comp: ['', [Validators.required]],
+            isUnico: [0],
+            visibles: [5, [Validators.min(0), Validators.max(50)]],
+            swEnable: [1]
         });
     }
 
@@ -554,17 +745,17 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     cargarConceptos(): void {
         this.loadingConceptos = true;
-        console.log('📊 Cargando conceptos con filtro de canal:', this.canalFiltro);
+        console.log('📊 Cargando componentes con filtro de canal:', this.canalFiltroSeleccionado);
 
-        // Si hay filtro de canal, aplicar filtro
+        // Aplicar filtro de canal si está seleccionado
         const filtros: any = {};
-        if (this.canalFiltro) {
-            filtros.canal = this.canalFiltro;
+        if (this.canalFiltroSeleccionado) {
+            filtros.canal = this.canalFiltroSeleccionado;
         }
 
         this.componentsService.getAllComponentes({ filters: filtros }).subscribe({
             next: (response) => {
-                console.log('✅ Conceptos cargados:', response.data);
+                console.log('✅ Componentes cargados:', response.data);
                 this.conceptos = response.data;
                 this.loadingConceptos = false;
 
@@ -597,16 +788,23 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         this.isEditingConcepto = !!concepto;
 
         if (concepto) {
-            console.log('✏️ Editando concepto:', concepto);
+            console.log('✏️ Editando componente:', concepto);
             this.conceptoForm.patchValue({
                 clave: concepto.clave,
                 nombre: concepto.nombre,
-                swestado: concepto.swEnable === 1
+                descripcion: concepto.descripcion,
+                canal: concepto.canal,
+                tipo_comp: concepto.tipo_comp,
+                isUnico: concepto.isUnico,
+                visibles: concepto.visibles,
+                swEnable: concepto.swEnable
             });
         } else {
-            console.log('➕ Creando nuevo concepto');
+            console.log('➕ Creando nuevo componente');
             this.conceptoForm.reset({
-                swestado: true
+                isUnico: 0,
+                visibles: 5,
+                swEnable: 1
             });
         }
 
@@ -624,10 +822,9 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             this.savingConcepto = true;
             const formData = this.conceptoForm.value;
 
-            // Convertir valores booleanos
+            // Los valores ya están en el formato correcto
             const processedData: CreateComponenteRequest = {
-                ...formData,
-                swestado: formData.swestado ? 1 : 0
+                ...formData
             };
 
             if (this.isEditingConcepto && this.conceptoSeleccionado) {
@@ -957,8 +1154,118 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     toggleFormField(fieldName: string): void {
         const currentValue = this.conceptoForm.get(fieldName)?.value;
-        const newValue = !currentValue;
-        this.conceptoForm.patchValue({ [fieldName]: newValue });
+
+        if (fieldName === 'visibles') {
+            // Para visibles, alternar entre 0 y 5
+            const newValue = currentValue > 0 ? 0 : 5;
+            this.conceptoForm.patchValue({ [fieldName]: newValue });
+        } else {
+            // Para otros campos booleanos
+            const newValue = !currentValue;
+            this.conceptoForm.patchValue({ [fieldName]: newValue });
+        }
+    }
+
+    // ========== MÉTODOS DE CATÁLOGO ==========
+
+    cargarOpcionesCatalogo(): void {
+        console.log('📊 Cargando opciones de catálogo');
+        this.cargarCanalesOptions();
+        this.cargarTiposCompOptions();
+    }
+
+    private cargarCanalesOptions(): void {
+        this.catConceptosDetService.queryDetalles({
+            clave: 'TIPOCANAL',
+            swestado: 1
+        }).subscribe({
+            next: (response) => {
+                const options = response.data.map(item => ({
+                    label: item.descripcion,
+                    value: item.valorcadena1 || item.descripcion
+                }));
+
+                this.canalesOptions = [
+                    { label: 'Todos los canales', value: '' },
+                    ...options
+                ];
+
+                this.canalesFormOptions = options;
+
+                console.log('📊 Opciones de canal cargadas:', this.canalesOptions);
+            },
+            error: (error) => {
+                console.error('❌ Error cargando opciones de canal:', error);
+                this.canalesOptions = [{ label: 'Todos los canales', value: '' }];
+                this.canalesFormOptions = [];
+            }
+        });
+    }
+
+    private cargarTiposCompOptions(): void {
+        this.catConceptosDetService.queryDetalles({
+            clave: 'TIPOCOMP',
+            swestado: 1
+        }).subscribe({
+            next: (response) => {
+                this.tiposCompOptions = response.data.map(item => ({
+                    label: item.descripcion,
+                    value: item.valorcadena1 || item.descripcion
+                }));
+                console.log('📊 Opciones de tipos de componente cargadas:', this.tiposCompOptions);
+            },
+            error: (error) => {
+                console.error('❌ Error cargando tipos de componente:', error);
+                this.tiposCompOptions = [];
+            }
+        });
+    }
+
+    // ========== FILTRO DE CANAL ==========
+
+    onCanalFiltroChange(event: any): void {
+        console.log('🔄 Filtro de canal cambió:', event.value);
+        this.canalFiltroSeleccionado = event.value || '';
+        this.cargarConceptos();
+    }
+
+    // ========== MÉTODO TOGGLE VISIBLE ==========
+
+    toggleVisible(componente: Componente): void {
+        const nuevoValor = componente.visibles > 0 ? 0 : 5;
+        const valorAnterior = componente.visibles;
+
+        componente.visibles = nuevoValor;
+
+        this.componentsService.updateComponente({
+            id_comp: componente.id_comp,
+            visibles: nuevoValor
+        }).subscribe({
+            next: (response) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Campo Actualizado',
+                    detail: `Campo "Visible" actualizado correctamente`
+                });
+            },
+            error: (error) => {
+                // Revertir cambio
+                componente.visibles = valorAnterior;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al actualizar campo "Visible"',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    // ========== UTILIDADES ==========
+
+    getTipoCompLabel(tipoComp: string): string {
+        const tipo = this.tiposCompOptions.find(t => t.value === tipoComp);
+        return tipo ? tipo.label : tipoComp;
     }
 
     getEstadoLabel(estado: number): string {

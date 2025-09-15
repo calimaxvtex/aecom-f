@@ -12,15 +12,18 @@ import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { TooltipModule } from 'primeng/tooltip';
-// import { CalendarModule } from 'primeng/calendar';
-// import { DropdownModule } from 'primeng/dropdown';
-// import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { CardModule } from 'primeng/card';
 import { MessageService } from 'primeng/api';
 
 // Servicios y modelos
 import { BannerService } from '../../../features/banner/services/banner.service';
 import { Banner, CreateBannerRequest, UpdateBannerRequest } from '../../../features/banner/models/banner.interface';
 import { Componente } from '../../../features/comp/models/comp.interface';
+import { CatConceptosDetService } from '../../../features/catconceptos/services/catconceptosdet.service';
+import { CollService } from '../../../features/coll/services/coll.service';
+import { CatConceptoDet } from '../../../features/catconceptos/models/catconceptosdet.interface';
 
 @Component({
     selector: 'app-banners-tab',
@@ -36,7 +39,10 @@ import { Componente } from '../../../features/comp/models/comp.interface';
         ToastModule,
         TagModule,
         FloatLabelModule,
-        TooltipModule
+        TooltipModule,
+        SelectModule,
+        MultiSelectModule,
+        CardModule
     ],
     providers: [MessageService],
     template: `
@@ -97,15 +103,11 @@ import { Componente } from '../../../features/comp/models/comp.interface';
             <!-- Headers -->
             <ng-template #header>
                 <tr>
-                    <th pSortableColumn="id_mb" style="width: 80px">ID <p-sortIcon field="id_mb"></p-sortIcon></th>
-                    <th pSortableColumn="orden" style="width: 100px">Orden <p-sortIcon field="orden"></p-sortIcon></th>
+                    <th style="width: 80px">ID</th>
+                    <th style="min-width: 120px">URL Banner</th>
                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
-                    <th pSortableColumn="tipo_call" style="min-width: 120px">Tipo Acción <p-sortIcon field="tipo_call"></p-sortIcon></th>
-                    <th pSortableColumn="call" style="min-width: 150px">Texto Acción <p-sortIcon field="call"></p-sortIcon></th>
-                    <th pSortableColumn="fecha_ini" style="min-width: 120px">Fecha Inicio <p-sortIcon field="fecha_ini"></p-sortIcon></th>
-                    <th pSortableColumn="fecha_fin" style="min-width: 120px">Fecha Fin <p-sortIcon field="fecha_fin"></p-sortIcon></th>
+                    <th pSortableColumn="orden" style="width: 100px">Orden <p-sortIcon field="orden"></p-sortIcon></th>
                     <th style="width: 100px">Habilitado</th>
-                    <th style="width: 100px">Programado</th>
                     <th style="width: 150px">Acciones</th>
                 </tr>
             </ng-template>
@@ -116,38 +118,54 @@ import { Componente } from '../../../features/comp/models/comp.interface';
                     class="cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                     <!-- ID -->
-                    <td>{{ banner.id_mb }}</td>
+                    <td class="text-center font-mono text-sm">{{ banner.id_mb }}</td>
 
-                    <!-- Orden -->
+                    <!-- URL Banner Preview -->
+                    <td class="text-center">
+                        <div class="relative inline-block">
+                            <div class="w-16 h-10 bg-gray-100 border border-gray-300 rounded flex items-center justify-center overflow-hidden">
+                                <img
+                                    *ngIf="banner.url_banner"
+                                    [src]="banner.url_banner"
+                                    [alt]="banner.nombre"
+                                    class="w-full h-full object-cover"
+                                    (error)="onImageError($event)"
+                                />
+                                <i *ngIf="!banner.url_banner" class="pi pi-image text-gray-400"></i>
+                                <i class="pi pi-image text-gray-400 hidden"></i>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Nombre -->
                     <td>
                         <span
-                            (click)="editInlineBanner(banner, 'orden'); $event.stopPropagation()"
+                            (click)="editInlineBanner(banner, 'nombre'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
                         >
-                            {{ banner.orden }}
+                            {{ banner.nombre }}
                         </span>
                         <div
-                            *ngIf="editingCell === banner.id_mb + '_orden'"
+                            *ngIf="editingCell === banner.id_mb + '_nombre'"
                             class="inline-edit-container"
                         >
                             <input
                                 pInputText
-                                type="number"
-                                [(ngModel)]="banner.orden"
-                                (keyup.enter)="saveInlineEditBanner(banner, 'orden')"
+                                type="text"
+                                [(ngModel)]="banner.nombre"
+                                (keyup.enter)="saveInlineEditBanner(banner, 'nombre')"
                                 (keyup.escape)="cancelInlineEdit()"
                                 class="p-inputtext-sm flex-1"
                                 #input
                                 (focus)="input.select()"
                                 autofocus
-                                placeholder="Orden"
-                                min="1"
+                                placeholder="Nombre del banner"
                             />
                             <button
                                 pButton
                                 icon="pi pi-check"
-                                (click)="saveInlineEditBanner(banner, 'orden')"
+                                (click)="saveInlineEditBanner(banner, 'nombre')"
                                 class="p-button-sm p-button-success p-button-text inline-action-btn"
                                 pTooltip="Guardar (Enter)"
                             ></button>
@@ -307,13 +325,15 @@ import { Componente } from '../../../features/comp/models/comp.interface';
             [(visible)]="showBannerModal"
             [header]="isEditingBanner ? 'Editar Banner' : 'Nuevo Banner'"
             [modal]="true"
-            [style]="{width: '700px'}"
+            [style]="{width: '800px', maxWidth: '90vw'}"
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
+            styleClass="banner-form-dialog"
         >
             <form [formGroup]="bannerForm" (ngSubmit)="saveBanner()">
-                <div class="grid grid-cols-1 gap-4">
+                <!-- Campos principales -->
+                <div class="grid grid-cols-1 gap-4 mb-6">
                     <!-- Nombre -->
                     <div>
                         <p-floatLabel variant="on">
@@ -328,133 +348,214 @@ import { Componente } from '../../../features/comp/models/comp.interface';
                         </p-floatLabel>
                     </div>
 
+                    <!-- URL Banner con preview -->
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">URL del Banner</label>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <input
+                                    pInputText
+                                    formControlName="url_banner"
+                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                    class="w-full"
+                                />
+                            </div>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-external-link"
+                                (click)="validarUrl(bannerForm.get('url_banner')?.value)"
+                                pTooltip="Validar URL"
+                                class="p-button-secondary"
+                            ></button>
+                        </div>
+                        <!-- Preview del banner -->
+                        <div class="mt-3" *ngIf="bannerForm.get('url_banner')?.value">
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Preview del Banner</label>
+                            <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                                <div class="max-w-md mx-auto">
+                                    <img
+                                        [src]="bannerForm.get('url_banner')?.value"
+                                        [alt]="bannerForm.get('nombre')?.value"
+                                        class="w-full h-32 object-cover rounded border"
+                                        (error)="onImageError($event)"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tipo Call -->
                     <div>
                         <p-floatLabel variant="on">
-                            <select
+                            <p-select
                                 formControlName="tipo_call"
-                                class="p-inputtext w-full"
-                                style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
-                            >
-                                <option value="NONE">Ninguno</option>
-                                <option value="LINK">Enlace</option>
-                                <option value="BUTTON">Botón</option>
-                            </select>
+                                [options]="tipoCallOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                (onChange)="onTipoCallChange($event)"
+                                placeholder="Seleccionar tipo de acción"
+                                class="w-full"
+                            ></p-select>
                             <label>Tipo de Acción *</label>
                         </p-floatLabel>
                     </div>
 
-                    <!-- Call -->
-                    <div>
+                    <!-- Call (solo si valor1 es 1) -->
+                    <div *ngIf="mostrarCampoCall">
                         <p-floatLabel variant="on">
                             <input
                                 pInputText
                                 formControlName="call"
-                                placeholder="Texto para el botón o enlace"
+                                [placeholder]="callLabel"
                                 class="w-full"
                                 maxlength="255"
                             />
-                            <label>Texto Acción</label>
+                            <label>{{ callLabel }}</label>
                         </p-floatLabel>
                     </div>
 
-                    <!-- Fechas -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input
-                                    pInputText
-                                    type="date"
-                                    formControlName="fecha_ini"
-                                    placeholder="Fecha de inicio"
-                                    class="w-full"
-                                />
-                                <label>Fecha Inicio *</label>
-                            </p-floatLabel>
-                        </div>
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input
-                                    pInputText
-                                    type="date"
-                                    formControlName="fecha_fin"
-                                    placeholder="Fecha de fin"
-                                    class="w-full"
-                                />
-                                <label>Fecha Fin *</label>
-                            </p-floatLabel>
-                        </div>
-                    </div>
-
-                    <!-- URLs -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input
-                                    pInputText
-                                    formControlName="url_banner"
-                                    placeholder="URL de la imagen del banner"
-                                    class="w-full"
-                                />
-                                <label>URL Banner</label>
-                            </p-floatLabel>
-                        </div>
-                        <div>
-                            <p-floatLabel variant="on">
+                    <!-- URL Banner Call con preview -->
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">URL de Acción</label>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
                                 <input
                                     pInputText
                                     formControlName="url_banner_call"
-                                    placeholder="URL de destino de la acción"
+                                    placeholder="https://ejemplo.com/destino"
                                     class="w-full"
                                 />
-                                <label>URL Acción</label>
-                            </p-floatLabel>
+                            </div>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-external-link"
+                                (click)="validarUrl(bannerForm.get('url_banner_call')?.value)"
+                                pTooltip="Validar URL"
+                                class="p-button-secondary"
+                            ></button>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-eye"
+                                (click)="previewUrl(bannerForm.get('url_banner_call')?.value)"
+                                pTooltip="Vista previa"
+                                class="p-button-info"
+                                [disabled]="!bannerForm.get('url_banner_call')?.value"
+                            ></button>
                         </div>
                     </div>
 
-                    <!-- Orden -->
-                    <div>
+                    <!-- Collection selector (solo si tipo_call es 'COLL') -->
+                    <div *ngIf="mostrarCollectionSelector">
                         <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                type="number"
-                                formControlName="orden"
-                                placeholder="Orden de visualización"
+                            <p-select
+                                formControlName="id_coll"
+                                [options]="collectionsOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Seleccionar colección"
                                 class="w-full"
-                                min="1"
-                            />
-                            <label>Orden *</label>
+                            ></p-select>
+                            <label>Colección</label>
                         </p-floatLabel>
                     </div>
 
-                    <!-- Campos booleanos -->
-                    <div class="flex items-center gap-6">
-                        <div class="flex items-center gap-2">
+                    <!-- Sucursales (mockup) -->
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Sucursales</label>
+                        <p-multiSelect
+                            formControlName="sucursales"
+                            [options]="sucursalesOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Seleccionar sucursales"
+                            class="w-full"
+                            [maxSelectedLabels]="3"
+                        ></p-multiSelect>
+                        <small class="text-gray-500 mt-1 block">Funcionalidad pendiente de implementación del servicio de sucursales</small>
+                    </div>
+
+                    <!-- Orden -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    type="number"
+                                    formControlName="orden"
+                                    placeholder="Orden de visualización"
+                                    class="w-full"
+                                    min="1"
+                                />
+                                <label>Orden *</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Programado -->
+                        <div class="flex items-center gap-4">
                             <p-tag
-                                [value]="bannerForm.get('swsched')?.value ? 'Sí' : 'No'"
+                                [value]="bannerForm.get('swsched')?.value ? 'Programado' : 'Inmediato'"
                                 [severity]="bannerForm.get('swsched')?.value ? 'warning' : 'info'"
                                 (click)="toggleFormField('swsched')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
-                                title="Clic para cambiar">
-                            </p-tag>
-                            <span>¿Programado?</span>
+                                pTooltip="Activar/desactivar programación"
+                            ></p-tag>
+                            <label class="text-sm text-gray-600">Programado</label>
                         </div>
+                    </div>
 
-                        <div class="flex items-center gap-2">
-                            <p-tag
-                                [value]="bannerForm.get('swEnable')?.value ? 'Sí' : 'No'"
-                                [severity]="bannerForm.get('swEnable')?.value ? 'success' : 'danger'"
-                                (click)="toggleFormField('swEnable')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
-                                title="Clic para cambiar">
-                            </p-tag>
-                            <span>¿Habilitado?</span>
+                    <!-- Fechas (solo si está programado) -->
+                    <div *ngIf="bannerForm.get('swsched')?.value" class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Fecha Inicio</label>
+                            <input
+                                pInputText
+                                type="date"
+                                formControlName="fecha_ini"
+                                placeholder="Seleccionar fecha inicio"
+                                class="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-2 block">Fecha Fin</label>
+                            <input
+                                pInputText
+                                type="date"
+                                formControlName="fecha_fin"
+                                placeholder="Seleccionar fecha fin"
+                                class="w-full"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección informativa -->
+                <div *ngIf="isEditingBanner && bannerSeleccionado" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-lg font-semibold mb-3">Información del Registro</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="font-medium text-gray-700">Creado por:</label>
+                            <p class="text-gray-600">{{ bannerSeleccionado.usr_a }}</p>
+                        </div>
+                        <div>
+                            <label class="font-medium text-gray-700">Fecha creación:</label>
+                            <p class="text-gray-600">{{ bannerSeleccionado.fecha_a | date:'dd/MM/yyyy HH:mm' }}</p>
+                        </div>
+                        <div *ngIf="bannerSeleccionado.usr_m">
+                            <label class="font-medium text-gray-700">Modificado por:</label>
+                            <p class="text-gray-600">{{ bannerSeleccionado.usr_m }}</p>
+                        </div>
+                        <div *ngIf="bannerSeleccionado.fecha_m">
+                            <label class="font-medium text-gray-700">Última modificación:</label>
+                            <p class="text-gray-600">{{ bannerSeleccionado.fecha_m | date:'dd/MM/yyyy HH:mm' }}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Botones -->
-                <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+                <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
                     <button
                         pButton
                         type="button"
@@ -512,6 +613,26 @@ import { Componente } from '../../../features/comp/models/comp.interface';
                     class="p-button-danger"
                     [loading]="deletingBanner"
                 ></button>
+            </div>
+        </p-dialog>
+
+        <!-- Modal de preview URL -->
+        <p-dialog
+            [(visible)]="showUrlPreviewModal"
+            header="Vista Previa de URL"
+            [modal]="true"
+            [style]="{width: '90vw', height: '80vh'}"
+            [draggable]="false"
+            [resizable]="false"
+            [closable]="true"
+        >
+            <div class="w-full h-full">
+                <iframe
+                    *ngIf="previewUrlValue"
+                    [src]="previewUrlValue"
+                    class="w-full h-full border-0 rounded"
+                    title="Vista previa"
+                ></iframe>
             </div>
         </p-dialog>
 
@@ -608,14 +729,26 @@ export class BannersTabComponent implements OnInit, OnChanges {
     bannerToDelete: Banner | null = null;
 
     // Opciones para dropdowns
-    tipoCallOptions = [
-        { label: 'Enlace', value: 'LINK' },
-        { label: 'Botón', value: 'BUTTON' },
-        { label: 'Ninguno', value: 'NONE' }
-    ];
+    tipoCallOptions: { label: string; value: string; valor1?: number }[] = [];
+    collectionsOptions: { label: string; value: number }[] = [];
+    sucursalesOptions: { label: string; value: number }[] = [];
+
+    // Estados condicionales del formulario
+    mostrarCampoCall = false;
+    mostrarCollectionSelector = false;
+    callLabel = 'Texto Acción';
+
+    // Modal de preview
+    showUrlPreviewModal = false;
+    previewUrlValue = '';
+
+    // Banner seleccionado para edición
+    bannerSeleccionado: Banner | null = null;
 
     // Servicios
     private bannerService = inject(BannerService);
+    private catConceptosDetService = inject(CatConceptosDetService);
+    private collService = inject(CollService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
 
@@ -625,6 +758,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     ngOnInit(): void {
         console.log('🎨 BannersTabComponent inicializado');
         this.initializeForms();
+        this.cargarOpcionesCatalogo();
         this.cargarBanners();
     }
 
@@ -639,16 +773,23 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // ========== INICIALIZACIÓN ==========
 
     initializeForms(): void {
+        // Fechas por defecto
+        const fechaHoy = new Date();
+        const fechaFin = new Date();
+        fechaFin.setDate(fechaFin.getDate() + 7);
+
         this.bannerForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.maxLength(100)]],
+            url_banner: ['', [Validators.pattern(/^https?:\/\/.+/)]],
+            url_banner_call: ['', [Validators.pattern(/^https?:\/\/.+/)]],
             tipo_call: ['NONE', [Validators.required]],
             call: [''],
-            fecha_ini: [new Date(), [Validators.required]],
-            fecha_fin: [new Date(), [Validators.required]],
-            url_banner: [''],
-            url_banner_call: [''],
-            orden: [1, [Validators.required, Validators.min(1)]],
+            id_coll: [null],
+            sucursales: [[]],
             swsched: [0],
+            fecha_ini: [fechaHoy],
+            fecha_fin: [fechaFin],
+            orden: [1, [Validators.required, Validators.min(1)]],
             swEnable: [1]
         });
     }
@@ -703,16 +844,31 @@ export class BannersTabComponent implements OnInit, OnChanges {
             console.log('✏️ Editando banner:', banner);
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
-                tipo_call: banner.tipo_call,
-                call: banner.call,
-                fecha_ini: new Date(banner.fecha_ini),
-                fecha_fin: new Date(banner.fecha_fin),
                 url_banner: banner.url_banner,
                 url_banner_call: banner.url_banner_call,
+                tipo_call: banner.tipo_call,
+                call: banner.call,
+                id_coll: banner.id_coll,
+                sucursales: banner.sucursales || [],
                 orden: banner.orden,
                 swsched: banner.swsched,
                 swEnable: banner.swEnable
             });
+
+            // Agregar fechas si están programadas
+            if (banner.swsched && banner.fecha_ini) {
+                this.bannerForm.patchValue({
+                    fecha_ini: new Date(banner.fecha_ini)
+                });
+            }
+            if (banner.swsched && banner.fecha_fin) {
+                this.bannerForm.patchValue({
+                    fecha_fin: new Date(banner.fecha_fin)
+                });
+            }
+
+            // Trigger change para actualizar campos condicionales
+            this.onTipoCallChange({ value: banner.tipo_call });
         } else {
             console.log('➕ Creando nuevo banner');
             this.bannerForm.reset({
@@ -739,20 +895,37 @@ export class BannersTabComponent implements OnInit, OnChanges {
             this.savingBanner = true;
             const formData = this.bannerForm.value;
 
-            // Convertir fechas a formato string
-            const processedData: CreateBannerRequest = {
-                ...formData,
+            // Preparar datos para el backend
+            const processedData: any = {
+                nombre: formData.nombre,
                 id_comp: this.componenteSeleccionado.id_comp,
-                fecha_ini: this.formatDate(formData.fecha_ini),
-                fecha_fin: this.formatDate(formData.fecha_fin),
+                tipo_call: formData.tipo_call,
+                call: formData.call || '',
+                url_banner: formData.url_banner || '',
+                url_banner_call: formData.url_banner_call || '',
+                orden: formData.orden,
                 swsched: formData.swsched ? 1 : 0,
                 swEnable: formData.swEnable ? 1 : 0
             };
 
-            if (this.isEditingBanner && this.bannerToDelete) {
+            // Agregar fechas si está programado
+            if (formData.swsched) {
+                processedData.fecha_ini = this.formatDate(formData.fecha_ini);
+                processedData.fecha_fin = this.formatDate(formData.fecha_fin);
+            }
+
+            // Agregar campos opcionales
+            if (formData.id_coll) {
+                processedData.id_coll = formData.id_coll;
+            }
+            if (formData.sucursales && formData.sucursales.length > 0) {
+                processedData.sucursales = formData.sucursales;
+            }
+
+            if (this.isEditingBanner && this.bannerSeleccionado) {
                 // Actualizar
                 const updateData: UpdateBannerRequest = {
-                    id_mb: this.bannerToDelete.id_mb,
+                    id_mb: this.bannerSeleccionado.id_mb,
                     ...processedData
                 };
 
@@ -955,8 +1128,16 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     toggleFormField(fieldName: string): void {
         const currentValue = this.bannerForm.get(fieldName)?.value;
-        const newValue = !currentValue;
-        this.bannerForm.patchValue({ [fieldName]: newValue });
+
+        if (fieldName === 'visibles') {
+            // Para visibles, alternar entre 0 y 5
+            const newValue = currentValue > 0 ? 0 : 5;
+            this.bannerForm.patchValue({ [fieldName]: newValue });
+        } else {
+            // Para otros campos booleanos
+            const newValue = !currentValue;
+            this.bannerForm.patchValue({ [fieldName]: newValue });
+        }
     }
 
     private formatDate(date: Date): string {
@@ -982,5 +1163,158 @@ export class BannersTabComponent implements OnInit, OnChanges {
             'call': 'Texto Acción'
         };
         return labels[field] || field;
+    }
+
+    // ========== MÉTODOS DE CATÁLOGO ==========
+
+    cargarOpcionesCatalogo(): void {
+        console.log('📊 Cargando opciones de catálogo');
+        this.cargarTipoCallOptions();
+        this.cargarCollectionsOptions();
+        this.cargarSucursalesOptions();
+    }
+
+    private cargarTipoCallOptions(): void {
+        this.catConceptosDetService.queryDetalles({
+            clave: 'TIPOCALL',
+            swestado: 1
+        }).subscribe({
+            next: (response) => {
+                this.tipoCallOptions = response.data.map(item => ({
+                    label: item.descripcion,
+                    value: item.valorcadena1 || item.descripcion,
+                    valor1: item.valor1
+                }));
+
+                // Agregar opción por defecto
+                this.tipoCallOptions.unshift({ label: 'Ninguno', value: 'NONE', valor1: 0 });
+
+                console.log('📊 Opciones de tipo call cargadas:', this.tipoCallOptions);
+            },
+            error: (error) => {
+                console.error('❌ Error cargando tipos de call:', error);
+                this.tipoCallOptions = [{ label: 'Ninguno', value: 'NONE', valor1: 0 }];
+            }
+        });
+    }
+
+    private cargarCollectionsOptions(): void {
+        // Mockup por ahora - implementar cuando esté disponible el servicio
+        this.collectionsOptions = [
+            { label: 'Colección Principal', value: 1 },
+            { label: 'Colección Secundaria', value: 2 },
+            { label: 'Colección Promocional', value: 3 }
+        ];
+        console.log('📊 Opciones de colecciones (mockup):', this.collectionsOptions);
+    }
+
+    private cargarSucursalesOptions(): void {
+        // Mockup por ahora - implementar cuando esté disponible el servicio
+        this.sucursalesOptions = [
+            { label: 'Sucursal Centro', value: 1 },
+            { label: 'Sucursal Norte', value: 2 },
+            { label: 'Sucursal Sur', value: 3 },
+            { label: 'Sucursal Este', value: 4 },
+            { label: 'Sucursal Oeste', value: 5 }
+        ];
+        console.log('📊 Opciones de sucursales (mockup):', this.sucursalesOptions);
+    }
+
+    // ========== MANEJO DE FORMULARIO ==========
+
+    onTipoCallChange(event: any): void {
+        const selectedTipo = event.value;
+        const tipoOption = this.tipoCallOptions.find(t => t.value === selectedTipo);
+
+        // Mostrar/ocultar campo call basado en valor1
+        this.mostrarCampoCall = tipoOption ? tipoOption.valor1 === 1 : false;
+
+        // Actualizar label del campo call
+        if (tipoOption) {
+            this.callLabel = tipoOption.label;
+        }
+
+        // Mostrar/ocultar selector de colección
+        this.mostrarCollectionSelector = selectedTipo === 'COLL';
+
+        // Reset campos dependientes
+        if (!this.mostrarCampoCall) {
+            this.bannerForm.patchValue({ call: '' });
+        }
+        if (!this.mostrarCollectionSelector) {
+            this.bannerForm.patchValue({ id_coll: null });
+        }
+    }
+
+    // ========== PREVIEW DE URLs ==========
+
+    validarUrl(url: string): void {
+        if (!url) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'URL Vacía',
+                detail: 'Por favor ingrese una URL para validar'
+            });
+            return;
+        }
+
+        if (!url.match(/^https?:\/\/.+/)) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'URL Inválida',
+                detail: 'La URL debe comenzar con http:// o https://'
+            });
+            return;
+        }
+
+        this.messageService.add({
+            severity: 'success',
+            summary: 'URL Válida',
+            detail: 'La URL tiene un formato correcto'
+        });
+    }
+
+    previewUrl(url: string): void {
+        if (!url) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'URL Vacía',
+                detail: 'Por favor ingrese una URL para preview'
+            });
+            return;
+        }
+
+        if (!url.match(/^https?:\/\/.+/)) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'URL Inválida',
+                detail: 'La URL debe comenzar con http:// o https://'
+            });
+            return;
+        }
+
+        this.previewUrlValue = url;
+        this.showUrlPreviewModal = true;
+    }
+
+    onImageError(event: any): void {
+        console.warn('Error cargando imagen del banner:', event);
+        // El fallback ya está manejado en el template con los iconos alternativos
+    }
+
+    // ========== UTILIDADES ==========
+
+    // ========== MÉTODO TOGGLE VISIBLE ==========
+    // Nota: El campo "visibles" no existe en el modelo Banner actual
+    // Se puede implementar cuando se actualice el modelo del backend
+
+    toggleVisible(banner: Banner): void {
+        // Implementación pendiente - requiere actualización del modelo Banner
+        this.messageService.add({
+            severity: 'info',
+            summary: 'Funcionalidad Pendiente',
+            detail: 'El campo "Visible" requiere actualización del modelo en el backend',
+            life: 3000
+        });
     }
 }

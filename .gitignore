@@ -122,7 +122,12 @@ dist
 
 # Gatsby files
 .cache/
-public
+
+# Public folder - exclude but include specific image folders
+public/*
+!public/images/
+!public/layout/
+!public/favicon.ico
 
 # Storybook build outputs
 .out

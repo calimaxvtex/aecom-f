@@ -68,6 +68,11 @@ export default [
         path: 'adm-ecom/banners',
         data: { breadcrumb: 'Gestión de Banners', proy: 1 },
         loadComponent: () => import('./adm-ecom/banners/banners.component').then(c => c.BannersComponent)
+    },
+    {
+        path: 'adm-ecom/recetas',
+        data: { breadcrumb: 'Recetas', proy: 1 },
+        loadComponent: () => import('./adm-ecom/recetas/recetalist').then(c => c.RecetaList)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

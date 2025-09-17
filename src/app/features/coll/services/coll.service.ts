@@ -237,18 +237,47 @@ export class CollService {
     createCollection(collection: CreateCollRequest): Observable<CollSingleResponse> {
         const collUrl = this.apiConfigService.getCollCrudUrl();
 
-        return this.http.post<CollArrayResponse>(collUrl, collection).pipe(
-            map((responseArray: CollArrayResponse) => {
-                // Tomar el primer elemento del array si existe
-                if (Array.isArray(responseArray) && responseArray.length > 0) {
-                    const response = responseArray[0];
-                    return {
-                        statuscode: response.statuscode,
-                        mensaje: response.mensaje,
-                        data: response.data && response.data.length > 0 ? response.data[0] : null
-                    } as CollSingleResponse;
+        // Preparar el body con la acción y datos de sesión (REGLA CRÍTICA DEL PROYECTO)
+        const body: any = {
+            action: 'IN', // Insert según convenciones del proyecto
+            ...collection,
+            ...this.getSessionData() // ⚠️ REGLA CRÍTICA: Inyección obligatoria de sesión
+        };
+
+        console.log('➕ Creando colección con body:', body);
+
+        return this.http.post<any>(collUrl, body).pipe(
+            map((response: any) => {
+                console.log('✅ Respuesta cruda de crear colección:', response);
+
+                // Manejar diferentes formatos de respuesta del backend
+                let responseData: any;
+
+                if (Array.isArray(response)) {
+                    // Caso 1: Backend regresa array
+                    responseData = response.length > 0 ? response[0] : null;
+                    console.log('📦 Backend regresó array en create:', responseData);
+                } else if (response && typeof response === 'object') {
+                    // Caso 2: Backend regresa objeto directo
+                    responseData = response;
+                    console.log('📦 Backend regresó objeto directo en create:', responseData);
+                } else {
+                    console.warn('⚠️ Respuesta inesperada en create:', response);
+                    responseData = null;
                 }
-                throw new Error('Error al crear la colección');
+
+                // Verificar si hay error del backend
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Backend regresó error en create:', responseData);
+                    throw new Error(responseData.mensaje || 'Error del servidor');
+                }
+
+                // Éxito - devolver respuesta formateada
+                return {
+                    statuscode: responseData?.statuscode || 200,
+                    mensaje: responseData?.mensaje || 'Colección creada exitosamente',
+                    data: responseData?.data || collection as CollItem
+                } as CollSingleResponse;
             }),
             catchError(this.handleError)
         );
@@ -261,18 +290,48 @@ export class CollService {
         const collUrl = this.apiConfigService.getCollCrudUrl();
         const { id_coll, ...updateData } = collection;
 
-        return this.http.put<CollArrayResponse>(`${collUrl}/${id_coll}`, updateData).pipe(
-            map((responseArray: CollArrayResponse) => {
-                // Tomar el primer elemento del array si existe
-                if (Array.isArray(responseArray) && responseArray.length > 0) {
-                    const response = responseArray[0];
-                    return {
-                        statuscode: response.statuscode,
-                        mensaje: response.mensaje,
-                        data: response.data && response.data.length > 0 ? response.data[0] : null
-                    } as CollSingleResponse;
+        // Preparar el body con la acción y datos de sesión (REGLA CRÍTICA DEL PROYECTO)
+        const body: any = {
+            action: 'UP', // Update según convenciones del proyecto
+            id_coll: id_coll,
+            ...updateData,
+            ...this.getSessionData() // ⚠️ REGLA CRÍTICA: Inyección obligatoria de sesión
+        };
+
+        console.log('✏️ Actualizando colección con body:', body);
+
+        return this.http.post<any>(collUrl, body).pipe(
+            map((response: any) => {
+                console.log('✅ Respuesta cruda de actualizar colección:', response);
+
+                // Manejar diferentes formatos de respuesta del backend
+                let responseData: any;
+
+                if (Array.isArray(response)) {
+                    // Caso 1: Backend regresa array
+                    responseData = response.length > 0 ? response[0] : null;
+                    console.log('📦 Backend regresó array en update:', responseData);
+                } else if (response && typeof response === 'object') {
+                    // Caso 2: Backend regresa objeto directo
+                    responseData = response;
+                    console.log('📦 Backend regresó objeto directo en update:', responseData);
+                } else {
+                    console.warn('⚠️ Respuesta inesperada en update:', response);
+                    responseData = null;
                 }
-                throw new Error('Error al actualizar la colección');
+
+                // Verificar si hay error del backend
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Backend regresó error en update:', responseData);
+                    throw new Error(responseData.mensaje || 'Error del servidor');
+                }
+
+                // Éxito - devolver respuesta formateada
+                return {
+                    statuscode: responseData?.statuscode || 200,
+                    mensaje: responseData?.mensaje || 'Colección actualizada exitosamente',
+                    data: responseData?.data || collection as CollItem
+                } as CollSingleResponse;
             }),
             catchError(this.handleError)
         );

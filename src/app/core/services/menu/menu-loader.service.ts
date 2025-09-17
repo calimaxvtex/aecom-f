@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, ChangeDetectorRef, ApplicationRef } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { MenuItem } from 'primeng/api';
 import { MenuService } from './menu.service';
@@ -30,7 +30,8 @@ export class MenuLoaderService {
 
   constructor(
     private menuService: MenuService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private appRef: ApplicationRef
   ) {
     // MenuLoaderService inicializado
   }
@@ -178,8 +179,14 @@ export class MenuLoaderService {
   async updateMenuOnLogin(): Promise<void> {
     try {
       await this.loadMenuFromAPI();
+      
+      // Forzar detección de cambios para asegurar renderizado
+      setTimeout(() => {
+        this.appRef.tick();
+      }, 100);
     } catch (error) {
       // Mantener cache existente si falla
+      console.warn('Error actualizando menú después del login:', error);
     }
   }
 

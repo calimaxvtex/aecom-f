@@ -226,11 +226,28 @@ export class CompService {
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+
+                            // ⚠️ CRÍTICO: Verificar si el backend devolvió un error
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ Backend devolvió error en array:', firstItem);
+                                console.log('📊 StatusCode recibido:', firstItem.statuscode);
+                                console.log('📝 Mensaje de error:', firstItem.mensaje);
+                                throw new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
+                            }
+
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Componente actualizado correctamente',
                                 data: firstItem.data || componente as Componente
                             } as ComponenteSingleResponse;
+                        }
+
+                        // Verificar error en respuesta directa
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error directo:', response);
+                            console.log('📊 StatusCode recibido:', response.statuscode);
+                            console.log('📝 Mensaje de error:', response.mensaje);
+                            throw new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
                         }
 
                         return {

@@ -1,0 +1,260 @@
+// Interfaces para el módulo de Sucursales (SUC)
+// Sistema para gestión de sucursales y tiendas
+
+import { Observable } from 'rxjs';
+
+// Interface principal de Sucursal basada en la respuesta del backend
+export interface Sucursal {
+    sucursal: number; // ID de sucursal
+    tienda: string; // Nombre de la tienda
+    direccion: string; // Dirección completa
+    latitud: string; // Coordenada latitud
+    longitud: string; // Coordenada longitud
+    fecha: string; // Fecha de registro (YYYY-MM-DD)
+    estado: string; // Estado (A: activo, I: inactivo)
+    id_proy: number; // ID del proyecto
+    id_sref: string; // ID de referencia
+    prioridad: number; // Nivel de prioridad
+    policies_id: number; // ID de políticas
+    store_id: string; // ID de tienda para APIs externas
+    serial: number; // Número de serie
+    orden_carga: number; // Orden de carga
+    agrupa_carga: number; // Agrupación de carga
+    id_muelle: string; // ID del muelle
+    apptoken: string; // Token de aplicación
+    appkey: string; // Key de aplicación
+    e_account_id: number; // ID de cuenta externa
+    e_account_name: string; // Nombre de cuenta externa
+    sellerid: number; // ID de vendedor
+    ip: string; // Dirección IP
+    locker_id: string | null; // ID de locker (opcional)
+    loc_id: number; // ID de ubicación
+    ip_serv: string; // IP del servidor
+    locker_top: string | null; // Locker superior (opcional)
+    ciudad: number; // ID de ciudad
+    picking_point_id: number; // ID del punto de recogida
+    place_id: string; // ID de lugar (Google Places)
+    swRappi: number; // Switch Rappi (1: activado, 2: desactivado)
+    express: string | null; // Servicio express (opcional)
+    telefono: string; // Número de teléfono
+    swUber: number; // Switch Uber (1: activado, 2: desactivado)
+    swpos: string | null; // Switch POS (opcional)
+    indexApp: string; // Índice de aplicación
+    zona_geografica: number; // ID de zona geográfica
+    sap: string | null; // Código SAP (opcional)
+}
+
+// Respuesta cruda del backend (data como array directo)
+export interface SucursalRawResponse {
+    statuscode: number;
+    mensaje: string;
+    data: Sucursal[]; // ← El backend devuelve data como array directo
+}
+
+// Respuesta procesada (data siempre como array)
+export interface SucursalResponse {
+    statuscode: number;
+    mensaje: string;
+    data: Sucursal[];
+}
+
+// Array de respuestas del backend
+export interface SucursalRawArrayResponse extends Array<SucursalRawResponse> {}
+export interface SucursalArrayResponse extends Array<SucursalResponse> {}
+
+// Respuesta individual (para un solo registro)
+export interface SucursalSingleResponse {
+    statuscode: number;
+    mensaje: string;
+    data: Sucursal;
+}
+
+// Interfaces para operaciones CRUD
+export interface CreateSucursalRequest {
+    tienda: string;
+    direccion: string;
+    latitud: string;
+    longitud: string;
+    estado?: string; // opcional, default 'A'
+    id_proy: number;
+    id_sref: string;
+    prioridad?: number; // opcional, default 1
+    policies_id: number;
+    store_id: string;
+    serial: number;
+    orden_carga?: number; // opcional, default 1
+    agrupa_carga?: number; // opcional, default 1
+    id_muelle: string;
+    apptoken: string;
+    appkey: string;
+    e_account_id: number;
+    e_account_name: string;
+    sellerid: number;
+    ip: string;
+    locker_id?: string | null; // opcional
+    loc_id: number;
+    ip_serv: string;
+    locker_top?: string | null; // opcional
+    ciudad: number;
+    picking_point_id: number;
+    place_id: string;
+    swRappi?: number; // opcional, default 2
+    express?: string | null; // opcional
+    telefono: string;
+    swUber?: number; // opcional, default 2
+    swpos?: string | null; // opcional
+    indexApp: string;
+    zona_geografica: number;
+    sap?: string | null; // opcional
+}
+
+export interface UpdateSucursalRequest extends Partial<CreateSucursalRequest> {
+    sucursal: number;
+}
+
+// Interfaces para filtros y búsqueda
+export interface SucursalFilters {
+    tienda?: string;
+    direccion?: string;
+    estado?: string;
+    id_proy?: number;
+    id_sref?: string;
+    prioridad?: number;
+    store_id?: string;
+    ciudad?: number;
+    zona_geografica?: number;
+    swRappi?: number;
+    swUber?: number;
+}
+
+export interface SucursalPaginationParams {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    filters?: SucursalFilters;
+}
+
+// ==========================================
+// Interfaces adicionales para configuración
+// ==========================================
+
+// Estados disponibles
+export interface EstadoSucursal {
+    id: string;
+    nombre: string;
+    descripcion: string;
+    color: string; // Para UI
+}
+
+// Ciudades disponibles
+export interface Ciudad {
+    id: number;
+    nombre: string;
+    estado: string;
+    pais: string;
+}
+
+// Zonas geográficas
+export interface ZonaGeografica {
+    id: number;
+    nombre: string;
+    descripcion: string;
+}
+
+// Configuración de sucursal
+export interface SucursalConfig {
+    sucursal: number;
+    config_json: string; // JSON string con configuración específica
+    ultima_modificacion: string;
+}
+
+// Respuesta para estados
+export interface EstadosSucursalResponse {
+    statuscode: number;
+    mensaje: string;
+    data: EstadoSucursal[];
+}
+
+// Respuesta para ciudades
+export interface CiudadesResponse {
+    statuscode: number;
+    mensaje: string;
+    data: Ciudad[];
+}
+
+// Respuesta para zonas geográficas
+export interface ZonasGeograficasResponse {
+    statuscode: number;
+    mensaje: string;
+    data: ZonaGeografica[];
+}
+
+// ==========================================
+// Interfaces para operaciones avanzadas
+// ==========================================
+
+// Filtros avanzados
+export interface SucursalAdvancedFilters extends SucursalFilters {
+    fecha_desde?: string; // ISO date
+    fecha_hasta?: string; // ISO date
+    latitud_desde?: string;
+    latitud_hasta?: string;
+    longitud_desde?: string;
+    longitud_hasta?: string;
+    distancia_max?: number; // en km
+    punto_referencia?: {
+        latitud: string;
+        longitud: string;
+    };
+}
+
+// Estadísticas de sucursales
+export interface SucursalStats {
+    total_sucursales: number;
+    sucursales_activas: number;
+    sucursales_por_estado: { [estado: string]: number };
+    sucursales_por_ciudad: { [ciudad: number]: number };
+    sucursales_por_zona: { [zona: number]: number };
+    sucursales_con_rappi: number;
+    sucursales_con_uber: number;
+    sucursales_creadas_hoy: number;
+    sucursales_modificadas_hoy: number;
+}
+
+// Respuesta de estadísticas
+export interface SucursalStatsResponse {
+    statuscode: number;
+    mensaje: string;
+    data: SucursalStats;
+}
+
+// ==========================================
+// Interfaces para validación y configuración
+// ==========================================
+
+// Reglas de validación
+export interface ValidacionSucursal {
+    campos_requeridos: string[];
+    campos_opcionales: string[];
+    validaciones: {
+        campo: string;
+        regla: string;
+        mensaje_error: string;
+    }[];
+}
+
+// Configuración por defecto para nuevas sucursales
+export interface SucursalDefaultConfig {
+    estado: string; // default 'A'
+    prioridad: number; // default 1
+    orden_carga: number; // default 1
+    agrupa_carga: number; // default 1
+    swRappi: number; // default 2
+    swUber: number; // default 2
+    zona_geografica: number; // default 1
+}
+
+// Export types for convenience
+export type SucursalCreate = Omit<Sucursal, 'sucursal' | 'fecha'>;
+export type SucursalUpdate = Partial<SucursalCreate> & { sucursal: number };

@@ -200,26 +200,30 @@ export class BannerService {
                             // ⚠️ CRÍTICO: Verificar errores del backend
                             if (firstItem.statuscode && firstItem.statuscode !== 200) {
                                 console.log('❌ Backend devolvió error en array:', firstItem);
-                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                                console.log('📊 StatusCode recibido:', firstItem.statuscode);
+                                console.log('📝 Mensaje de error:', firstItem.mensaje);
+                                throw new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
                             }
 
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Banner creado correctamente',
-                                data: firstItem.data || banner as Banner
+                                data: firstItem.data || null
                             } as BannerSingleResponse;
                         }
 
                         // Verificar error en respuesta directa
                         if (response.statuscode && response.statuscode !== 200) {
                             console.log('❌ Backend devolvió error directo:', response);
-                            throw new Error(response.mensaje || 'Error del servidor');
+                            console.log('📊 StatusCode recibido:', response.statuscode);
+                            console.log('📝 Mensaje de error:', response.mensaje);
+                            throw new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
                         }
 
                         return {
                             statuscode: response.statuscode || 200,
                             mensaje: response.mensaje || 'Banner creado correctamente',
-                            data: response.data || banner as Banner
+                            data: response.data || null
                         } as BannerSingleResponse;
                     }),
                     catchError(error => {
@@ -262,7 +266,9 @@ export class BannerService {
                             // ⚠️ CRÍTICO: Verificar errores del backend
                             if (firstItem.statuscode && firstItem.statuscode !== 200) {
                                 console.log('❌ Backend devolvió error en array:', firstItem);
-                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                                console.log('📊 StatusCode recibido:', firstItem.statuscode);
+                                console.log('📝 Mensaje de error:', firstItem.mensaje);
+                                throw new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
                             }
 
                             return {
@@ -275,7 +281,9 @@ export class BannerService {
                         // Verificar error en respuesta directa
                         if (response.statuscode && response.statuscode !== 200) {
                             console.log('❌ Backend devolvió error directo:', response);
-                            throw new Error(response.mensaje || 'Error del servidor');
+                            console.log('📊 StatusCode recibido:', response.statuscode);
+                            console.log('📝 Mensaje de error:', response.mensaje);
+                            throw new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
                         }
 
                         return {

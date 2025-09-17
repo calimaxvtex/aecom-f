@@ -1,0 +1,617 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, catchError, throwError, switchMap, of } from 'rxjs';
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+import { SessionService } from '../../../core/services/session.service';
+import {
+    Sucursal,
+    SucursalResponse,
+    SucursalSingleResponse,
+    SucursalPaginationParams,
+    CreateSucursalRequest,
+    UpdateSucursalRequest,
+    SucursalStatsResponse,
+    EstadosSucursalResponse,
+    CiudadesResponse,
+    ZonasGeograficasResponse
+} from '../models/suc.interface';
+
+@Injectable({
+    providedIn: 'root'
+})
+export class SucService {
+    private http = inject(HttpClient);
+    private apiConfigService = inject(ApiConfigService);
+    private sessionService = inject(SessionService);
+
+    // ID del endpoint según configuración del backend
+    private readonly SUC_ENDPOINT_ID = 15;
+
+    /**
+     * Método para obtener URL dinámica del endpoint de sucursales
+     * Sigue el patrón obligatorio de la documentación del proyecto
+     */
+    private getSucUrl(): Observable<string> {
+        console.log('🔗 Obteniendo URL dinámica para sucursales...');
+        const endpoint = this.apiConfigService.getEndpointById(this.SUC_ENDPOINT_ID);
+
+        if (!endpoint) {
+            console.error('❌ Endpoint de sucursales no encontrado en configuración');
+            return throwError(() => new Error(`Endpoint con ID ${this.SUC_ENDPOINT_ID} no encontrado`));
+        }
+
+        console.log('✅ URL obtenida:', endpoint.url);
+        return of(endpoint.url);
+    }
+
+    /**
+     * Método helper para obtener datos de sesión
+     */
+    private getSessionData(): { usr?: string | number; id_session?: number } {
+        return this.sessionService.getApiPayloadBase();
+    }
+
+    /**
+     * Método helper para manejar errores
+     */
+    private handleError = (error: any): Observable<never> => {
+        console.error('❌ Error en SucService:', error);
+        console.log('🔍 Detalles del error:', {
+            status: error.status,
+            statusText: error.statusText,
+            url: error.url,
+            message: error.message,
+            error: error.error
+        });
+
+        let errorMessage = 'Ha ocurrido un error desconocido';
+        let errorTitle = 'Error';
+
+        if (error.status) {
+            switch (error.status) {
+                case 404:
+                    errorTitle = 'Servicio no encontrado';
+                    errorMessage = 'La API de sucursales no está disponible en el servidor. Verifica que el endpoint esté configurado correctamente.';
+                    break;
+                case 400:
+                    errorTitle = 'Datos inválidos';
+                    errorMessage = error.error?.message || 'Los datos enviados no son válidos';
+                    break;
+                case 500:
+                    errorTitle = 'Error del servidor';
+                    errorMessage = 'Error interno del servidor. Inténtalo más tarde.';
+                    break;
+                default:
+                    errorTitle = `Error ${error.status}`;
+                    errorMessage = error.error?.message || error.message || `Error de servidor: ${error.status}`;
+            }
+        }
+
+        console.log('📤 Error que se enviará al componente:', { errorTitle, errorMessage });
+
+        return throwError(() => ({
+            statuscode: error.status || 500,
+            titulo: errorTitle,
+            mensaje: errorMessage,
+            originalError: error
+        }));
+    };
+
+    /**
+     * Obtiene todas las sucursales
+     */
+    getAllSucursales(params?: SucursalPaginationParams): Observable<SucursalResponse> {
+        console.log('🏪 Obteniendo todas las sucursales...');
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body: any = {
+                    action: 'SL',
+                    ...this.getSessionData()
+                };
+
+                // Agregar filtros si existen
+                if (params?.filters) {
+                    Object.entries(params.filters).forEach(([key, value]) => {
+                        if (value !== undefined && value !== null && value !== '') {
+                            body[key] = value;
+                        }
+                    });
+                }
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        // Procesar respuesta según formato del backend
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursales obtenidas exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as SucursalResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'OK',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as SucursalResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene una sucursal por ID
+     */
+    getSucursalById(id: number): Observable<SucursalSingleResponse> {
+        console.log('🔍 Obteniendo sucursal por ID:', id);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'SL',
+                    id_sucursal: id,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(`${url}/${id}`, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursal obtenida exitosamente',
+                                data: firstItem.data && Array.isArray(firstItem.data) && firstItem.data.length > 0 ? firstItem.data[0] : null
+                            } as SucursalSingleResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'OK',
+                            data: response?.data || null
+                        } as SucursalSingleResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Crea una nueva sucursal
+     */
+    createSucursal(sucursal: CreateSucursalRequest): Observable<SucursalSingleResponse> {
+        console.log('🆕 Creando nueva sucursal:', sucursal);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'IN',
+                    ...sucursal,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursal creada exitosamente',
+                                data: firstItem.data && Array.isArray(firstItem.data) && firstItem.data.length > 0 ? firstItem.data[0] : sucursal as any
+                            } as SucursalSingleResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Sucursal creada exitosamente',
+                            data: response?.data || sucursal as any
+                        } as SucursalSingleResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Actualiza una sucursal existente
+     */
+    updateSucursal(sucursal: UpdateSucursalRequest): Observable<SucursalSingleResponse> {
+        console.log('🔄 Actualizando sucursal:', sucursal);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'UP',
+                    ...sucursal,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursal actualizada exitosamente',
+                                data: firstItem.data && Array.isArray(firstItem.data) && firstItem.data.length > 0 ? firstItem.data[0] : sucursal as any
+                            } as SucursalSingleResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Sucursal actualizada exitosamente',
+                            data: response?.data || sucursal as any
+                        } as SucursalSingleResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Elimina una sucursal
+     */
+    deleteSucursal(id: number): Observable<{ statuscode: number; mensaje: string }> {
+        console.log('🗑️ Eliminando sucursal:', id);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'DL',
+                    id_sucursal: id,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(`${url}/${id}`, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursal eliminada exitosamente'
+                            };
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Sucursal eliminada exitosamente'
+                        };
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene sucursales por ciudad
+     */
+    getSucursalesByCiudad(ciudadId: number): Observable<SucursalResponse> {
+        console.log('🏙️ Obteniendo sucursales por ciudad:', ciudadId);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'SL',
+                    ciudad: ciudadId,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursales obtenidas exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as SucursalResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'OK',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as SucursalResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene estadísticas de sucursales
+     */
+    getSucursalesStats(): Observable<SucursalStatsResponse> {
+        console.log('📊 Obteniendo estadísticas de sucursales');
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'STATS',
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Estadísticas obtenidas exitosamente',
+                                data: firstItem.data || {}
+                            } as SucursalStatsResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Estadísticas obtenidas exitosamente',
+                            data: response?.data || {}
+                        } as SucursalStatsResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene el catálogo de estados de sucursal
+     */
+    getEstadosSucursal(): Observable<EstadosSucursalResponse> {
+        console.log('🇲🇽 Obteniendo estados de sucursales');
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = { action: 'ESTADOS' };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Estados obtenidos exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : [
+                                    { id: 'A', nombre: 'Activo', descripcion: 'Sucursal activa', color: 'green' },
+                                    { id: 'I', nombre: 'Inactivo', descripcion: 'Sucursal inactiva', color: 'red' }
+                                ]
+                            } as EstadosSucursalResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Estados obtenidos exitosamente',
+                            data: Array.isArray(response?.data) ? response.data : [
+                                { id: 'A', nombre: 'Activo', descripcion: 'Sucursal activa', color: 'green' },
+                                { id: 'I', nombre: 'Inactivo', descripcion: 'Sucursal inactiva', color: 'red' }
+                            ]
+                        } as EstadosSucursalResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene el catálogo de ciudades
+     */
+    getCiudades(): Observable<CiudadesResponse> {
+        console.log('🏙️ Obteniendo catálogo de ciudades');
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = { action: 'CIUDADES' };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Ciudades obtenidas exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as CiudadesResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Ciudades obtenidas exitosamente',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as CiudadesResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene el catálogo de zonas geográficas
+     */
+    getZonasGeograficas(): Observable<ZonasGeograficasResponse> {
+        console.log('🗺️ Obteniendo zonas geográficas');
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = { action: 'ZONAS' };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Zonas geográficas obtenidas exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as ZonasGeograficasResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Zonas geográficas obtenidas exitosamente',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as ZonasGeograficasResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Busca sucursales por nombre o tienda
+     */
+    searchSucursales(query: string): Observable<SucursalResponse> {
+        console.log('🔍 Buscando sucursales:', query);
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'SL',
+                    search: query,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Búsqueda completada exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as SucursalResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Búsqueda completada exitosamente',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as SucursalResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+
+    /**
+     * Obtiene sucursales cercanas a una ubicación
+     */
+    getSucursalesCercanas(latitud: string, longitud: string, radioKm: number = 10): Observable<SucursalResponse> {
+        console.log('📍 Obteniendo sucursales cercanas:', { latitud, longitud, radioKm });
+
+        return this.getSucUrl().pipe(
+            switchMap(url => {
+                const body = {
+                    action: 'SL',
+                    latitud: latitud,
+                    longitud: longitud,
+                    radio: radioKm,
+                    ...this.getSessionData()
+                };
+
+                return this.http.post<any>(url, body).pipe(
+                    map((response: any) => {
+                        if (Array.isArray(response) && response.length > 0) {
+                            const firstItem = response[0];
+
+                            // Verificar errores del backend
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                throw new Error(firstItem.mensaje || 'Error del servidor');
+                            }
+
+                            return {
+                                statuscode: firstItem.statuscode || 200,
+                                mensaje: firstItem.mensaje || 'Sucursales cercanas obtenidas exitosamente',
+                                data: Array.isArray(firstItem.data) ? firstItem.data : []
+                            } as SucursalResponse;
+                        }
+
+                        return {
+                            statuscode: response?.statuscode || 200,
+                            mensaje: response?.mensaje || 'Sucursales cercanas obtenidas exitosamente',
+                            data: Array.isArray(response?.data) ? response.data : []
+                        } as SucursalResponse;
+                    }),
+                    catchError(this.handleError)
+                );
+            })
+        );
+    }
+}

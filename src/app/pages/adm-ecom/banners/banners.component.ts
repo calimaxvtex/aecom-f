@@ -7,6 +7,8 @@ import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 // Angular
 import { FormsModule } from '@angular/forms';
@@ -17,8 +19,6 @@ import { BannersTabComponent } from './banners-tab.component';
 
 // Modelos
 import { Componente } from '../../../features/comp/models/comp.interface';
-import { CatConceptosDetService } from '../../../features/catconceptos/services/catconceptosdet.service';
-import { CatConceptoDet } from '../../../features/catconceptos/models/catconceptosdet.interface';
 
 @Component({
     selector: 'app-banners',
@@ -31,53 +31,37 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
         TagModule,
         SelectModule,
         FloatLabelModule,
+        ToastModule,
         BannersComponentsTabComponent,
         BannersTabComponent
     ],
+    providers: [MessageService],
     template: `
         <div class="card">
-
-            <!-- Header con filtro por canal -->
-            <div class="mb-4">
-                <h2 class="text-2xl font-bold mb-4">🎨 Gestión de Banners</h2>
-                <div class="flex gap-4 items-end">
-                    <div class="flex-1">
-                        <p-floatLabel variant="on">
-                            <p-select
-                                [(ngModel)]="canalSeleccionado"
-                                [options]="canalesOptions"
-                                optionLabel="label"
-                                optionValue="value"
-                                placeholder="Seleccionar canal"
-                                class="w-full"
-                                (onChange)="onCanalChange($event)"
-                            ></p-select>
-                            <label>Filtro por Canal</label>
-                        </p-floatLabel>
-                    </div>
-                </div>
-            </div>
-
+            <p-toast></p-toast>
             <p-tabs [value]="activeTabIndex" (onTabChange)="onTabChange($event)">
                 <p-tablist>
                     <p-tab value="0">
                         <span class="flex items-center gap-2">
-                            Componentes
+                            Contenedores
+                        </span>
+                    </p-tab>
+                    <p-tab value="1">
+                        <span class="flex items-center gap-2">
+                            Banners
                             <p-tag
-                                *ngIf="canalSeleccionado"
-                                [value]="canalSeleccionado"
+                                *ngIf="componenteSeleccionado"
+                                [value]="componenteSeleccionado.nombre"
                                 severity="info"
                                 class="text-xs">
                             </p-tag>
                         </span>
                     </p-tab>
-                    <p-tab value="1">Banners</p-tab>
                 </p-tablist>
 
                 <p-tabpanels>
                     <p-tabpanel value="0">
                         <app-banners-components-tab
-                            [canalFiltro]="canalSeleccionado"
                             (conceptoClick)="onConceptoClick($event)"
                             (conceptoDobleClick)="onConceptoDobleClick($event)">
                         </app-banners-components-tab>
@@ -106,17 +90,11 @@ export class BannersComponent implements OnInit {
     activeTabIndex: string = '0'; // manejar como string
     componenteSeleccionado: Componente | null = null;
 
-    // Filtro por canal
-    canalSeleccionado: string = '';
-    canalesOptions: { label: string; value: string }[] = [];
 
-    constructor(
-        private catConceptosDetService: CatConceptosDetService
-    ) {}
+    constructor() {}
 
     ngOnInit(): void {
         console.log('🎨 BannersComponent inicializado');
-        this.cargarCanalesOptions();
     }
 
     onConceptoSeleccionadoChange(componente: Componente | null): void {
@@ -141,43 +119,29 @@ export class BannersComponent implements OnInit {
     }
 
     onTabChange(event: any): void {
-        this.activeTabIndex = event.value; // sincronizar con el tab clicado
-        console.log('📑 Tab cambió a:', this.activeTabIndex);
+        const newTabIndex = event.value;
+        console.log('📑 Tab cambió de', this.activeTabIndex, 'a', newTabIndex);
 
-        // Si cambió al tab 2 (banners) y hay un componente seleccionado, forzar refresh
+        // Actualizar el tab activo
+        this.activeTabIndex = newTabIndex;
+
+        // Si cambió al tab 1 (banners) y hay un componente seleccionado, forzar refresh
         if (this.activeTabIndex === '1' && this.componenteSeleccionado) {
-            console.log('🔄 Cambió a tab 2 con componente seleccionado - forzando refresh');
-            // Forzar refresh del tab 2 enviando el componente nuevamente
+            console.log('🔄 Cambió a tab Banners con componente seleccionado - forzando refresh');
+            // Forzar refresh del tab banners enviando el componente nuevamente
             setTimeout(() => {
-                this.componenteSeleccionado = { ...this.componenteSeleccionado! };
-            }, 100);
+                const componenteActual = this.componenteSeleccionado;
+                this.componenteSeleccionado = null; // Reset temporal
+                setTimeout(() => {
+                    this.componenteSeleccionado = { ...componenteActual! }; // Reasignar para forzar change detection
+                }, 10);
+            }, 50);
+        }
+
+        // Si cambió al tab 0 (contenedores), mantener el componente seleccionado
+        if (this.activeTabIndex === '0') {
+            console.log('🏠 Cambió a tab Contenedores - componente seleccionado:', this.componenteSeleccionado?.nombre || 'ninguno');
         }
     }
 
-    // Cargar opciones de canal desde conceptosdet con clave 'TIPOCANAL'
-    private cargarCanalesOptions(): void {
-        this.catConceptosDetService.queryDetalles({
-            clave: 'TIPOCANAL',
-            swestado: 1
-        }).subscribe({
-            next: (response) => {
-                this.canalesOptions = response.data.map(item => ({
-                    label: item.valorcadena1 || item.descripcion,
-                    value: item.valorcadena1 || item.descripcion
-                }));
-                console.log('📊 Opciones de canal cargadas:', this.canalesOptions);
-            },
-            error: (error) => {
-                console.error('❌ Error al cargar opciones de canal:', error);
-                this.canalesOptions = [];
-            }
-        });
-    }
-
-    // Manejar cambio de selección de canal
-    onCanalChange(event: any): void {
-        console.log('🔄 Canal seleccionado cambió:', event.value);
-        this.canalSeleccionado = event.value;
-        // Aquí se podría agregar lógica adicional si es necesario
-    }
 }

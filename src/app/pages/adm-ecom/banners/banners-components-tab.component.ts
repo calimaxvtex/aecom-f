@@ -13,7 +13,6 @@ import { TagModule } from 'primeng/tag';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { CardModule } from 'primeng/card';
 import { MessageService } from 'primeng/api';
 
@@ -39,31 +38,10 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
         FloatLabelModule,
         TooltipModule,
         SelectModule,
-        SelectButtonModule,
         CardModule
     ],
     providers: [MessageService],
     template: `
-        <!-- Filtro superior -->
-        <div class="mb-4">
-            <div class="flex flex-wrap gap-4 items-end">
-                <div class="flex-1 max-w-md">
-                    <p-floatLabel variant="on">
-                        <p-selectButton
-                            [(ngModel)]="canalFiltroSeleccionado"
-                            [options]="canalesOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            (onChange)="onCanalFiltroChange($event)"
-                            class="w-full"
-                            multiple="false"
-                        ></p-selectButton>
-                        <label>Filtro por Canal</label>
-                    </p-floatLabel>
-                </div>
-            </div>
-        </div>
-
         <!-- Tabla CRUD -->
         <p-table
             #dtConceptos
@@ -89,7 +67,22 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         placeholder="Buscar componentes..."
                         class="w-full sm:w-80 order-1 sm:order-0"
                     />
-                    <div class="flex gap-2 order-0 sm:order-1">
+                    <div class="flex gap-2 order-0 sm:order-1 items-end">
+                        <!-- Botones de filtro por canal -->
+                        <button
+                            *ngFor="let canal of canalesOptions"
+                            (click)="onCanalFiltroClick(canal.value)"
+                            pButton
+                            raised
+                            [class]="canalFiltroSeleccionado === canal.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                            [label]="canal.label"
+                            pTooltip="Filtrar por {{ canal.label }}"
+                        ></button>
+                        
+                        <!-- Separador visual -->
+                        <div class="w-px bg-gray-300 mx-1"></div>
+                        
+                        <!-- Botones de acción -->
                         <button
                             (click)="cargarConceptos()"
                             pButton
@@ -113,12 +106,10 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             <ng-template #header>
                 <tr>
                     <th style="width: 80px">ID</th>
-                    <th pSortableColumn="clave" style="min-width: 150px">Clave <p-sortIcon field="clave"></p-sortIcon></th>
                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
                     <th pSortableColumn="descripcion" style="min-width: 200px">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
-                    <th style="min-width: 150px">Tipo Componente</th>
-                    <th style="width: 100px">Único</th>
-                    <th style="width: 100px">Visible</th>
+                    <th style="min-width: 150px">Tipo Contenedor</th>
+                    <th style="min-width: 120px">Canal</th>
                     <th style="width: 100px">Habilitado</th>
                     <th style="width: 150px">Acciones</th>
                 </tr>
@@ -134,48 +125,6 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                     <!-- ID -->
                     <td>{{ concepto.id_comp }}</td>
 
-                    <!-- Clave -->
-                    <td>
-                        <span
-                            *ngIf="editingCell !== concepto.id_comp + '_clave'"
-                            (click)="editInlineConcepto(concepto, 'clave'); $event.stopPropagation()"
-                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                            title="Clic para editar"
-                        >
-                            {{ concepto.clave }}
-                        </span>
-                        <div
-                            *ngIf="editingCell === concepto.id_comp + '_clave'"
-                            class="inline-edit-container"
-                        >
-                            <input
-                                pInputText
-                                type="text"
-                                [(ngModel)]="concepto.clave"
-                                (keyup.enter)="saveInlineEditConcepto(concepto, 'clave')"
-                                (keyup.escape)="cancelInlineEdit()"
-                                class="p-inputtext-sm flex-1"
-                                #input
-                                (focus)="input.select()"
-                                autofocus
-                                placeholder="Clave del concepto"
-                            />
-                            <button
-                                pButton
-                                icon="pi pi-check"
-                                (click)="saveInlineEditConcepto(concepto, 'clave')"
-                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                pTooltip="Guardar (Enter)"
-                            ></button>
-                            <button
-                                pButton
-                                icon="pi pi-undo"
-                                (click)="cancelInlineEdit()"
-                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                pTooltip="Deshacer (Escape)"
-                            ></button>
-                        </div>
-                    </td>
 
                     <!-- Nombre -->
                     <td>
@@ -277,16 +226,15 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             *ngIf="editingCell === concepto.id_comp + '_tipo_comp'"
                             class="inline-edit-container"
                         >
-                            <select
+                            <p-select
                                 [(ngModel)]="concepto.tipo_comp"
-                                (change)="saveInlineEditConcepto(concepto, 'tipo_comp')"
-                                class="p-inputtext p-inputtext-sm flex-1"
-                                style="padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem;"
-                            >
-                                <option *ngFor="let tipo of tiposCompOptions" [value]="tipo.value">
-                                    {{ tipo.label }}
-                                </option>
-                            </select>
+                                [options]="tiposCompOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                (onChange)="saveInlineEditConcepto(concepto, 'tipo_comp')"
+                                class="flex-1"
+                                style="min-width: 120px;"
+                            ></p-select>
                             <button
                                 pButton
                                 icon="pi pi-undo"
@@ -297,33 +245,20 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         </div>
                     </td>
 
-                    <!-- Único -->
+                    <!-- Canal -->
                     <td class="text-center">
                         <p-tag
-                            [value]="concepto.isUnico ? 'Si' : 'No'"
-                            [severity]="concepto.isUnico ? 'success' : 'danger'"
-                            (click)="toggleIsUnico(concepto); $event.stopPropagation()"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            pTooltip="Clic para cambiar"
+                            [value]="concepto.canal"
+                            severity="info"
                         ></p-tag>
                     </td>
 
-                    <!-- Visible -->
-                    <td class="text-center">
-                        <p-tag
-                            [value]="concepto.visibles > 0 ? 'Si' : 'No'"
-                            [severity]="concepto.visibles > 0 ? 'info' : 'secondary'"
-                            (click)="toggleVisible(concepto); $event.stopPropagation()"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            pTooltip="Clic para cambiar"
-                        ></p-tag>
-                    </td>
 
                     <!-- Habilitado -->
                     <td class="text-center">
                         <p-tag
-                            [value]="concepto.swEnable ? 'Si' : 'No'"
-                            [severity]="concepto.swEnable ? 'success' : 'danger'"
+                            [value]="concepto.swEnable === 1 ? 'Si' : 'No'"
+                            [severity]="concepto.swEnable === 1 ? 'success' : 'danger'"
                             (click)="toggleSwEnable(concepto); $event.stopPropagation()"
                             class="cursor-pointer hover:opacity-80 transition-opacity"
                             pTooltip="Clic para cambiar"
@@ -370,6 +305,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                     <div class="grid grid-cols-2 gap-4">
                         <!-- Clave -->
                         <div>
+                         <div style="height: 0; margin-top: 1rem;"></div>
                             <p-floatLabel variant="on">
                                 <input
                                     pInputText
@@ -377,13 +313,15 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                                     placeholder="Ej: BANNER, HEADER, FOOTER"
                                     class="w-full"
                                     maxlength="50"
+                                    (input)="onClaveInput($event)"
                                 />
-                                <label>Clave *</label>
+                                <label>Clave </label>
                             </p-floatLabel>
                         </div>
 
                         <!-- Canal -->
                         <div>
+                            <div style="height: 0; margin-top: 1rem;"></div>
                             <p-floatLabel variant="on">
                                 <p-select
                                     formControlName="canal"
@@ -392,24 +330,45 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                                     optionValue="value"
                                     placeholder="Seleccionar canal"
                                     class="w-full"
+                                    appendTo="body"
+                                    [style]="{'z-index': '9999'}"
                                 ></p-select>
-                                <label>Canal *</label>
                             </p-floatLabel>
                         </div>
                     </div>
 
-                    <!-- Nombre -->
-                    <div>
-                        <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                formControlName="nombre"
-                                placeholder="Nombre descriptivo del componente"
-                                class="w-full"
-                                maxlength="100"
-                            />
-                            <label>Nombre *</label>
-                        </p-floatLabel>
+                    <!-- Nombre y Tipo Componente en el mismo renglón -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Nombre -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    formControlName="nombre"
+                                    placeholder="Nombre descriptivo del componente"
+                                    class="w-full"
+                                    maxlength="100"
+                                    (input)="onNombreInput($event)"
+                                />
+                                <label>Nombre </label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Tipo Componente -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-select
+                                    formControlName="tipo_comp"
+                                    [options]="tiposCompOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Seleccionar tipo"
+                                    class="w-full"
+                                    appendTo="body"
+                                    [style]="{'z-index': '9999'}"
+                                ></p-select>
+                            </p-floatLabel>
+                        </div>
                     </div>
 
                     <!-- Descripción -->
@@ -422,80 +381,56 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                                 rows="3"
                                 maxlength="255"
                                 style="resize: vertical; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                                (input)="onDescripcionInput($event)"
                             ></textarea>
                             <label>Descripción</label>
                         </p-floatLabel>
-                    </div>
-
-                    <!-- Tipo Componente -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <p-select
-                                    formControlName="tipo_comp"
-                                    [options]="tiposCompOptions"
-                                    optionLabel="label"
-                                    optionValue="value"
-                                    placeholder="Seleccionar tipo"
-                                    class="w-full"
-                                ></p-select>
-                                <label>Tipo Componente *</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <!-- Visible (número) -->
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input
-                                    pInputText
-                                    type="number"
-                                    formControlName="visibles"
-                                    placeholder="Elementos visibles"
-                                    class="w-full"
-                                    min="0"
-                                    max="50"
-                                />
-                                <label>Elementos Visibles</label>
-                            </p-floatLabel>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Botones de estado -->
                 <div class="mb-6">
-                    <h4 class="text-lg font-semibold mb-3">Estado del Componente</h4>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="text-center">
-                            <p-tag
-                                [value]="conceptoForm.get('isUnico')?.value ? 'Único' : 'Múltiple'"
-                                [severity]="conceptoForm.get('isUnico')?.value ? 'warning' : 'info'"
-                                (click)="toggleFormField('isUnico')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
-                                pTooltip="Componente único o múltiple"
-                            ></p-tag>
-                            <label class="text-sm text-gray-600 block">Único</label>
-                        </div>
+                    <div class="flex items-center justify-between">
+                        <!-- Botón habilitado a la izquierda -->
+                        <p-tag
+                            [value]="conceptoForm.get('swEnable')?.value === 1 ? 'Habilitado' : 'Deshabilitado'"
+                            [severity]="conceptoForm.get('swEnable')?.value === 1 ? 'success' : 'danger'"
+                            (click)="toggleFormField('swEnable')"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            pTooltip="Estado del componente"
+                        ></p-tag>
 
-                        <div class="text-center">
-                            <p-tag
-                                [value]="conceptoForm.get('visibles')?.value > 0 ? 'Visible' : 'Oculto'"
-                                [severity]="conceptoForm.get('visibles')?.value > 0 ? 'success' : 'secondary'"
-                                (click)="toggleFormField('visibles')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
-                                pTooltip="Elementos visibles"
-                            ></p-tag>
-                            <label class="text-sm text-gray-600 block">Visible</label>
-                        </div>
+                        <!-- Inputs justificados a la derecha -->
+                        <div class="flex items-center gap-4">
+                            <!-- Input para tiempo -->
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-medium text-gray-600 text-center">Tiempo</label>
+                                <input
+                                    pInputText
+                                    formControlName="tiempo"
+                                    placeholder="T"
+                                    class="w-20 h-8 text-center text-sm"
+                                    maxlength="1"
+                                    type="number"
+                                    min="0"
+                                    max="9"
+                                />
+                            </div>
 
-                        <div class="text-center">
-                            <p-tag
-                                [value]="conceptoForm.get('swEnable')?.value ? 'Habilitado' : 'Deshabilitado'"
-                                [severity]="conceptoForm.get('swEnable')?.value ? 'success' : 'danger'"
-                                (click)="toggleFormField('swEnable')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity mb-2"
-                                pTooltip="Estado del componente"
-                            ></p-tag>
-                            <label class="text-sm text-gray-600 block">Habilitado</label>
+                            <!-- Input para visibles -->
+                            <div class="flex flex-col items-center gap-1">
+                                <label class="text-xs font-medium text-gray-600 text-center">Visibles</label>
+                                <input
+                                    pInputText
+                                    formControlName="visibles"
+                                    placeholder="V"
+                                    class="w-20 h-8 text-center text-sm"
+                                    maxlength="1"
+                                    type="number"
+                                    min="0"
+                                    max="9"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -503,22 +438,21 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                 <!-- Sección informativa -->
                 <div *ngIf="isEditingConcepto && conceptoSeleccionado" class="mb-6 p-4 bg-gray-50 rounded-lg">
                     <h4 class="text-lg font-semibold mb-3">Información del Registro</h4>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <label class="font-medium text-gray-700">Creado por:</label>
-                            <p class="text-gray-600">{{ conceptoSeleccionado.usr_a }}</p>
-                        </div>
-                        <div>
-                            <label class="font-medium text-gray-700">Fecha creación:</label>
-                            <p class="text-gray-600">{{ conceptoSeleccionado.fecha_a | date:'dd/MM/yyyy HH:mm' }}</p>
-                        </div>
-                        <div *ngIf="conceptoSeleccionado.usr_m">
-                            <label class="font-medium text-gray-700">Modificado por:</label>
-                            <p class="text-gray-600">{{ conceptoSeleccionado.usr_m }}</p>
-                        </div>
-                        <div *ngIf="conceptoSeleccionado.fecha_m">
-                            <label class="font-medium text-gray-700">Última modificación:</label>
-                            <p class="text-gray-600">{{ conceptoSeleccionado.fecha_m | date:'dd/MM/yyyy HH:mm' }}</p>
+                    <div class="text-sm">
+                        <!-- Todo en el mismo renglón -->
+                        <div class="flex flex-wrap gap-6">
+                            <div class="flex-1 min-w-0">
+                                <label class="font-medium text-gray-700">Creado por:</label>
+                                <p class="text-gray-600">{{ conceptoSeleccionado.usr_a }}</p>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <label class="font-medium text-gray-700">Fecha creación:</label>
+                                <p class="text-gray-600">{{ conceptoSeleccionado.fecha_a | date:'dd/MM/yyyy HH:mm' }}</p>
+                            </div>
+                            <div class="flex-1 min-w-0" *ngIf="conceptoSeleccionado.fecha_m">
+                                <label class="font-medium text-gray-700">Última modificación:</label>
+                                <p class="text-gray-600">{{ conceptoSeleccionado.fecha_m | date:'dd/MM/yyyy HH:mm' }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -625,6 +559,31 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
 
         .p-button.p-button-text.p-button-sm .p-button-icon {
             font-size: 0.875rem !important;
+        }
+
+        /* Estilos para botones de filtro compactos */
+        :host ::ng-deep .compact-filter-button.p-button {
+            padding: 0.25rem 0.5rem !important;
+            min-height: 1.75rem !important;
+            font-size: 0.75rem !important;
+            line-height: 1.25 !important;
+            border-radius: 0.25rem !important;
+        }
+
+        :host ::ng-deep .compact-filter-button.p-button .p-button-label {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        :host ::ng-deep .compact-filter-button.p-button-success {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+        }
+
+        :host ::ng-deep .compact-filter-button.p-button-outlined {
+            background-color: transparent !important;
+            border-color: #d1d5db !important;
+            color: #6b7280 !important;
         }
 
         /* Fila seleccionada */
@@ -735,9 +694,9 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             descripcion: ['', [Validators.maxLength(255)]],
             canal: ['', [Validators.required]],
             tipo_comp: ['', [Validators.required]],
-            isUnico: [0],
-            visibles: [5, [Validators.min(0), Validators.max(50)]],
-            swEnable: [1]
+            swEnable: [1],
+            tiempo: [4],
+            visibles: [8]
         });
     }
 
@@ -795,16 +754,16 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                 descripcion: concepto.descripcion,
                 canal: concepto.canal,
                 tipo_comp: concepto.tipo_comp,
-                isUnico: concepto.isUnico,
-                visibles: concepto.visibles,
-                swEnable: concepto.swEnable
+                swEnable: concepto.swEnable,
+                tiempo: concepto.tiempo || 0,
+                visibles: concepto.visibles || 0
             });
         } else {
             console.log('➕ Creando nuevo componente');
             this.conceptoForm.reset({
-                isUnico: 0,
-                visibles: 5,
-                swEnable: 1
+                swEnable: 1,
+                tiempo: 4,
+                visibles: 8
             });
         }
 
@@ -899,9 +858,16 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             return;
         }
 
+        // Aplicar formateo según el campo
+        let formattedValue = (concepto as any)[field];
+        if (field === 'nombre' || field === 'descripcion') {
+            formattedValue = this.toPascalCase(formattedValue);
+            (concepto as any)[field] = formattedValue;
+        }
+
         const updateData: UpdateComponenteRequest = {
             id_comp: concepto.id_comp,
-            [field]: (concepto as any)[field]
+            [field]: formattedValue
         };
 
         this.componentsService.updateComponente(updateData).subscribe({
@@ -949,35 +915,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     // ========== TOGGLE DE CAMPOS ==========
 
-    toggleIsUnico(componente: Componente): void {
-        const nuevoValor = componente.isUnico === 1 ? 0 : 1;
-        const valorAnterior = componente.isUnico;
-
-        componente.isUnico = nuevoValor;
-
-        this.componentsService.updateComponente({
-            id_comp: componente.id_comp,
-            isUnico: nuevoValor
-        }).subscribe({
-            next: (response) => {
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Campo Actualizado',
-                    detail: `Campo "Único" actualizado correctamente`
-                });
-            },
-            error: (error) => {
-                // Revertir cambio
-                componente.isUnico = valorAnterior;
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al actualizar campo "Único"',
-                    life: 5000
-                });
-            }
-        });
-    }
 
     toggleSwEnable(componente: Componente): void {
         const nuevoValor = componente.swEnable === 1 ? 0 : 1;
@@ -1154,16 +1091,8 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     toggleFormField(fieldName: string): void {
         const currentValue = this.conceptoForm.get(fieldName)?.value;
-
-        if (fieldName === 'visibles') {
-            // Para visibles, alternar entre 0 y 5
-            const newValue = currentValue > 0 ? 0 : 5;
-            this.conceptoForm.patchValue({ [fieldName]: newValue });
-        } else {
-            // Para otros campos booleanos
-            const newValue = !currentValue;
-            this.conceptoForm.patchValue({ [fieldName]: newValue });
-        }
+        const newValue = currentValue === 1 ? 0 : 1;
+        this.conceptoForm.patchValue({ [fieldName]: newValue });
     }
 
     // ========== MÉTODOS DE CATÁLOGO ==========
@@ -1185,10 +1114,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                     value: item.valorcadena1 || item.descripcion
                 }));
 
-                this.canalesOptions = [
-                    { label: 'Todos los canales', value: '' },
-                    ...options
-                ];
+                this.canalesOptions = options;
 
                 this.canalesFormOptions = options;
 
@@ -1196,7 +1122,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             },
             error: (error) => {
                 console.error('❌ Error cargando opciones de canal:', error);
-                this.canalesOptions = [{ label: 'Todos los canales', value: '' }];
+                this.canalesOptions = [];
                 this.canalesFormOptions = [];
             }
         });
@@ -1223,45 +1149,57 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     // ========== FILTRO DE CANAL ==========
 
-    onCanalFiltroChange(event: any): void {
-        console.log('🔄 Filtro de canal cambió:', event.value);
-        this.canalFiltroSeleccionado = event.value || '';
+    onCanalFiltroClick(canalValue: string): void {
+        console.log('🔄 Filtro de canal cambió:', canalValue);
+        // Si ya está seleccionado, deseleccionar (mostrar todos)
+        if (this.canalFiltroSeleccionado === canalValue) {
+            this.canalFiltroSeleccionado = '';
+        } else {
+            this.canalFiltroSeleccionado = canalValue;
+        }
         this.cargarConceptos();
     }
 
-    // ========== MÉTODO TOGGLE VISIBLE ==========
-
-    toggleVisible(componente: Componente): void {
-        const nuevoValor = componente.visibles > 0 ? 0 : 5;
-        const valorAnterior = componente.visibles;
-
-        componente.visibles = nuevoValor;
-
-        this.componentsService.updateComponente({
-            id_comp: componente.id_comp,
-            visibles: nuevoValor
-        }).subscribe({
-            next: (response) => {
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Campo Actualizado',
-                    detail: `Campo "Visible" actualizado correctamente`
-                });
-            },
-            error: (error) => {
-                // Revertir cambio
-                componente.visibles = valorAnterior;
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al actualizar campo "Visible"',
-                    life: 5000
-                });
-            }
-        });
-    }
 
     // ========== UTILIDADES ==========
+
+    onClaveInput(event: any): void {
+        const input = event.target;
+        const upperValue = input.value.toUpperCase();
+        input.value = upperValue;
+        this.conceptoForm.patchValue({ clave: upperValue });
+    }
+
+    onNombreInput(event: any): void {
+        const input = event.target;
+        const pascalCaseValue = this.toPascalCase(input.value);
+        input.value = pascalCaseValue;
+        this.conceptoForm.patchValue({ nombre: pascalCaseValue });
+    }
+
+    onDescripcionInput(event: any): void {
+        const input = event.target;
+        const pascalCaseValue = this.toPascalCase(input.value);
+        input.value = pascalCaseValue;
+        this.conceptoForm.patchValue({ descripcion: pascalCaseValue });
+    }
+
+    private toPascalCase(text: string): string {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        // Separar por espacios, guiones o guiones bajos
+        const words = text.split(/[\s\-_]+/);
+
+        // Convertir cada palabra: primera letra mayúscula, resto minúscula
+        const pascalCaseWords = words.map(word => {
+            if (word.length === 0) return '';
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
+
+        return pascalCaseWords.join(' ');
+    }
 
     getTipoCompLabel(tipoComp: string): string {
         const tipo = this.tiposCompOptions.find(t => t.value === tipoComp);

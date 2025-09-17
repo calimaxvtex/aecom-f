@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
@@ -49,6 +49,7 @@ import { Subscription } from 'rxjs';
 export class AppMenu implements OnInit, OnDestroy {
     el: ElementRef = inject(ElementRef);
     private menuLoaderService = inject(MenuLoaderService);
+    private cdr = inject(ChangeDetectorRef);
 
     @ViewChild('menuContainer') menuContainer!: ElementRef;
 
@@ -57,6 +58,8 @@ export class AppMenu implements OnInit, OnDestroy {
     skeletonItems = [1, 2, 3, 4, 5]; // 5 items de skeleton
 
     private subscriptions: Subscription[] = [];
+    private renderRetryCount = 0;
+    private maxRetries = 3;
 
     async ngOnInit(): Promise<void> {
         // Suscribirse a cambios del menú
@@ -64,6 +67,8 @@ export class AppMenu implements OnInit, OnDestroy {
             this.menuLoaderService.menu$.subscribe(menu => {
                 if (menu !== null) {
                     this.model = menu;
+                    // Forzar detección de cambios para asegurar renderizado
+                    this.forceMenuRender();
                 }
             })
         );
@@ -72,11 +77,63 @@ export class AppMenu implements OnInit, OnDestroy {
         this.subscriptions.push(
             this.menuLoaderService.loading$.subscribe(loading => {
                 this.loading = loading;
+                // Forzar detección de cambios para asegurar renderizado
+                this.cdr.detectChanges();
             })
         );
 
         // Inicializar el menú dinámico
         await this.menuLoaderService.initialize();
+    }
+
+    /**
+     * Fuerza el renderizado del menú con reintentos
+     */
+    private forceMenuRender(): void {
+        try {
+            this.cdr.detectChanges();
+            
+            // Verificar si el menú se renderizó correctamente
+            setTimeout(() => {
+                this.verifyMenuRender();
+            }, 100);
+        } catch (error) {
+            console.warn('⚠️ Error forzando renderizado del menú:', error);
+            this.retryMenuRender();
+        }
+    }
+
+    /**
+     * Verifica si el menú se renderizó correctamente y reintenta si es necesario
+     */
+    private verifyMenuRender(): void {
+        const menuElement = this.el.nativeElement.querySelector('.layout-menu');
+        const menuItems = menuElement?.querySelectorAll('li');
+        
+        // Si no hay elementos del menú visibles, reintentar
+        if (!menuItems || menuItems.length === 0) {
+            console.warn('⚠️ Menú no renderizado correctamente, reintentando...');
+            this.retryMenuRender();
+        } else {
+            console.log('✅ Menú renderizado correctamente con', menuItems.length, 'elementos');
+            this.renderRetryCount = 0; // Reset counter on success
+        }
+    }
+
+    /**
+     * Reintenta el renderizado del menú
+     */
+    private retryMenuRender(): void {
+        if (this.renderRetryCount < this.maxRetries) {
+            this.renderRetryCount++;
+            console.log(`🔄 Reintento ${this.renderRetryCount}/${this.maxRetries} de renderizado del menú`);
+            
+            setTimeout(() => {
+                this.forceMenuRender();
+            }, 200 * this.renderRetryCount); // Incrementar delay con cada reintento
+        } else {
+            console.error('❌ Falló el renderizado del menú después de', this.maxRetries, 'intentos');
+        }
     }
 
     ngOnDestroy(): void {

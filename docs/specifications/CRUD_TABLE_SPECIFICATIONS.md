@@ -1971,6 +1971,113 @@ styles: [`
 </form>
 ```
 
+### **17.8 ESPACIO PARA LABELS EN FORMULARIOS SUPERIORES**
+
+#### **⚠️ REGLA CRÍTICA: DIV ESPACIADOR OBLIGATORIO**
+
+**TODOS los formularios que se encuentren en la parte superior (top) de los componentes DEBEN incluir un div espaciador antes de cada campo con label flotante.**
+
+#### **17.8.1 Implementación obligatoria:**
+```html
+<!-- ✅ CORRECTO - Con div espaciador -->
+<div>
+  <div style="height: 0; margin-top: 1rem;"></div>
+  <p-floatLabel variant="on">
+    <input pInputText formControlName="campo" placeholder="Campo" class="w-full" />
+    <label>Campo *</label>
+  </p-floatLabel>
+</div>
+```
+
+#### **17.8.2 ❌ PROHIBIDO - Sin div espaciador:**
+```html
+<!-- ❌ INCORRECTO - Sin div espaciador -->
+<div>
+  <p-floatLabel variant="on">
+    <input pInputText formControlName="campo" placeholder="Campo" class="w-full" />
+    <label>Campo *</label>
+  </p-floatLabel>
+</div>
+```
+
+#### **17.8.3 Propiedades del div espaciador:**
+- **height: 0** - No ocupa espacio visual
+- **margin-top: 1rem** - Crea espacio vertical para que el label sea visible
+- **Posición** - Debe estar ANTES del p-floatLabel
+- **Alcance** - Aplicable solo a formularios en posición top
+
+#### **17.8.4 ¿Cuándo aplicar?**
+
+##### **✅ SÍ aplicar en:**
+- **Primer elemento del formulario** o elementos en el **primer renglón**
+- Campos que usan `p-floatLabel variant="on"`
+- Formularios en la parte superior de componentes
+- Cuando el label no es visible por superposición
+- Formularios dentro de modales o dialogs
+
+##### **❌ NO aplicar en:**
+- Campos en renglones posteriores al primero
+- Formularios en posiciones centrales o inferiores
+- Campos que no usan labels flotantes
+- Formularios en tabs secundarios
+- Campos booleanos con p-tag
+
+#### **17.8.5 Ejemplo implementado:**
+**Archivo de referencia**: `src/app/pages/adm-ecom/banners/banners-components-tab.component.ts`
+
+```html
+<!-- PRIMER RENGLÓN: Espaciadores aplicados solo a campos del primer renglón -->
+<div class="grid grid-cols-2 gap-4">
+    <!-- Clave -->
+    <div>
+        <div style="height: 0; margin-top: 1rem;"></div>
+        <p-floatLabel variant="on">
+            <input pInputText formControlName="clave" placeholder="Ej: BANNER, HEADER, FOOTER" class="w-full" />
+            <label>Clave </label>
+        </p-floatLabel>
+    </div>
+
+    <!-- Canal -->
+    <div>
+        <div style="height: 0; margin-top: 1rem;"></div>
+        <p-select formControlName="canal" [options]="canalesFormOptions" class="w-full"></p-select>
+    </div>
+</div>
+
+<!-- SEGUNDO RENGLÓN: Sin espaciadores -->
+<div class="grid grid-cols-2 gap-4">
+    <!-- Nombre -->
+    <div>
+        <p-floatLabel variant="on">
+            <input pInputText formControlName="nombre" placeholder="Nombre descriptivo del componente" class="w-full" />
+            <label>Nombre *</label>
+        </p-floatLabel>
+    </div>
+
+    <!-- Tipo Componente -->
+    <div>
+        <p-floatLabel variant="on">
+            <p-select formControlName="tipo_comp" [options]="tiposCompOptions" class="w-full"></p-select>
+            <label>Tipo Componente *</label>
+        </p-floatLabel>
+    </div>
+</div>
+```
+
+#### **17.8.6 Beneficios del div espaciador:**
+- **Labels visibles** - Los labels flotantes se muestran correctamente
+- **UX consistente** - Experiencia uniforme en todos los formularios
+- **Prevención de bugs** - Evita problemas de visualización
+- **Compatibilidad** - Funciona en diferentes navegadores y dispositivos
+
+#### **17.8.7 Checklist de implementación:**
+- [ ] Campo está en el primer renglón del formulario
+- [ ] Campo usa `p-floatLabel variant="on"`
+- [ ] Div espaciador agregado antes del p-floatLabel
+- [ ] Propiedades del div: `height: 0; margin-top: 1rem;`
+- [ ] Label es visible y funciona correctamente
+- [ ] Campos en renglones posteriores NO tienen espaciador
+
 ### **17.8 BENEFICIOS DE USAR LABELS FLOTANTES**
 
 #### **✅ Ventajas:**

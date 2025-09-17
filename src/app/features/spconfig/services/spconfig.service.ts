@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+
 import {
   SPConfig,
   SPConfigApiResponse,
@@ -21,49 +23,245 @@ import { SPCONFIG_API_CONFIG, SPCONFIG_MESSAGES } from '../models/spconfig.const
 
 /**
  * Servicio para la configuración de Stored Procedures
- * Endpoint: /api/spconfig/v1/{id}
- * Base URL: http://localhost:3000
+ * Endpoints dinámicos desde ApiConfigService:
+ * - SPConfig: /api/spconfig/v1 (ID dinámico)
+ * - Roles: /api/adminUsr/rol (ID 2)
+ * - Usuarios: /api/admusr/v1 (ID 1)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class SPConfigService {
-  private baseUrl: string = SPCONFIG_API_CONFIG.DEFAULT_BASE_URL;
-  private readonly endpoints = {
-    SPCONFIG: SPCONFIG_API_CONFIG.ENDPOINTS.SPCONFIG
+  // Endpoint names para ApiConfigService
+  private readonly ENDPOINT_NAMES = {
+    SPCONFIG: 'spconfig',      // Para operaciones de SPConfig
+    ROLES: 'adminUsr',         // ID 2 - Roles
+    USUARIOS: 'admusr',        // ID 1 - Usuarios
+    ROL_DETALLE: 'admrold',    // ID 3 - Rol Detalle
+    ROL_USUARIO: 'admrolu',    // ID 4 - Rol Usuario
+    MENU: 'adminMenu'          // Para operaciones de menú
   };
 
   private readonly httpOptions = {
     headers: new HttpHeaders(SPCONFIG_API_CONFIG.DEFAULT_HEADERS)
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiConfig: ApiConfigService
+  ) {
+    console.log('🔧 SPConfigService inicializado con ApiConfigService');
+  }
 
   /**
-   * Configura la URL base del servicio
+   * Configura la URL base del servicio (para compatibilidad)
    */
   setBaseUrl(url: string): void {
-    this.baseUrl = url;
-    console.log(`🔧 URL base configurada para SPConfig: ${this.baseUrl}`);
+    console.log(`🔧 SPConfigService usa ApiConfigService - URL configurada: ${url}`);
+    // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
   }
 
   /**
-   * Obtiene la URL base actual
+   * Obtiene la URL base actual desde ApiConfigService
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.apiConfig.getBaseUrl();
   }
+
+  /**
+   * Obtiene URL de endpoint por nombre
+   */
+  getEndpointUrl(endpointName: string): string {
+    const endpoint = this.apiConfig.getEndpointByName(endpointName);
+    if (!endpoint) {
+      console.warn(`⚠️ Endpoint '${endpointName}' no encontrado en ApiConfigService`);
+      return '';
+    }
+    return endpoint.url;
+  }
+
+  /**
+   * Obtiene URL del endpoint con ID 2 (Roles) - Método solicitado
+   */
+  getRolesUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.ROLES);
+  }
+
+  /**
+   * Obtiene URL del endpoint de SPConfig
+   */
+  getSpconfigUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.SPCONFIG);
+  }
+
+  /**
+   * Obtiene URL del endpoint de Usuarios
+   */
+  getUsuariosUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.USUARIOS);
+  }
+
+  /**
+   * Obtiene URL del endpoint de Rol Detalle
+   */
+  getRolDetalleUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.ROL_DETALLE);
+  }
+
+  /**
+   * Obtiene URL del endpoint de Rol Usuario
+   */
+  getRolUsuarioUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.ROL_USUARIO);
+  }
+
+  /**
+   * Obtiene URL del endpoint de Menú
+   */
+  getMenuUrl(): string {
+    return this.getEndpointUrl(this.ENDPOINT_NAMES.MENU);
+  }
+
+  /**
+   * Método de debug para mostrar todas las URLs disponibles
+   */
+  debugUrls(): void {
+    console.log('🔧 SPConfigService - URLs disponibles:');
+    Object.entries(this.ENDPOINT_NAMES).forEach(([key, endpointName]) => {
+      const url = this.getEndpointUrl(endpointName);
+      console.log(`  ${key}: ${url || 'No disponible'}`);
+    });
+  }
+
+  // ========================================
+  // MÉTODOS ESPECÍFICOS PARA ENDPOINT ID 2 (ROLES)
+  // ========================================
+
+  /**
+   * GET - Obtener todos los roles (ID 2)
+   */
+  getRoles(): Observable<any[]> {
+    const url = this.getRolesUrl();
+    console.log(`👥 Consultando roles desde: ${url}`);
+
+    return this.http.get<any>(url, this.httpOptions).pipe(
+      map(response => {
+        if (response.statuscode === 200 && response.data) {
+          return Array.isArray(response.data) ? response.data : [response.data];
+        }
+        return [];
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * POST - Crear nuevo rol (ID 2)
+   */
+  createRol(rolData: any): Observable<any> {
+    const url = this.getRolesUrl();
+    console.log(`➕ Creando rol en: ${url}`);
+
+    return this.http.post<any>(url, rolData, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Rol creado exitosamente`);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * PUT - Actualizar rol por ID (ID 2)
+   */
+  updateRol(id: number, rolData: any): Observable<any> {
+    const baseUrl = this.getRolesUrl();
+    const url = `${baseUrl}/${id}`;
+    console.log(`🔄 Actualizando rol en: ${url}`);
+
+    return this.http.put<any>(url, rolData, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Rol actualizado exitosamente: ID ${id}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * DELETE - Eliminar rol por ID (ID 2)
+   */
+  deleteRol(id: number): Observable<any> {
+    const baseUrl = this.getRolesUrl();
+    const url = `${baseUrl}/${id}`;
+    console.log(`🗑️ Eliminando rol en: ${url}`);
+
+    return this.http.delete<any>(url, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Rol eliminado exitosamente: ID ${id}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  // ========================================
+  // MÉTODOS PARA OTROS ENDPOINTS ÚTILES
+  // ========================================
+
+  /**
+   * GET - Obtener todos los usuarios (ID 1)
+   */
+  getUsuarios(): Observable<any[]> {
+    const url = this.getUsuariosUrl();
+    console.log(`👤 Consultando usuarios desde: ${url}`);
+
+    return this.http.get<any>(url, this.httpOptions).pipe(
+      map(response => {
+        if (response.statuscode === 200 && response.data) {
+          return Array.isArray(response.data) ? response.data : [response.data];
+        }
+        return [];
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * GET - Obtener todos los permisos de roles (ID 4)
+   */
+  getPermisosRoles(): Observable<any[]> {
+    const url = this.getRolUsuarioUrl();
+    console.log(`🔐 Consultando permisos de roles desde: ${url}`);
+
+    return this.http.get<any>(url, this.httpOptions).pipe(
+      map(response => {
+        if (response.statuscode === 200 && response.data) {
+          return Array.isArray(response.data) ? response.data : [response.data];
+        }
+        return [];
+      }),
+      catchError(this.handleError)
+    );
+  }
+
 
   /**
    * GET - Consulta de configuraciones de SP
    * Si no se especifica id, regresa todas las configuraciones
    */
   getSPConfigs(id?: number): Observable<SPConfig[]> {
-    let url = `${this.baseUrl}${this.endpoints.SPCONFIG}/1`; // ID fijo en URL
-    
+    const baseUrl = this.getSpconfigUrl();
+    let url = baseUrl;
+
     if (id) {
-      url += `/${id}`;
+      url = `${baseUrl}/${id}`;
     }
+
+    console.log(`🔍 Consultando SPConfigs desde: ${url}`);
 
     return this.http.get<SPConfigApiResponse>(url, this.httpOptions).pipe(
       map(response => {
@@ -89,8 +287,10 @@ export class SPConfigService {
    * POST - Crear nueva configuración de SP
    */
   createSPConfig(config: SPConfigForm): Observable<SPConfigApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.SPCONFIG}/1`;
-    
+    const url = this.getSpconfigUrl();
+
+    console.log(`📝 Creando SPConfig en: ${url}`);
+
     return this.http.post<SPConfigApiResponse>(url, config, this.httpOptions).pipe(
       tap(response => {
         if (response.statusCode === 200) {
@@ -105,8 +305,11 @@ export class SPConfigService {
    * PATCH - Actualizar atributos específicos de la configuración
    */
   updateSPConfig(id: number, config: Partial<SPConfigForm>): Observable<SPConfigApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.SPCONFIG}/${id}`;
-    
+    const baseUrl = this.getSpconfigUrl();
+    const url = `${baseUrl}/${id}`;
+
+    console.log(`🔄 Actualizando SPConfig en: ${url}`);
+
     return this.http.patch<SPConfigApiResponse>(url, config, this.httpOptions).pipe(
       tap(response => {
         if (response.statusCode === 200) {
@@ -121,8 +324,11 @@ export class SPConfigService {
    * PUT - Actualización completa de la configuración
    */
   updateSPConfigCompleto(id: number, config: SPConfigForm): Observable<SPConfigApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.SPCONFIG}/${id}`;
-    
+    const baseUrl = this.getSpconfigUrl();
+    const url = `${baseUrl}/${id}`;
+
+    console.log(`🔄 Actualizando SPConfig completamente en: ${url}`);
+
     return this.http.put<SPConfigApiResponse>(url, config, this.httpOptions).pipe(
       tap(response => {
         if (response.statusCode === 200) {
@@ -137,8 +343,11 @@ export class SPConfigService {
    * DELETE - Eliminar configuración de SP
    */
   deleteSPConfig(id: number): Observable<SPConfigApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.SPCONFIG}/${id}`;
-    
+    const baseUrl = this.getSpconfigUrl();
+    const url = `${baseUrl}/${id}`;
+
+    console.log(`🗑️ Eliminando SPConfig en: ${url}`);
+
     return this.http.delete<SPConfigApiResponse>(url, this.httpOptions).pipe(
       tap(response => {
         if (response.statusCode === 200) {
@@ -157,11 +366,12 @@ export class SPConfigService {
    * DL -> eliminar el registro señalado por el id
    */
   executeAction(action: SPConfigAction, data?: any): Observable<SPConfigApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.SPCONFIG}/1`;
+    const url = this.getSpconfigUrl();
     const body = { action, ...data };
-    
+
     console.log(`🔧 Ejecutando acción de SPConfig: ${action}`, body);
-    
+    console.log(`📍 URL: ${url}`);
+
     return this.http.post<SPConfigApiResponse>(url, body, this.httpOptions).pipe(
       tap(response => {
         if (response.statusCode === 200) {
@@ -465,7 +675,10 @@ export class SPConfigService {
    * Probar conectividad con la API
    */
   testConnection(): Observable<boolean> {
-    return this.http.get<SPConfigApiResponse>(`${this.baseUrl}${this.endpoints.SPCONFIG}/1`, this.httpOptions).pipe(
+    const url = this.getSpconfigUrl();
+    console.log(`🔍 Probando conexión con: ${url}`);
+
+    return this.http.get<SPConfigApiResponse>(url, this.httpOptions).pipe(
       map(response => {
         console.log('✅ Conexión exitosa con la API de SPConfig');
         return true;

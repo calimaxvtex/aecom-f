@@ -3,6 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SessionService } from '@/core/services/session.service';
+
+// Servicios actualizados
+import { UsuarioService } from '../../../features/usuarios/services/usuario.service';
+import { RolService } from '../../../features/usuarios/services/rol.service';
+import { RolUsuarioService } from '../../../features/usuarios/services/rol-usuario.service';
+import { RolDetalleService } from '../../../features/usuarios/services/rol-detalle.service';
 import { TableModule, Table } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -140,8 +146,7 @@ interface RolUsuarioMock {
                                             pButton 
                                             raised 
                                             class="w-auto" 
-                                            icon="pi pi-refresh" 
-                                            label="Actualizar"
+                                            icon="pi pi-refresh"
                                             [loading]="loadingUsuarios"
                                         ></button>
                                         <button 
@@ -149,8 +154,7 @@ interface RolUsuarioMock {
                                             pButton 
                                             raised 
                                             class="w-auto" 
-                                            icon="pi pi-plus" 
-                                            label="Agregar Usuario"
+                                            icon="pi pi-plus"
                                         ></button>
                                     </div>
                                 </div>
@@ -375,8 +379,7 @@ interface RolUsuarioMock {
                                             pButton 
                                             raised 
                                             class="w-auto" 
-                                            icon="pi pi-refresh" 
-                                            label="Actualizar"
+                                            icon="pi pi-refresh"
                                             [loading]="loadingPermisos"
                                         ></button>
                                         <button 
@@ -384,8 +387,7 @@ interface RolUsuarioMock {
                                             pButton 
                                             outlined 
                                             class="w-auto" 
-                                            icon="pi pi-plus" 
-                                            label="Asignar Permiso"
+                                            icon="pi pi-plus"
                                         ></button>
                                     </div>
                                 </div>
@@ -576,8 +578,7 @@ interface RolUsuarioMock {
                                                 pButton 
                                                 raised 
                                                 class="w-auto" 
-                                                icon="pi pi-refresh" 
-                                                label="Actualizar"
+                                                icon="pi pi-refresh"
                                                 [loading]="loadingRoles"
                                             ></button>
                                             <button 
@@ -585,8 +586,7 @@ interface RolUsuarioMock {
                                                 pButton 
                                                 outlined 
                                                 class="w-auto" 
-                                                icon="pi pi-plus" 
-                                                label="Agregar Rol"
+                                                icon="pi pi-plus"
                                             ></button>
                                         </div>
                                     </div>
@@ -736,8 +736,7 @@ interface RolUsuarioMock {
                                             pButton 
                                             outlined 
                                             class="w-full sm:w-auto flex-order-0 sm:flex-order-1" 
-                                            icon="pi pi-plus" 
-                                            label="Agregar Detalle"
+                                            icon="pi pi-plus"
                                             [disabled]="!rolSeleccionado"
                                         ></button>
                                     </div>
@@ -1712,12 +1711,18 @@ export class UsuariosComponent implements OnInit {
     loadingUsuarios = false;
     loadingRoles = false;
     loadingPermisos = false;
-    apiUrl = 'http://localhost:3000/api/admusr/v1'; // API ID 1 - Usuarios
-    rolesApiUrl = 'http://localhost:3000/api/adminUsr/rol'; // API ID 2 - Roles
-    permisosApiUrl = 'http://localhost:3000/api/admrolu/v1'; // API ID 4 - Rol-Usuario (Permisos)
-    rolDetalleApiUrl = 'http://localhost:3000/api/admrold/v1'; // API ID 3 - Rol Detalle
 
-    constructor(private messageService: MessageService, private fb: FormBuilder, private http: HttpClient, private sessionService: SessionService) {
+    // Servicios actualizados (reemplazan las URLs hardcodeadas)
+    constructor(
+        private messageService: MessageService,
+        private fb: FormBuilder,
+        private http: HttpClient,
+        private sessionService: SessionService,
+        private usuarioService: UsuarioService,
+        private rolService: RolService,
+        private rolUsuarioService: RolUsuarioService,
+        private rolDetalleService: RolDetalleService
+    ) {
         console.log('🔧 UsuariosComponent: Constructor ejecutado');
         console.log('📧 MessageService disponible:', !!this.messageService);
         
@@ -1782,8 +1787,8 @@ export class UsuariosComponent implements OnInit {
         const payload = this.createApiPayload({
             action: 'SL'
         });
-        
-        this.http.post(this.apiUrl, payload).subscribe({
+
+        this.usuarioService.executeAction('SL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Usuarios cargados - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -1903,8 +1908,8 @@ export class UsuariosComponent implements OnInit {
         const payload = this.createApiPayload({
             action: 'SL'
         });
-        
-        this.http.post(this.rolesApiUrl, payload).subscribe({
+
+        this.rolService.executeAction('SL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Roles cargados - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -2004,8 +2009,8 @@ export class UsuariosComponent implements OnInit {
         const payload = this.createApiPayload({
             action: 'SL'
         });
-        
-        this.http.post(this.permisosApiUrl, payload).subscribe({
+
+        this.rolUsuarioService.executeAction('SL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Permisos cargados - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -2104,8 +2109,8 @@ export class UsuariosComponent implements OnInit {
         const payload = this.createApiPayload({
             action: 'SL'
         });
-        
-        this.http.post(this.rolDetalleApiUrl, payload).subscribe({
+
+        this.rolDetalleService.consultarDetalleRol(payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Rol detalle cargado - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -2748,9 +2753,8 @@ export class UsuariosComponent implements OnInit {
         });
         
         console.log('📤 Payload completo enviado:', payload);
-        console.log('📤 URL destino:', this.apiUrl);
-        
-        this.http.post(this.apiUrl, payload).subscribe({
+
+        this.usuarioService.createUsuario(payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Usuario creado en API - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -2861,8 +2865,8 @@ export class UsuariosComponent implements OnInit {
             console.log('🔐 Password OMITIDO del payload (campo vacío)');
             // NO se agrega el campo password al payload
         }
-        
-        this.http.post(this.apiUrl, payload).subscribe({
+
+        this.usuarioService.executeAction('UP', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Usuario actualizado en API - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -2970,8 +2974,8 @@ export class UsuariosComponent implements OnInit {
             id: userId,
             action: 'DL' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.apiUrl, payload).subscribe({
+
+        this.usuarioService.executeAction('DL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Usuario eliminado en API - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -3115,8 +3119,8 @@ export class UsuariosComponent implements OnInit {
             [field]: value,
             action: 'UP' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.apiUrl, payload).subscribe({
+
+        this.usuarioService.executeAction('UP', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Campo de usuario actualizado en API - RESPUESTA COMPLETA:', response);
                 console.log('✅ Tipo de respuesta:', typeof response);
@@ -3310,8 +3314,8 @@ export class UsuariosComponent implements OnInit {
             id: permisoId,
             action: 'DL' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.permisosApiUrl, payload).subscribe({
+
+        this.rolUsuarioService.executeAction('DL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Permiso eliminado en API - RESPUESTA COMPLETA:', response);
                 
@@ -3375,8 +3379,8 @@ export class UsuariosComponent implements OnInit {
             [field]: value,
             action: 'UP' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.permisosApiUrl, payload).subscribe({
+
+        this.rolUsuarioService.executeAction('UP', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Campo de permiso actualizado en API - RESPUESTA COMPLETA:', response);
                 
@@ -3724,8 +3728,8 @@ export class UsuariosComponent implements OnInit {
             id: rolId,
             action: 'DL' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.rolesApiUrl, payload).subscribe({
+
+        this.rolService.executeAction('DL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Rol eliminado en API - RESPUESTA COMPLETA:', response);
                 
@@ -3794,8 +3798,8 @@ export class UsuariosComponent implements OnInit {
             [field]: value,
             action: 'UP' // Según convenciones del proyecto
         };
-        
-        this.http.post(this.rolesApiUrl, payload).subscribe({
+
+        this.rolService.executeAction('UP', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Campo de rol actualizado en API - RESPUESTA COMPLETA:', response);
                 
@@ -4125,9 +4129,9 @@ export class UsuariosComponent implements OnInit {
             id: detalleId,
             action: 'DL' // Según convenciones del proyecto
         };
-        
-        // Usar endpoint específico de rol detalle
-        this.http.post(this.rolDetalleApiUrl, payload).subscribe({
+
+        // Usar servicio de rol detalle
+        this.rolDetalleService.executeAction('DL', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Rol detalle eliminado en API - RESPUESTA COMPLETA:', response);
                 
@@ -4191,9 +4195,9 @@ export class UsuariosComponent implements OnInit {
             [field]: value,
             action: 'UP' // Según convenciones del proyecto
         };
-        
-        // Usar endpoint específico de rol detalle
-        this.http.post(this.rolDetalleApiUrl, payload).subscribe({
+
+        // Usar servicio de rol detalle
+        this.rolDetalleService.executeAction('UP', payload).subscribe({
             next: (response: any) => {
                 console.log('✅ Campo de rol detalle actualizado en API - RESPUESTA COMPLETA:', response);
                 

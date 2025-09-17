@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SessionService } from '@/core/services/session.service';
+import { SPConfigService } from '../../../features/spconfig/services/spconfig.service';
+import { ControllersService } from '../../../core/services/controllers.service';
 
 // PrimeNG Components
 import { TableModule } from 'primeng/table';
@@ -20,6 +22,7 @@ import { MessageService } from 'primeng/api';
 // Interfaces y modelos
 import { SPConfig } from '../../../features/spconfig/models/spconfig.interface';
 import { ApiCall, MonitorConfig } from '../../../types/monitor.types';
+import { ApiConnTabComponent } from './apiconn-tab.component';
 
 // Interfaces para Controllers
 interface Controller {
@@ -96,7 +99,10 @@ interface ReloadResponse {
         TagModule,
         SelectModule,
         TabsModule,
-        TooltipModule
+        TooltipModule,
+
+        // Componente ApiConn
+        ApiConnTabComponent
     ],
     providers: [MessageService],
     template: `
@@ -141,16 +147,12 @@ interface ReloadResponse {
                         SPConfig
                     </p-tab>
                     <p-tab value="1">
-                        <i class="pi pi-cog mr-2"></i>
-                        API Config
-                    </p-tab>
-                    <p-tab value="2">
                         <i class="pi pi-server mr-2"></i>
                         Controllers
                     </p-tab>
-                    <p-tab value="3">
-                        <i class="pi pi-eye mr-2"></i>
-                        Monitor
+                    <p-tab value="2">
+                        <i class="pi pi-link mr-2"></i>
+                        API Connections
                     </p-tab>
                 </p-tablist>
                 
@@ -158,7 +160,7 @@ interface ReloadResponse {
                     <!-- Panel 1: SPConfig -->
                     <p-tabpanel value="0">
                         <div class="mb-4">
-                            <h1 class="text-2xl font-bold mb-2">🗄️ Configuración de Stored Procedures</h1>
+                            
                             <p class="text-gray-600 mb-4">Gestiona los stored procedures del sistema</p>
                         </div>
 
@@ -183,22 +185,24 @@ interface ReloadResponse {
                                         class="w-full sm:w-80 order-1 sm:order-0"
                                     />
                                     <div class="flex gap-2 order-0 sm:order-1">
-                                        <button 
-                                            (click)="cargarSPConfigs()" 
-                                            pButton 
-                                            raised 
-                                            class="w-full sm:w-auto" 
-                                            icon="pi pi-refresh" 
-                                            label="Actualizar"
+                                        <button
+                                            (click)="cargarSPConfigs()"
+                                            pButton
+                                            raised
+                                            class="square-button"
+                                            icon="pi pi-refresh"
                                             [loading]="loadingSPConfigs"
+                                            pTooltip="Actualizar"
+                                            tooltipPosition="top"
                                         ></button>
-                                        <button 
-                                            (click)="openSPConfigForm()" 
-                                            pButton 
-                                            raised 
-                                            class="w-full sm:w-auto" 
-                                            icon="pi pi-plus" 
-                                            label="Agregar SPConfig"
+                                        <button
+                                            (click)="openSPConfigForm()"
+                                            pButton
+                                            raised
+                                            class="square-button"
+                                            icon="pi pi-plus"
+                                            pTooltip="Agregar SPConfig"
+                                            tooltipPosition="top"
                                         ></button>
                                     </div>
                                 </div>
@@ -544,314 +548,11 @@ interface ReloadResponse {
                         </p-table>
                     </p-tabpanel>
                     
-                    <!-- Panel 2: API Config -->
+                    
+                    <!-- Panel 2: Controllers -->
                     <p-tabpanel value="1">
                         <div class="mb-4">
-                            <h1 class="text-2xl font-bold mb-2">🔌 Configuración de APIs del Sistema</h1>
-                            <p class="text-gray-600 mb-4">Gestiona y verifica todas las APIs del sistema</p>
-                        </div>
-
-                        <p-table
-                            #dtAPIConfig
-                            [value]="apiConfigs"
-                            [paginator]="true"
-                            [rows]="10"
-                            [showCurrentPageReport]="true"
-                            responsiveLayout="scroll"
-                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} APIs"
-                            [rowsPerPageOptions]="[10, 25, 50]"
-                            [globalFilterFields]="['nombre', 'url', 'metodo', 'estado']"
-                        >
-                            <ng-template #caption>
-                                <div class="flex flex-wrap gap-2 items-center justify-between">
-                                    <input 
-                                        pInputText
-                                        type="text" 
-                                        (input)="onGlobalFilter(dtAPIConfig, $event)" 
-                                        placeholder="Buscar APIs..." 
-                                        class="w-full sm:w-80 order-1 sm:order-0"
-                                    />
-                                    <button 
-                                        (click)="openAPIConfigForm()" 
-                                        pButton 
-                                        outlined 
-                                        class="w-full sm:w-auto flex-order-0 sm:flex-order-1" 
-                                        icon="pi pi-plus" 
-                                        label="Agregar API"
-                                    ></button>
-                                </div>
-                            </ng-template>
-
-                            <ng-template #header>
-                                <tr>
-                                    <th pSortableColumn="id" style="width: 80px">ID <p-sortIcon field="id"></p-sortIcon></th>
-                                    <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
-                                    <th pSortableColumn="url" style="min-width: 300px">URL <p-sortIcon field="url"></p-sortIcon></th>
-                                    <th pSortableColumn="metodo" style="width: 100px">Param <p-sortIcon field="metodo"></p-sortIcon></th>
-                                    <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
-                                    <th pSortableColumn="timeout" style="width: 100px">Timeout <p-sortIcon field="timeout"></p-sortIcon></th>
-                                    <th style="width: 200px">Acciones</th>
-                                </tr>
-                            </ng-template>
-
-                            <ng-template #body let-api>
-                                <tr>
-                                    <!-- ID - NO EDITABLE -->
-                                    <td>{{api.id}}</td>
-                                    
-                                    <!-- Nombre - EDITABLE -->
-                                    <td>
-                                        <span
-                                            *ngIf="editingCell !== api.id + '_nombre'"
-                                            (click)="editInlineAPIConfig(api, 'nombre')"
-                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                            title="Clic para editar"
-                                        >
-                                            {{api.nombre}}
-                                        </span>
-                                        <div
-                                            *ngIf="editingCell === api.id + '_nombre'"
-                                            class="inline-edit-container"
-                                        >
-                                            <input
-                                                pInputText
-                                                type="text"
-                                                [(ngModel)]="api.nombre"
-                                                (keyup.enter)="saveInlineEditAPIConfig(api, 'nombre')"
-                                                (keyup.escape)="cancelInlineEditAPIConfig()"
-                                                class="p-inputtext-sm flex-1"
-                                                #input
-                                                (focus)="input.select()"
-                                                autofocus
-                                                placeholder="Nombre de la API"
-                                            />
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditAPIConfig(api, 'nombre')"
-                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                                pTooltip="Guardar (Enter)"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEditAPIConfig()"
-                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                                pTooltip="Deshacer (Escape)"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- URL - EDITABLE -->
-                                    <td>
-                                        <span
-                                            *ngIf="editingCell !== api.id + '_url'"
-                                            (click)="editInlineAPIConfig(api, 'url')"
-                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                            title="Clic para editar"
-                                        >
-                                            {{api.url}}
-                                        </span>
-                                        <div
-                                            *ngIf="editingCell === api.id + '_url'"
-                                            class="inline-edit-container"
-                                        >
-                                            <input
-                                                pInputText
-                                                type="text"
-                                                [(ngModel)]="api.url"
-                                                (keyup.enter)="saveInlineEditAPIConfig(api, 'url')"
-                                                (keyup.escape)="cancelInlineEditAPIConfig()"
-                                                class="p-inputtext-sm flex-1"
-                                                #input
-                                                (focus)="input.select()"
-                                                autofocus
-                                                placeholder="URL de la API"
-                                            />
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditAPIConfig(api, 'url')"
-                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                                pTooltip="Guardar (Enter)"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEditAPIConfig()"
-                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                                pTooltip="Deshacer (Escape)"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- Método - EDITABLE -->
-                                    <td>
-                                        <span
-                                            *ngIf="editingCell !== api.id + '_metodo'"
-                                            (click)="editInlineAPIConfig(api, 'metodo')"
-                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                            title="Clic para editar"
-                                        >
-                                            {{api.metodo}}
-                                        </span>
-                                        <div
-                                            *ngIf="editingCell === api.id + '_metodo'"
-                                            class="inline-edit-container"
-                                        >
-                                            <p-select
-                                                [(ngModel)]="api.metodo"
-                                                [options]="getMetodosOptions()"
-                                                optionLabel="label"
-                                                optionValue="value"
-                                                (keyup.enter)="saveInlineEditAPIConfig(api, 'metodo')"
-                                                (keyup.escape)="cancelInlineEditAPIConfig()"
-                                                class="flex-1"
-                                                placeholder="Seleccionar método"
-                                                autofocus
-                                            ></p-select>
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditAPIConfig(api, 'metodo')"
-                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                                pTooltip="Guardar (Enter)"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEditAPIConfig()"
-                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                                pTooltip="Deshacer (Escape)"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- Estado - EDITABLE -->
-                                    <td>
-                                        <span
-                                            *ngIf="editingCell !== api.id + '_estado'"
-                                            (click)="editInlineAPIConfig(api, 'estado')"
-                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                            title="Clic para editar"
-                                        >
-                                            <p-tag 
-                                                [value]="getEstadoAPIConfigLabel(api.estado)"
-                                                [severity]="getEstadoAPIConfigSeverity(api.estado)"
-                                            ></p-tag>
-                                        </span>
-                                        <div
-                                            *ngIf="editingCell === api.id + '_estado'"
-                                            class="inline-edit-container"
-                                        >
-                                            <p-select
-                                                [(ngModel)]="api.estado"
-                                                [options]="getEstadosOptions()"
-                                                optionLabel="label"
-                                                optionValue="value"
-                                                (keyup.enter)="saveInlineEditAPIConfig(api, 'estado')"
-                                                (keyup.escape)="cancelInlineEditAPIConfig()"
-                                                class="flex-1"
-                                                placeholder="Seleccionar estado"
-                                                autofocus
-                                            ></p-select>
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditAPIConfig(api, 'estado')"
-                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                                pTooltip="Guardar (Enter)"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEditAPIConfig()"
-                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                                pTooltip="Deshacer (Escape)"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- Timeout - EDITABLE -->
-                                    <td>
-                                        <span
-                                            *ngIf="editingCell !== api.id + '_timeout'"
-                                            (click)="editInlineAPIConfig(api, 'timeout')"
-                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                            title="Clic para editar"
-                                        >
-                                            {{api.timeout}}ms
-                                        </span>
-                                        <div
-                                            *ngIf="editingCell === api.id + '_timeout'"
-                                            class="inline-edit-container"
-                                        >
-                                            <input
-                                                pInputText
-                                                type="number"
-                                                [(ngModel)]="api.timeout"
-                                                (keyup.enter)="saveInlineEditAPIConfig(api, 'timeout')"
-                                                (keyup.escape)="cancelInlineEditAPIConfig()"
-                                                class="p-inputtext-sm flex-1"
-                                                #input
-                                                (focus)="input.select()"
-                                                autofocus
-                                                placeholder="Timeout en ms"
-                                                min="1000"
-                                                max="30000"
-                                            />
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditAPIConfig(api, 'timeout')"
-                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                                pTooltip="Guardar (Enter)"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEditAPIConfig()"
-                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                                pTooltip="Deshacer (Escape)"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                    
-                                                                         <!-- Acciones -->
-                                     <td>
-                                         <div class="flex gap-1">
-                                             <button
-                                                 pButton
-                                                 icon="pi pi-play"
-                                                 (click)="testAPIConnection(api)"
-                                                 class="p-button-sm p-button-text p-button-success"
-                                                 pTooltip="Probar Conexión de API"
-                                             ></button>
-                                             <button
-                                                 pButton
-                                                 icon="pi pi-pencil"
-                                                 (click)="openAPIConfigForm(api)"
-                                                 class="p-button-sm p-button-text p-button-info"
-                                                 pTooltip="Editar API Config"
-                                             ></button>
-                                             <button
-                                                 pButton
-                                                 icon="pi pi-trash"
-                                                 (click)="eliminarAPIConfig(api)"
-                                                 class="p-button-sm p-button-text p-button-danger"
-                                                 pTooltip="Eliminar API Config"
-                                             ></button>
-                                         </div>
-                                     </td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
-                    </p-tabpanel>
-                    
-                    <!-- Panel 3: Controllers -->
-                    <p-tabpanel value="2">
-                        <div class="mb-4">
-                            <h1 class="text-2xl font-bold mb-2">🎮 Controladores Dinámicos</h1>
+                            
                             <p class="text-gray-600 mb-4">Consulta los controladores activos del sistema</p>
                         </div>
 
@@ -1070,282 +771,12 @@ interface ReloadResponse {
                             </div>
                         </div>
                     </p-tabpanel>
-                    
-                    <!-- Panel 4: Monitor -->
-                    <p-tabpanel value="3">
-                        <div class="mb-4">
-                            <h1 class="text-2xl font-bold mb-2">👁️ Monitor de APIs</h1>
-                            <p class="text-gray-600 mb-4">Intercepta y monitorea todas las llamadas a APIs del sistema</p>
-                        </div>
 
-                        <!-- Configuración del Monitor -->
-                        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <div class="flex items-center gap-2 mb-4">
-                                <i class="pi pi-cog text-blue-600 text-xl"></i>
-                                <h3 class="text-lg font-semibold text-blue-800">Configuración del Monitor</h3>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <!-- Estado del Monitor -->
-                                <div class="flex items-center gap-2">
-                                    <p-tag 
-                                        [value]="monitorConfig.enabled ? 'ACTIVO' : 'INACTIVO'"
-                                        [severity]="monitorConfig.enabled ? 'success' : 'danger'"
-                                    ></p-tag>
-                                    <button 
-                                        (click)="toggleMonitor()" 
-                                        pButton 
-                                        [label]="monitorConfig.enabled ? 'Desactivar' : 'Activar'"
-                                        [class]="monitorConfig.enabled ? 'p-button-danger' : 'p-button-success'"
-                                        class="p-button-sm"
-                                    ></button>
-                                </div>
-                                
-                                <!-- Límite de Registros -->
-                                <div class="flex items-center gap-2">
-                                    <label class="text-sm font-medium">Límite:</label>
-                                    <input 
-                                        pInputText 
-                                        type="number"
-                                        [(ngModel)]="monitorConfig.maxRecords"
-                                        (change)="updateMonitorConfig()"
-                                        class="w-20"
-                                        min="100"
-                                        max="10000"
-                                    />
-                                </div>
-                                
-                                <!-- Auto Limpieza -->
-                                <div class="flex items-center gap-2">
-                                    <input 
-                                        type="checkbox" 
-                                        [(ngModel)]="monitorConfig.autoCleanup"
-                                        (change)="updateMonitorConfig()"
-                                        class="mr-2"
-                                    />
-                                    <label class="text-sm">Auto Limpieza</label>
-                                </div>
-                                
-                                <!-- Días de Limpieza -->
-                                <div class="flex items-center gap-2">
-                                    <label class="text-sm font-medium">Días:</label>
-                                    <input 
-                                        pInputText 
-                                        type="number"
-                                        [(ngModel)]="monitorConfig.cleanupDays"
-                                        (change)="updateMonitorConfig()"
-                                        class="w-16"
-                                        min="1"
-                                        max="30"
-                                        [disabled]="!monitorConfig.autoCleanup"
-                                    />
-                                </div>
-                            </div>
-                            
-                            <!-- Controles -->
-                            <div class="flex gap-2 mt-4">
-                                <button 
-                                    (click)="resetMonitorData()" 
-                                    pButton 
-                                    label="Reset Datos" 
-                                    icon="pi pi-trash"
-                                    class="p-button-danger p-button-sm"
-                                ></button>
-                                <button 
-                                    (click)="exportMonitorData()" 
-                                    pButton 
-                                    label="Exportar" 
-                                    icon="pi pi-download"
-                                    class="p-button-info p-button-sm"
-                                ></button>
-                                <button 
-                                    (click)="cleanupOldRecords()" 
-                                    pButton 
-                                    label="Limpiar Antiguos" 
-                                    icon="pi pi-broom"
-                                    class="p-button-warning p-button-sm"
-                                ></button>
-                            </div>
-                        </div>
-
-                        <!-- Estadísticas -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div class="bg-white p-4 rounded border text-center">
-                                <div class="text-2xl font-bold text-blue-600">{{apiCalls.length}}</div>
-                                <div class="text-sm text-gray-600">Total Registros</div>
-                            </div>
-                            <div class="bg-white p-4 rounded border text-center">
-                                <div class="text-2xl font-bold text-green-600">{{getApiCallsByType('out').length}}</div>
-                                <div class="text-sm text-gray-600">Salientes</div>
-                            </div>
-                            <div class="bg-white p-4 rounded border text-center">
-                                <div class="text-2xl font-bold text-orange-600">{{getApiCallsByType('in').length}}</div>
-                                <div class="text-sm text-gray-600">Entrantes</div>
-                            </div>
-                            <div class="bg-white p-4 rounded border text-center">
-                                <div class="text-2xl font-bold text-red-600">{{getErrorCalls().length}}</div>
-                                <div class="text-sm text-gray-600">Errores</div>
-                            </div>
-                        </div>
-
-                        <!-- Tabla de Registros -->
-                        <p-table
-                            #dtMonitor
-                            [value]="apiCalls"
-                            [paginator]="true"
-                            [rows]="20"
-                            [showCurrentPageReport]="true"
-                            responsiveLayout="scroll"
-                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} llamadas"
-                            [rowsPerPageOptions]="[10, 20, 50, 100]"
-                            [globalFilterFields]="['url', 'ruta', 'servidor', 'statusCode', 'mensaje']"
-                            sortField="timestamp"
-                            [sortOrder]="-1"
-                        >
-                            <ng-template #caption>
-                                <div class="space-y-4">
-                                    <!-- Filtros de búsqueda -->
-                                    <div class="flex flex-wrap gap-2 items-center justify-between">
-                                        <input 
-                                            pInputText
-                                            type="text" 
-                                            (input)="onGlobalFilter(dtMonitor, $event)" 
-                                            placeholder="Buscar llamadas..." 
-                                            class="w-full sm:w-80 order-1 sm:order-0"
-                                        />
-                                        <div class="flex gap-2 order-0 sm:order-1">
-                                            <button 
-                                                (click)="refreshMonitorData()" 
-                                                pButton 
-                                                outlined 
-                                                class="w-full sm:w-auto" 
-                                                icon="pi pi-refresh" 
-                                                label="Actualizar"
-                                            ></button>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Filtros específicos -->
-                                    <div class="flex flex-wrap gap-2 items-center">
-                                        <span class="text-sm font-medium text-gray-700">Filtros:</span>
-                                        <button 
-                                            (click)="filterMonitorByType('all')" 
-                                            pButton 
-                                            [class]="monitorFilterType === 'all' ? 'p-button-primary' : 'p-button-outlined'"
-                                            class="p-button-sm"
-                                            label="Todos"
-                                        ></button>
-                                        <button 
-                                            (click)="filterMonitorByType('errors')" 
-                                            pButton 
-                                            [class]="monitorFilterType === 'errors' ? 'p-button-danger' : 'p-button-outlined'"
-                                            class="p-button-sm"
-                                            icon="pi pi-exclamation-triangle"
-                                            label="Solo Errores"
-                                        ></button>
-                                        <button 
-                                            (click)="filterMonitorByType('success')" 
-                                            pButton 
-                                            [class]="monitorFilterType === 'success' ? 'p-button-success' : 'p-button-outlined'"
-                                            class="p-button-sm"
-                                            icon="pi pi-check"
-                                            label="Solo Éxitos"
-                                        ></button>
-                                        <button 
-                                            (click)="filterMonitorByType('out')" 
-                                            pButton 
-                                            [class]="monitorFilterType === 'out' ? 'p-button-info' : 'p-button-outlined'"
-                                            class="p-button-sm"
-                                            icon="pi pi-arrow-right"
-                                            label="Salientes"
-                                        ></button>
-                                        <button 
-                                            (click)="filterMonitorByType('in')" 
-                                            pButton 
-                                            [class]="monitorFilterType === 'in' ? 'p-button-warning' : 'p-button-outlined'"
-                                            class="p-button-sm"
-                                            icon="pi pi-arrow-left"
-                                            label="Entrantes"
-                                        ></button>
-                                    </div>
-                                </div>
-                            </ng-template>
-
-                            <ng-template #header>
-                                <tr>
-                                    <th pSortableColumn="timestamp" style="width: 150px">Timestamp <p-sortIcon field="timestamp"></p-sortIcon></th>
-                                    <th pSortableColumn="tipo" style="width: 80px">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
-                                    <th pSortableColumn="servidor" style="width: 120px">Servidor <p-sortIcon field="servidor"></p-sortIcon></th>
-                                    <th pSortableColumn="ruta" style="min-width: 200px">Ruta <p-sortIcon field="ruta"></p-sortIcon></th>
-                                    <th pSortableColumn="statusCode" style="width: 100px">Status <p-sortIcon field="statusCode"></p-sortIcon></th>
-                                    <th pSortableColumn="duracion" style="width: 100px">Duración <p-sortIcon field="duracion"></p-sortIcon></th>
-                                    <th style="width: 120px">Body</th>
-                                    <th style="width: 120px">Respuesta</th>
-                                    <th style="width: 150px">Acciones</th>
-                                </tr>
-                            </ng-template>
-
-                            <ng-template #body let-call>
-                                <tr>
-                                    <td>
-                                        <span class="text-sm">{{call.timestamp | date:'short'}}</span>
-                                    </td>
-                                    <td>
-                                        <p-tag 
-                                            [value]="call.tipo.toUpperCase()"
-                                            [severity]="call.tipo === 'in' ? 'info' : 'success'"
-                                        ></p-tag>
-                                    </td>
-                                    <td>
-                                        <span class="font-mono text-sm">{{call.servidor}}</span>
-                                    </td>
-                                    <td>
-                                        <span class="font-mono text-sm text-blue-600">{{call.ruta}}</span>
-                                    </td>
-                                    <td>
-                                        <p-tag 
-                                            [value]="call.statusCode.toString()"
-                                            [severity]="getStatusSeverity(call.statusCode)"
-                                        ></p-tag>
-                                    </td>
-                                    <td>
-                                        <span class="text-sm">{{call.duracion || 0}}ms</span>
-                                    </td>
-                                    <td>
-                                        <button
-                                            pButton
-                                            icon="pi pi-file-edit"
-                                            (click)="openJsonModal('Body', call.body)"
-                                            class="p-button-sm p-button-text p-button-warning"
-                                            pTooltip="Ver Body JSON"
-                                            [disabled]="!call.body"
-                                        ></button>
-                                    </td>
-                                    <td>
-                                        <button
-                                            pButton
-                                            icon="pi pi-file"
-                                            (click)="openJsonModal('Respuesta', call.respuesta)"
-                                            class="p-button-sm p-button-text p-button-success"
-                                            pTooltip="Ver Respuesta JSON"
-                                            [disabled]="!call.respuesta"
-                                        ></button>
-                                    </td>
-                                    <td>
-                                        <div class="flex gap-1">
-                                            <button
-                                                pButton
-                                                icon="pi pi-eye"
-                                                (click)="showApiCallDetails(call)"
-                                                class="p-button-sm p-button-text p-button-info"
-                                                pTooltip="Ver Detalles Completos"
-                                            ></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
+                    <!-- Panel 3: API Connections -->
+                    <p-tabpanel value="2">
+                        <app-apiconn-tab></app-apiconn-tab>
                     </p-tabpanel>
+
                 </p-tabpanels>
              </p-tabs>
          </div>
@@ -1925,6 +1356,28 @@ interface ReloadResponse {
         .grid::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        /* Estilos para botones cuadrados */
+        .square-button {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
+            border-radius: 8px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .square-button .p-button-icon {
+            font-size: 1.2rem !important;
+            margin: 0 !important;
+        }
+
+        .square-button .p-button-label {
+            display: none !important;
+        }
     `]
 })
 export class SPConfigComponent implements OnInit, OnDestroy {
@@ -1937,20 +1390,6 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     reloadInforme: Informe | null = null;
     loadingSPConfigs = false;
     
-    // Monitor
-    apiCalls: ApiCall[] = [];
-    monitorConfig: MonitorConfig = {
-        enabled: true, // Activado por defecto
-        maxRecords: 1000,
-        autoCleanup: true,
-        cleanupDays: 7
-    };
-    monitorFilterType: string = 'all'; // 'all', 'errors', 'success', 'out', 'in'
-    showApiCallDetailsModal = false;
-    selectedApiCall: ApiCall | null = null;
-    showJsonModal = false;
-    jsonModalTitle = '';
-    jsonModalContent = '';
 
     // Formularios
     spConfigForm: FormGroup;
@@ -1992,11 +1431,22 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     nuevoEstadoConfirm = '';
     estadoAnteriorConfirm = '';
 
+    // Propiedades para modales de detalles de API
+    showApiCallDetailsModal = false;
+    selectedApiCall: any = null;
+
+    // Propiedades para modal JSON
+    showJsonModal = false;
+    jsonModalTitle = '';
+    jsonModalContent = '';
+
     constructor(
         private fb: FormBuilder,
         private messageService: MessageService,
         private http: HttpClient,
-        private sessionService: SessionService
+        private sessionService: SessionService,
+        private spconfigService: SPConfigService,
+        private controllersService: ControllersService
     ) {
         console.log('🔧 SPConfigComponent: Constructor ejecutado');
         
@@ -2026,36 +1476,25 @@ export class SPConfigComponent implements OnInit, OnDestroy {
         console.log('🚀 SPConfigComponent: ngOnInit ejecutado');
         this.cargarDatos();
 
-        // Inicializar configuración del monitor al inicio
-        this.initializeMonitorConfig();
-
-        // Escuchar eventos de llamadas API capturadas por el interceptor
-        window.addEventListener('apiCallCaptured', (event: any) => {
-            console.log('🔍 Componente: Evento recibido:', event.detail);
-            this.addApiCall(event.detail);
-        });
-
-        console.log('🔍 Componente: Listener de eventos configurado');
+        // Inicializar datos del componente
+        console.log('🔍 Componente: Inicialización completada');
     }
 
     ngOnDestroy(): void {
-        // Limpiar el listener de eventos
-        window.removeEventListener('apiCallCaptured', (event: any) => {
-            this.addApiCall(event.detail);
-        });
+        // Limpieza del componente
+        console.log('🧹 SPConfigComponent: Componente destruido');
     }
 
     // Cargar datos mock
     cargarDatos(): void {
         console.log('📊 Cargando datos desde API...');
         this.cargarSPConfigs();
-        this.cargarAPIConfigs(); // Cargar APIs fijas del frontend
     }
 
     cargarSPConfigs(): void {
         console.log('📊 Cargando SPConfigs desde API...');
         this.loadingSPConfigs = true;
-        const apiUrl = 'http://localhost:3000/api/spconfig/v1'; // API id 6
+        const apiUrl = this.spconfigService.getSpconfigUrl();
         
         // Obtener datos de sesión
         const sessionBase = this.sessionService.getApiPayloadBase();
@@ -2159,8 +1598,8 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             error: (error) => {
                 console.error('❌ Error al cargar SPConfigs:', error);
                 
-                // Registrar error en el monitor
-                this.registrarErrorEnMonitor(error, apiUrl, 'GET');
+                // Error registrado en logs
+                console.error('❌ Error en SPConfigs:', error);
                 
                 // Extraer información detallada del error
                 let errorCode = 'N/A';
@@ -2247,12 +1686,12 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             }
         ];
 
-        // API Config mock (APIs del sistema)
+        // API Config mock (APIs del sistema) - URLs dinámicas desde servicios
         this.apiConfigs = [
             {
                 id: 1,
                 nombre: 'API Usuarios',
-                url: 'http://localhost:3000/api/admusr/v1',
+                url: this.spconfigService.getUsuariosUrl(),
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2260,7 +1699,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             {
                 id: 2,
                 nombre: 'API Roles',
-                url: 'http://localhost:3000/api/adminUsr/rol',
+                url: this.spconfigService.getRolesUrl(),
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2268,7 +1707,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             {
                 id: 3,
                 nombre: 'API Rol Detalle',
-                url: 'http://localhost:3000/api/admrold/v1',
+                url: this.spconfigService.getRolDetalleUrl(),
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2276,7 +1715,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             {
                 id: 4,
                 nombre: 'API Rol Usuario',
-                url: 'http://localhost:3000/api/admrolu/v1',
+                url: this.spconfigService.getRolUsuarioUrl(),
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2284,7 +1723,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             {
                 id: 5,
                 nombre: 'API Menús',
-                url: 'http://localhost:3000/api/adminMenu/menu',
+                url: this.spconfigService.getMenuUrl(),
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2292,7 +1731,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             {
                 id: 6,
                 nombre: 'API SPConfig',
-                url: 'http://localhost:3000/api/spconfig/v1/1',
+                url: this.spconfigService.getSpconfigUrl() + '/1',
                 metodo: 'POST',
                 estado: 'A',
                 timeout: 5000
@@ -2305,77 +1744,16 @@ export class SPConfigComponent implements OnInit, OnDestroy {
         });
     }
 
-    cargarAPIConfigs(): void {
-        console.log('📊 Cargando API Configs (APIs fijas del frontend)...');
-        // Las API Configs son fijas y no vienen de una API externa
-        // Son las APIs disponibles en este proyecto Angular
-        this.cargarAPIConfigsFijas();
-    }
 
-    cargarAPIConfigsFijas(): void {
-        console.log('📊 Cargando API Configs fijas del frontend...');
-        this.apiConfigs = [
-            {
-                id: 1,
-                nombre: 'API Usuarios',
-                url: 'http://localhost:3000/api/admusr/v1',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            },
-            {
-                id: 2,
-                nombre: 'API Roles',
-                url: 'http://localhost:3000/api/adminUsr/rol',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            },
-            {
-                id: 3,
-                nombre: 'API Rol Detalle',
-                url: 'http://localhost:3000/api/admrold/v1',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            },
-            {
-                id: 4,
-                nombre: 'API Rol Usuario',
-                url: 'http://localhost:3000/api/admrolu/v1',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            },
-            {
-                id: 5,
-                nombre: 'API Menús',
-                url: 'http://localhost:3000/api/adminMenu/menu',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            },
-            {
-                id: 6,
-                nombre: 'API SPConfig',
-                url: 'http://localhost:3000/api/spconfig/v1/1',
-                metodo: 'POST',
-                estado: 'A',
-                timeout: 5000
-            }
-        ];
-    }
 
     // ========== MÉTODOS PARA CONTROLLERS ==========
 
     // Cargar controladores desde la API (solo consulta)
     loadControllers(): void {
         console.log('🔍 Consultando controladores...');
-        
-        // URL de la API para consulta (ajustar según tu configuración)
-        const apiUrl = 'http://localhost:3000/apic/config'; // Cambiar por tu baseUrl
-        
-        this.http.get<ControllersResponse>(apiUrl).subscribe({
+
+        // Usar ControllersService para URL dinámica
+        this.controllersService.loadControllers().subscribe({
             next: (response) => {
                 console.log('✅ Controladores consultados:', response);
                 this.controllers = response.controllers || [];
@@ -2389,8 +1767,8 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             error: (error) => {
                 console.error('❌ Error consultando controladores:', error);
                 
-                // Registrar error en el monitor
-                this.registrarErrorEnMonitor(error, 'http://localhost:3000/apic/config', 'GET');
+                // Error registrado en logs
+                console.error('❌ Error al consultar controladores:', error);
                 
                 // Extraer información detallada del error
                 let errorCode = 'N/A';
@@ -2430,10 +1808,8 @@ export class SPConfigComponent implements OnInit, OnDestroy {
         console.log('🔄 Recargando controladores...');
         this.reloadingControllers = true;
         
-        // URL de la API para reload (ajustar según tu configuración)
-        const reloadUrl = 'http://localhost:3000/apic/config/reload'; // Cambiar por tu baseUrl
-        
-        this.http.post<ReloadResponse>(reloadUrl, {}).subscribe({
+        // Usar ControllersService para URL dinámica de recarga
+        this.controllersService.reloadControllers().subscribe({
             next: (response) => {
                 console.log('✅ Controladores recargados:', response);
                 this.reloadInforme = response.informe;
@@ -2449,8 +1825,8 @@ export class SPConfigComponent implements OnInit, OnDestroy {
                 console.error('❌ Error recargando controladores:', error);
                 this.reloadingControllers = false;
                 
-                // Registrar error en el monitor
-                this.registrarErrorEnMonitor(error, 'http://localhost:3000/apic/config/reload', 'POST');
+                // Error registrado en logs
+                console.error('❌ Error al recargar controladores:', error);
                 
                 // Extraer información detallada del error
                 let errorCode = 'N/A';
@@ -2531,296 +1907,6 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     // ========== MÉTODOS PARA MONITOR ==========
 
     // Inicializar configuración del monitor desde localStorage
-    initializeMonitorConfig(): void {
-        const savedConfig = localStorage.getItem('monitorConfig');
-        if (savedConfig) {
-            this.monitorConfig = { ...this.monitorConfig, ...JSON.parse(savedConfig) };
-        } else {
-            // Guardar configuración por defecto con monitor activado
-            this.monitorConfig.enabled = true;
-            this.saveMonitorConfig();
-        }
-        
-        // Cargar datos del monitor
-        this.loadMonitorData();
-    }
-
-    // Cargar datos del monitor desde localStorage
-    loadMonitorData(): void {
-        const savedData = localStorage.getItem('apiMonitor');
-        if (savedData) {
-            this.apiCalls = JSON.parse(savedData).map((call: any) => ({
-                ...call,
-                timestamp: new Date(call.timestamp)
-            }));
-        }
-    }
-
-    // Guardar datos del monitor en localStorage
-    saveMonitorData(): void {
-        localStorage.setItem('apiMonitor', JSON.stringify(this.apiCalls));
-    }
-
-    // Guardar configuración del monitor en localStorage
-    saveMonitorConfig(): void {
-        localStorage.setItem('monitorConfig', JSON.stringify(this.monitorConfig));
-    }
-
-    // Agregar nueva llamada API al monitor
-    addApiCall(apiCall: Omit<ApiCall, 'id' | 'timestamp'>): void {
-        console.log('🔍 Componente: addApiCall llamado con:', apiCall);
-        console.log('🔍 Componente: Monitor habilitado:', this.monitorConfig.enabled);
-        
-        if (!this.monitorConfig.enabled) {
-            console.log('🔍 Componente: Monitor deshabilitado, ignorando llamada');
-            return;
-        }
-
-        const newCall: ApiCall = {
-            ...apiCall,
-            id: this.generateId(),
-            timestamp: new Date()
-        };
-
-        console.log('🔍 Componente: Nueva llamada creada:', newCall);
-
-        this.apiCalls.unshift(newCall);
-
-        // Aplicar límite de registros
-        if (this.apiCalls.length > this.monitorConfig.maxRecords) {
-            this.apiCalls = this.apiCalls.slice(0, this.monitorConfig.maxRecords);
-        }
-
-        console.log('🔍 Componente: Total de llamadas:', this.apiCalls.length);
-        this.saveMonitorData();
-    }
-
-    // Generar ID único
-    generateId(): string {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    // Activar/Desactivar monitor
-    toggleMonitor(): void {
-        this.monitorConfig.enabled = !this.monitorConfig.enabled;
-        this.saveMonitorConfig();
-        
-        this.messageService.add({
-            severity: this.monitorConfig.enabled ? 'success' : 'info',
-            summary: 'Monitor',
-            detail: this.monitorConfig.enabled ? 'Monitor activado' : 'Monitor desactivado'
-        });
-    }
-
-    // Registrar error HTTP en el monitor
-    registrarErrorEnMonitor(error: any, url: string, method: string = 'GET', body: any = null): void {
-        if (!this.monitorConfig.enabled) return;
-
-        const errorCall: ApiCall = {
-            id: this.generateId(),
-            timestamp: new Date(),
-            tipo: 'out',
-            servidor: this.extractServerFromUrl(url),
-            ruta: this.extractRouteFromUrl(url),
-            url: url,
-            parametros: null,
-            body: body,
-            respuesta: error.error || null,
-            statusCode: error.status || 0,
-            mensaje: this.extractErrorMessage(error),
-            duracion: 0
-        };
-
-        // Agregar al inicio del array
-        this.apiCalls.unshift(errorCall);
-
-        // Mantener límite de registros
-        if (this.apiCalls.length > this.monitorConfig.maxRecords) {
-            this.apiCalls = this.apiCalls.slice(0, this.monitorConfig.maxRecords);
-        }
-
-        // Guardar en localStorage
-        this.saveMonitorData();
-
-        console.log('🚨 Error registrado en monitor:', errorCall);
-    }
-
-    // Métodos auxiliares para el registro de errores
-    private extractServerFromUrl(url: string): string {
-        try {
-            const urlObj = new URL(url);
-            return urlObj.hostname;
-        } catch {
-            return 'unknown';
-        }
-    }
-
-    private extractRouteFromUrl(url: string): string {
-        try {
-            const urlObj = new URL(url);
-            return urlObj.pathname;
-        } catch {
-            return url;
-        }
-    }
-
-    private extractErrorMessage(error: any): string {
-        if (error.error) {
-            if (error.error.mensaje) return error.error.mensaje;
-            if (error.error.message) return error.error.message;
-        }
-        if (error.message) return error.message;
-        return 'Error desconocido';
-    }
-
-    // Filtrar monitor por tipo
-    filterMonitorByType(type: string): void {
-        this.monitorFilterType = type;
-        
-        // Aplicar filtro a la tabla
-        const table = document.querySelector('p-table[#dtMonitor]') as any;
-        if (table && table.filter) {
-            if (type === 'all') {
-                table.filter(null, 'tipo', 'equals');
-            } else if (type === 'errors') {
-                // Filtrar por códigos de error (4xx, 5xx)
-                table.filter(null, 'statusCode', 'gte', 400);
-            } else if (type === 'success') {
-                // Filtrar por códigos de éxito (2xx, 3xx)
-                table.filter(null, 'statusCode', 'lt', 400);
-            } else {
-                // Filtrar por tipo (in/out)
-                table.filter(type, 'tipo', 'equals');
-            }
-        }
-        
-        console.log(`🔍 Filtro aplicado: ${type}`);
-    }
-
-    // Actualizar configuración del monitor
-    updateMonitorConfig(): void {
-        this.saveMonitorConfig();
-    }
-
-    // Reset datos del monitor
-    resetMonitorData(): void {
-        this.apiCalls = [];
-        this.saveMonitorData();
-        
-        this.messageService.add({
-            severity: 'success',
-            summary: 'Monitor',
-            detail: 'Datos del monitor reseteados'
-        });
-    }
-
-    // Exportar datos del monitor
-    exportMonitorData(): void {
-        const dataStr = JSON.stringify(this.apiCalls, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `api-monitor-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-    }
-
-    // Limpiar registros antiguos
-    cleanupOldRecords(): void {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - this.monitorConfig.cleanupDays);
-        
-        const initialCount = this.apiCalls.length;
-        this.apiCalls = this.apiCalls.filter(call => call.timestamp > cutoffDate);
-        
-        this.saveMonitorData();
-        
-        this.messageService.add({
-            severity: 'success',
-            summary: 'Monitor',
-            detail: `Se eliminaron ${initialCount - this.apiCalls.length} registros antiguos`
-        });
-    }
-
-    // Actualizar datos del monitor
-    refreshMonitorData(): void {
-        console.log('🔄 Refrescando datos del monitor en SPConfig...');
-        this.loadMonitorData();
-        // Forzar actualización de la vista
-        this.apiCalls = [...this.apiCalls];
-        console.log(`✅ Monitor refrescado: ${this.apiCalls.length} llamadas`);
-    }
-
-    // Obtener llamadas por tipo
-    getApiCallsByType(tipo: 'in' | 'out'): ApiCall[] {
-        return this.apiCalls.filter(call => call.tipo === tipo);
-    }
-
-    // Obtener llamadas con errores
-    getErrorCalls(): ApiCall[] {
-        return this.apiCalls.filter(call => call.statusCode >= 400);
-    }
-
-    // Obtener estadísticas de errores
-    getErrorStatistics(): any {
-        const errors = this.getErrorCalls();
-        const stats = {
-            total: errors.length,
-            byStatusCode: {} as any,
-            byUrl: {} as any,
-            byServer: {} as any,
-            recent: errors.slice(0, 5) // Últimos 5 errores
-        };
-
-        errors.forEach(error => {
-            // Por código de estado
-            const status = error.statusCode.toString();
-            stats.byStatusCode[status] = (stats.byStatusCode[status] || 0) + 1;
-
-            // Por URL
-            const url = error.url;
-            stats.byUrl[url] = (stats.byUrl[url] || 0) + 1;
-
-            // Por servidor
-            const server = error.servidor;
-            stats.byServer[server] = (stats.byServer[server] || 0) + 1;
-        });
-
-        return stats;
-    }
-
-    // Obtener severidad del status code
-    getStatusSeverity(statusCode: number): string {
-        if (statusCode >= 200 && statusCode < 300) return 'success';
-        if (statusCode >= 300 && statusCode < 400) return 'info';
-        if (statusCode >= 400 && statusCode < 500) return 'warning';
-        if (statusCode >= 500) return 'danger';
-        return 'secondary';
-    }
-
-    // Mostrar detalles de llamada API
-    showApiCallDetails(call: ApiCall): void {
-        this.selectedApiCall = call;
-        this.showApiCallDetailsModal = true;
-    }
-
-    // Formatear JSON para mostrar
-    formatJson(obj: any): string {
-        if (!obj) return 'N/A';
-        try {
-            return JSON.stringify(obj, null, 2);
-        } catch {
-            return String(obj);
-        }
-    }
-
-    // Mostrar modal con JSON
-    openJsonModal(title: string, content: any): void {
-        this.jsonModalTitle = title;
-        this.jsonModalContent = this.formatJson(content);
-        this.showJsonModal = true;
-    }
 
     // ========== MÉTODOS PARA SPConfig ==========
 
@@ -2968,7 +2054,7 @@ export class SPConfigComponent implements OnInit, OnDestroy {
         };
 
         console.log('🔍 Payload completo a enviar:', updateData);
-        const apiUrl = `http://localhost:3000/api/spconfig/v1/${spconfig.id_sp}`;
+        const apiUrl = `${this.spconfigService.getSpconfigUrl()}/${spconfig.id_sp}`;
         console.log('🔍 URL de la API:', apiUrl);
         
         this.http.post(apiUrl, updateData).subscribe({
@@ -2991,8 +2077,8 @@ export class SPConfigComponent implements OnInit, OnDestroy {
             error: (error) => {
                 console.error('❌ Error al actualizar SPConfig:', error);
                 
-                // Registrar error en el monitor
-                this.registrarErrorEnMonitor(error, 'http://localhost:3000/api/spconfig/v1', 'POST', updateData);
+                // Error registrado en logs
+                console.error('❌ Error al actualizar SPConfig:', error);
                 
                 // Extraer información detallada del error
                 let errorCode = 'N/A';
@@ -3055,48 +2141,6 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     // ========== MÉTODOS PARA API Config ==========
 
     // Edición inline para API Config
-    editInlineAPIConfig(api: any, field: string): void {
-        this.editingCell = api.id + '_' + field;
-        this.originalValue = api[field];
-        console.log('✏️ Editando API Config inline:', field, 'Valor:', this.originalValue);
-    }
-
-    // Guardar edición inline de API Config
-    saveInlineEditAPIConfig(api: any, field: string): void {
-        console.log('💾 Guardando API Config inline:', field, 'Nuevo valor:', api[field]);
-        
-        // Validar que el valor haya cambiado
-        if (api[field] === this.originalValue) {
-            console.log('ℹ️ Valor no cambió, cancelando edición');
-            this.cancelInlineEditAPIConfig();
-            return;
-        }
-
-        // Limpiar edición
-        this.editingCell = null;
-        this.originalValue = null;
-
-        this.messageService.add({
-            severity: 'success',
-            summary: 'Campo Actualizado',
-            detail: `Campo ${this.getFieldLabelAPIConfig(field)} actualizado correctamente`
-        });
-    }
-
-    // Cancelar edición inline de API Config
-    cancelInlineEditAPIConfig(): void {
-        if (this.editingCell && this.originalValue !== null) {
-            const [id, field] = this.editingCell.split('_');
-            const api = this.apiConfigs.find(a => a.id.toString() === id);
-            if (api) {
-                api[field] = this.originalValue;
-            }
-        }
-        
-        this.editingCell = null;
-        this.originalValue = null;
-        console.log('❌ Edición inline cancelada');
-    }
 
     // ========== MÉTODOS COMPARTIDOS ==========
 
@@ -3324,160 +2368,6 @@ export class SPConfigComponent implements OnInit, OnDestroy {
     // ========== FORMULARIOS API Config ==========
 
     // Abrir formulario de API Config
-    openAPIConfigForm(api?: any): void {
-        if (api) {
-            // Modo edición
-            this.isEditingAPIConfig = true;
-            this.editingAPIConfigId = api.id;
-            this.apiConfigForm.patchValue({
-                nombre: api.nombre,
-                url: api.url,
-                metodo: api.metodo,
-                estado: api.estado,
-                timeout: api.timeout
-            });
-            console.log('✏️ Editando API Config:', api.nombre);
-        } else {
-            // Modo creación
-            this.isEditingAPIConfig = false;
-            this.editingAPIConfigId = null;
-            this.apiConfigForm.reset({
-                estado: 'A',
-                metodo: 'GET',
-                timeout: 5000
-            });
-            console.log('➕ Creando nueva API Config');
-        }
-        
-        this.showAPIConfigModal = true;
-    }
-
-    // Cerrar formulario de API Config
-    closeAPIConfigForm(): void {
-        this.showAPIConfigModal = false;
-        this.apiConfigForm.reset();
-        this.isEditingAPIConfig = false;
-        this.editingAPIConfigId = null;
-    }
-
-    // Guardar API Config
-    saveAPIConfig(): void {
-        if (this.apiConfigForm.valid) {
-            const formValue = this.apiConfigForm.value;
-            console.log('💾 Guardando API Config:', formValue);
-
-            if (this.isEditingAPIConfig && this.editingAPIConfigId) {
-                // Editar API Config existente
-                const index = this.apiConfigs.findIndex(a => a.id === this.editingAPIConfigId);
-                
-                if (index !== -1) {
-                    // Verificar nombre duplicado
-                    const nombreExiste = this.apiConfigs.find(a => 
-                        a.id !== this.editingAPIConfigId && 
-                        a.nombre === formValue.nombre
-                    );
-                    
-                    if (nombreExiste) {
-                        this.messageService.add({
-                            severity: 'warn',
-                            summary: 'Nombre Duplicado',
-                            detail: `Ya existe una API Config con el nombre "${formValue.nombre}"`
-                        });
-                        return;
-                    }
-                    
-                    // Actualizar API Config
-                    this.apiConfigs[index] = {
-                        ...this.apiConfigs[index],
-                        nombre: formValue.nombre,
-                        url: formValue.url,
-                        metodo: formValue.metodo,
-                        estado: formValue.estado,
-                        timeout: formValue.timeout
-                    };
-
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'API Config Actualizada',
-                        detail: 'Configuración de API actualizada correctamente'
-                    });
-                }
-            } else {
-                // Crear nueva API Config
-                // Verificar nombre duplicado
-                const nombreExiste = this.apiConfigs.find(a => a.nombre === formValue.nombre);
-                
-                if (nombreExiste) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Nombre Duplicado',
-                        detail: `Ya existe una API Config con el nombre "${formValue.nombre}"`
-                    });
-                    return;
-                }
-                
-                const nuevaAPIConfig = {
-                    id: Math.max(...this.apiConfigs.map(a => a.id)) + 1,
-                    nombre: formValue.nombre,
-                    url: formValue.url,
-                    metodo: formValue.metodo,
-                    estado: formValue.estado,
-                    timeout: formValue.timeout
-                };
-
-                this.apiConfigs.push(nuevaAPIConfig);
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'API Config Creada',
-                    detail: 'Nueva configuración de API creada correctamente'
-                });
-            }
-
-            this.closeAPIConfigForm();
-        } else {
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error de Validación',
-                detail: 'Por favor, complete todos los campos requeridos'
-            });
-        }
-    }
-
-    // Eliminar API Config (mostrar confirmación)
-    eliminarAPIConfig(api: any): void {
-        console.log('🗑️ Solicitando eliminación de API Config:', api.nombre);
-        this.apiConfigToDelete = api;
-        this.showConfirmDeleteAPIConfig = true;
-    }
-
-    // Confirmar eliminación de API Config
-    confirmDeleteAPIConfig(): void {
-        if (this.apiConfigToDelete) {
-            console.log('✅ Confirmando eliminación de API Config:', this.apiConfigToDelete.nombre);
-            
-            const index = this.apiConfigs.findIndex(a => a.id === this.apiConfigToDelete!.id);
-            
-            if (index !== -1) {
-                this.apiConfigs.splice(index, 1);
-                
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'API Config Eliminada',
-                    detail: `Configuración "${this.apiConfigToDelete.nombre}" eliminada correctamente`
-                });
-            }
-        }
-        
-        this.cancelDeleteAPIConfig();
-    }
-
-    // Cancelar eliminación de API Config
-    cancelDeleteAPIConfig(): void {
-        this.showConfirmDeleteAPIConfig = false;
-        this.apiConfigToDelete = null;
-        console.log('❌ Eliminación de API Config cancelada');
-    }
 
     // ========== TESTING DE API ==========
 
@@ -3611,7 +2501,75 @@ export class SPConfigComponent implements OnInit, OnDestroy {
         
         // Inicializar monitor cuando se seleccione el tab de Monitor (índice 3)
         if (event.index === 3) {
-            this.initializeMonitorConfig();
+            // TODO: Implementar inicialización del monitor si es necesario
+            console.log('📊 Tab Monitor seleccionado - inicialización pendiente');
+        }
+    }
+
+    // ========== MÉTODOS PARA API CONFIG ==========
+
+    /**
+     * Guardar configuración de API
+     */
+    saveAPIConfig(): void {
+        console.log('💾 Guardando configuración de API...');
+        // TODO: Implementar lógica para guardar configuración de API
+    }
+
+    /**
+     * Cerrar formulario de configuración de API
+     */
+    closeAPIConfigForm(): void {
+        console.log('❌ Cerrando formulario de API config');
+        this.showAPIConfigModal = false;
+        this.isEditingAPIConfig = false;
+        this.editingAPIConfigId = null;
+        this.apiConfigForm.reset();
+    }
+
+    /**
+     * Cancelar eliminación de configuración de API
+     */
+    cancelDeleteAPIConfig(): void {
+        console.log('❌ Cancelando eliminación de API config');
+        this.showConfirmDeleteAPIConfig = false;
+        this.apiConfigToDelete = null;
+    }
+
+    /**
+     * Confirmar eliminación de configuración de API
+     */
+    confirmDeleteAPIConfig(): void {
+        console.log('🗑️ Confirmando eliminación de API config');
+        if (this.apiConfigToDelete) {
+            // TODO: Implementar lógica para eliminar configuración de API
+            this.showConfirmDeleteAPIConfig = false;
+            this.apiConfigToDelete = null;
+        }
+    }
+
+    /**
+     * Obtener severidad para estados de status
+     */
+    getStatusSeverity(statusCode: number): string {
+        if (statusCode >= 200 && statusCode < 300) {
+            return 'success';
+        } else if (statusCode >= 400 && statusCode < 500) {
+            return 'warning';
+        } else if (statusCode >= 500) {
+            return 'danger';
+        }
+        return 'info';
+    }
+
+    /**
+     * Formatear JSON para mostrar
+     */
+    formatJson(obj: any): string {
+        try {
+            return JSON.stringify(obj, null, 2);
+        } catch (error) {
+            return 'Error al formatear JSON';
         }
     }
     

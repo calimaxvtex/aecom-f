@@ -6,7 +6,10 @@ export interface CollItem {
     descripcion: string;
     products: number;
     swtag: number;
+    tag: string;
     swsrc: number;
+    swslug: number;
+    slug: string;
     swsched: number;
     estado: string;
     fecha_ini: string;

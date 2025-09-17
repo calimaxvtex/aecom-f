@@ -1,4 +1,5 @@
 export const API_CONFIG = {
+    BASE_URL_IMG: 'http://10.10.254.127:3013',
     BASE_URL: 'http://localhost:3012',
     // BASE_URL: 'http://10.10.250.168:3012',
     ENDPOINTS: {
@@ -7,6 +8,8 @@ export const API_CONFIG = {
         APIC: { CONFIG: '/apic/config' },
         COLL: { CRUD: '/api/admcoll/v1' },
         COLLD: { CRUD: '/api/admcolld/v1' },
+        SUC: { CRUD: '/api/admsuc/v1' },
+        BANNER: { UPLOAD: '/upload_banner' },
         RECETA: { CRUD: '/api/admrcta/v1' }
     }
 };
@@ -18,6 +21,8 @@ export const API_URLS = {
     APIC_CONFIG: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.APIC.CONFIG}`,
     COLL_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COLL.CRUD}`,
     COLLD_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COLLD.CRUD}`,
+    SUC_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUC.CRUD}`,
+    BANNER_UPLOAD: `${API_CONFIG.BASE_URL_IMG}${API_CONFIG.ENDPOINTS.BANNER.UPLOAD}`,  // ✅ Usa BASE_URL_IMG
     RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`
 };
 

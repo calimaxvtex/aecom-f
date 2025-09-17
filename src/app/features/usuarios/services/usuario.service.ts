@@ -3,6 +3,9 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+import { SessionService } from '../../../core/services/session.service';
+
 import {
   Usuario,
   ApiResponse,
@@ -13,18 +16,27 @@ import {
   UsuarioPagination
 } from '../models/usuario.interface';
 
+// Interfaces de autenticación para compatibilidad
+import {
+  LoginCredentials,
+  LoginRequest,
+  LoginResponse,
+  LoginUserData,
+  LogoutRequest,
+  LogoutResponse
+} from '../../../core/services/auth/login.models';
+
 /**
  * Servicio para la gestión de usuarios
- * Endpoint: /api/admusr/v1
- * Base URL: http://localhost:3000
+ * Endpoint dinámico: ID 4 (Rol Usuario)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
-  private baseUrl: string = 'http://localhost:3000';
+  private readonly API_ID: number = 4; // ID del endpoint de Rol Usuario
   private readonly endpoints = {
-    USUARIOS: '/api/admusr/v1'
+    USUARIOS: '/api/admusr/v1' // Mantener por compatibilidad, pero usar API_ID
   };
 
   private readonly httpOptions = {
@@ -33,21 +45,37 @@ export class UsuarioService {
     })
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiConfig: ApiConfigService,
+    private sessionService: SessionService
+  ) {}
 
   /**
-   * Configura la URL base del servicio
+   * Obtiene la URL del endpoint por ID
    */
-  setBaseUrl(url: string): void {
-    this.baseUrl = url;
-    console.log(`🔧 URL base configurada: ${this.baseUrl}`);
+  private getApiUrl(): string {
+    const endpoint = this.apiConfig.getEndpointById(this.API_ID);
+    if (!endpoint) {
+      console.warn(`⚠️ Endpoint con ID ${this.API_ID} no encontrado. Usando URL por defecto.`);
+      return this.apiConfig.getBaseUrl() + this.endpoints.USUARIOS;
+    }
+    return endpoint.url;
   }
 
   /**
-   * Obtiene la URL base actual
+   * Configura la URL base del servicio (para compatibilidad)
+   */
+  setBaseUrl(url: string): void {
+    console.log(`🔧 UsuarioService usa ApiConfigService - URL configurada: ${url}`);
+    // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
+  }
+
+  /**
+   * Obtiene la URL base actual desde ApiConfigService
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.apiConfig.getBaseUrl();
   }
 
   /**
@@ -55,8 +83,8 @@ export class UsuarioService {
    * Si no se especifica id, regresa todos los usuarios
    */
   getUsuarios(id?: number): Observable<Usuario[]> {
-    let url = `${this.baseUrl}${this.endpoints.USUARIOS}`;
-    
+    let url = this.getApiUrl();
+
     if (id) {
       url += `/${id}`;
     }
@@ -86,8 +114,8 @@ export class UsuarioService {
    * Si se manda el id lo toma como update
    */
   createUsuario(usuario: UsuarioForm): Observable<ApiResponse<Usuario>> {
-    const url = `${this.baseUrl}${this.endpoints.USUARIOS}`;
-    
+    const url = this.getApiUrl();
+
     return this.http.post<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -102,8 +130,8 @@ export class UsuarioService {
    * PATCH - Actualizar atributos específicos del usuario
    */
   updateUsuario(id: number, usuario: Partial<UsuarioForm>): Observable<ApiResponse<Usuario>> {
-    const url = `${this.baseUrl}${this.endpoints.USUARIOS}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.patch<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -118,8 +146,8 @@ export class UsuarioService {
    * PUT - Actualización completa del usuario
    */
   updateUsuarioCompleto(id: number, usuario: UsuarioForm): Observable<ApiResponse<Usuario>> {
-    const url = `${this.baseUrl}${this.endpoints.USUARIOS}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.put<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -134,8 +162,8 @@ export class UsuarioService {
    * DELETE - Eliminar usuario
    */
   deleteUsuario(id: number): Observable<ApiResponse<Usuario>> {
-    const url = `${this.baseUrl}${this.endpoints.USUARIOS}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.delete<ApiResponse<Usuario>>(url, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -154,11 +182,11 @@ export class UsuarioService {
    * DL -> eliminar el registro señalado por el id
    */
   executeAction(action: UsuarioAction, data?: any): Observable<ApiResponse<Usuario>> {
-    const url = `${this.baseUrl}${this.endpoints.USUARIOS}`;
+    const url = this.getApiUrl();
     const body = { action, ...data };
-    
+
     console.log(`🔧 Ejecutando acción: ${action}`, body);
-    
+
     return this.http.post<ApiResponse<Usuario>>(url, body, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -289,10 +317,79 @@ export class UsuarioService {
   }
 
   /**
+   * LOGIN - Autenticación de usuario
+   * Usa la acción 'LG' para login
+   */
+  login(credentials: LoginCredentials): Observable<LoginResponse> {
+    const url = this.getApiUrl();
+    const loginPayload: LoginRequest = {
+      usuario: credentials.usuario,
+      password: credentials.password,
+      action: 'LG'
+    };
+
+    console.log('🔐 UsuarioService - Iniciando proceso de login');
+
+    return this.http.post<LoginResponse>(url, loginPayload, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log('✅ UsuarioService - Login exitoso');
+
+          // Procesar respuesta y guardar sesión
+          let loginData: LoginUserData | null = null;
+
+          if (Array.isArray(response.data) && response.data.length > 0) {
+            loginData = response.data[0];
+          } else if (response.data) {
+            loginData = response.data as LoginUserData;
+          }
+
+          if (loginData) {
+            this.sessionService.setSession(loginData);
+          }
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * LOGOUT - Cierre de sesión del usuario
+   * Usa la acción 'LO' para logout
+   */
+  logout(): Observable<LogoutResponse> {
+    const sessionData = this.sessionService.getSession();
+    const url = this.getApiUrl();
+
+    const logoutPayload: LogoutRequest = {
+      action: 'LO',
+      id_session: sessionData?.id_session
+    };
+
+    console.log('🚪 UsuarioService - Iniciando proceso de logout');
+
+    return this.http.post<LogoutResponse>(url, logoutPayload, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log('✅ UsuarioService - Logout exitoso');
+        }
+        // Limpiar sesión local independientemente del resultado del servidor
+        this.sessionService.logout();
+      }),
+      catchError(error => {
+        console.warn('⚠️ UsuarioService - Error en logout remoto, limpiando sesión local:', error);
+        // Limpiar sesión local incluso si hay error
+        this.sessionService.logout();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
    * Probar conectividad con la API
    */
   testConnection(): Observable<boolean> {
-    return this.http.get<ApiResponse<Usuario>>(`${this.baseUrl}${this.endpoints.USUARIOS}`, this.httpOptions).pipe(
+    return this.http.get<ApiResponse<Usuario>>(this.getApiUrl(), this.httpOptions).pipe(
       map(response => {
         console.log('✅ Conexión exitosa con la API de usuarios');
         return true;

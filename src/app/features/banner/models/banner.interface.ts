@@ -23,6 +23,8 @@ export interface Banner {
     url_banner_call?: string | null;
     orden: number;
     swEnable: number;
+    swslug: number;
+    slug: string;
     usr_a: string;
     usr_m?: string | null;
     fecha_a: string;
@@ -52,6 +54,8 @@ export interface CreateBannerRequest {
     url_banner_call?: string | null;
     orden: number;
     swEnable: number;
+    swslug: number;
+    slug: string;
 }
 
 /**
@@ -213,5 +217,7 @@ export const BANNER_DEFAULTS = {
     TIPO_CALL: 'NONE' as TipoCall,
     SWSCHED: 0,
     SWENABLE: 1,
+    SWSLUG: 0,
+    SLUG: '',
     ORDEN: 1
 } as const;

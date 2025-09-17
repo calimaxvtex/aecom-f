@@ -37,26 +37,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
     template: `
         <div class="card">
 
-            <!-- Header con filtro por canal -->
-            <div class="mb-4">
-                <h2 class="text-2xl font-bold mb-4">🎨 Gestión de Banners</h2>
-                <div class="flex gap-4 items-end">
-                    <div class="flex-1">
-                        <p-floatLabel variant="on">
-                            <p-select
-                                [(ngModel)]="canalSeleccionado"
-                                [options]="canalesOptions"
-                                optionLabel="label"
-                                optionValue="value"
-                                placeholder="Seleccionar canal"
-                                class="w-full"
-                                (onChange)="onCanalChange($event)"
-                            ></p-select>
-                            <label>Filtro por Canal</label>
-                        </p-floatLabel>
-                    </div>
-                </div>
-            </div>
+ 
 
             <p-tabs [value]="activeTabIndex" (onTabChange)="onTabChange($event)">
                 <p-tablist>

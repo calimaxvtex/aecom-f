@@ -7,7 +7,7 @@ import {LayoutService} from "@/layout/service/layout.service";
     selector: '[app-footer]',
     imports: [ButtonModule],
     template: ` <span class="font-medium text-lg text-muted-color">
-        <img src="/layout/images/logo/footer-ultima{{layoutService.isDarkTheme() ? '-dark.svg' : '.svg'}}"/>
+        Calimax Digital
     </span>
         <div class="flex gap-2">
             <button pButton icon="pi pi-github" rounded text severity="secondary"></button>

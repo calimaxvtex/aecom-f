@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
@@ -12,8 +11,7 @@ import { IconField } from 'primeng/iconfield';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { AppConfigurator } from '@/layout/components/app.configurator';
-import { SessionService } from '@/core/services/session.service';
-import { MenuLoaderService } from '@/core/services/menu/menu-loader.service';
+import { UsuarioService } from '@/features/usuarios/services/usuario.service';
 
 @Component({
     selector: 'app-login',
@@ -78,20 +76,20 @@ import { MenuLoaderService } from '@/core/services/menu/menu-loader.service';
 export class Login {
     loginForm: FormGroup;
     isLoading = false;
-    apiUrl = 'http://localhost:3000/api/admusr/v1'; // API ID 1 - Usuarios
 
     private fb = inject(FormBuilder);
-    private http = inject(HttpClient);
     private router = inject(Router);
     private messageService = inject(MessageService);
-    private sessionService = inject(SessionService);
-    private menuLoaderService = inject(MenuLoaderService);
+    private usuarioService = inject(UsuarioService);
 
     constructor() {
         this.loginForm = this.fb.group({
             usuario: ['', [Validators.required]], // Simplificado temporalmente
             password: ['', [Validators.required]] // Simplificado temporalmente
         });
+
+        // Suscribirse al estado de carga del servicio de usuario
+        // Nota: UsuarioService no tiene estado de carga, se maneja localmente
 
         // Debug: Monitorear cambios en el formulario
         this.loginForm.valueChanges.subscribe(value => {
@@ -103,38 +101,52 @@ export class Login {
     }
 
     onLogin(): void {
-        console.log('🔐 Iniciando proceso de login');
-        
+        console.log('🔐 Iniciando proceso de login usando UsuarioService');
+
         if (this.loginForm.valid) {
             this.isLoading = true;
             const formData = this.loginForm.value;
-            
-            // Preparar payload para login
-            const loginPayload = {
+            const credentials = {
                 usuario: formData.usuario,
-                password: formData.password,
-                action: 'LG' // Acción de login según especificación
+                password: formData.password
             };
-            
-            console.log('📤 Enviando login a API:', loginPayload);
-            
-            this.http.post(this.apiUrl, loginPayload).subscribe({
+
+            console.log('📤 Enviando login con credenciales:', { ...credentials, password: '***' });
+
+            this.usuarioService.login(credentials).subscribe({
                 next: (response: any) => {
-                    console.log('✅ Login exitoso - RESPUESTA:', response);
+                    console.log('✅ Login exitoso a través de UsuarioService:', response);
                     this.isLoading = false;
-                    
-                    // Procesar respuesta
-                    this.handleLoginResponse(response);
+
+                    // Mostrar mensaje de éxito
+                    let userName = 'Usuario';
+                    if (Array.isArray(response.data) && response.data.length > 0) {
+                        userName = response.data[0]?.nombre || response.data[0]?.usuario || 'Usuario';
+                    } else if (response.data) {
+                        userName = response.data.nombre || response.data.usuario || 'Usuario';
+                    }
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Login Exitoso',
+                        detail: `Bienvenido ${userName}`,
+                        life: 3000
+                    });
+
+                    // Redirigir al dashboard con recarga completa
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
                 },
                 error: (error: any) => {
-                    console.error('❌ Error en login:', error);
+                    console.error('❌ Error en login a través de UsuarioService:', error);
                     this.isLoading = false;
-                    
+
                     // Mostrar mensaje de error
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error de Autenticación',
-                        detail: error.error?.mensaje || 'Usuario o contraseña incorrectos',
+                        detail: error.message || 'Usuario o contraseña incorrectos',
                         life: 5000
                     });
                 }
@@ -149,103 +161,4 @@ export class Login {
         }
     }
 
-    private handleLoginResponse(response: any): void {
-        console.log('🔍 Procesando respuesta de login:', response);
-        console.log('🔍 Tipo de respuesta:', typeof response);
-        console.log('🔍 Es array?:', Array.isArray(response));
-        
-        // Analizar estructura de respuesta (manejo robusto de diferentes formatos)
-        let loginData = null;
-        let responseMessage = '';
-        
-        try {
-            if (Array.isArray(response) && response.length > 0) {
-                console.log('📦 Respuesta viene en array, procesando primer elemento...');
-                const firstItem = response[0];
-                console.log('📦 Primer elemento:', firstItem);
-                
-                if (firstItem && firstItem.statuscode === 200) {
-                    responseMessage = firstItem.mensaje || 'Login exitoso';
-                    
-                    if (firstItem.data) {
-                        // Si data es array, tomar primer elemento, si no, tomar directo
-                        loginData = Array.isArray(firstItem.data) ? firstItem.data[0] : firstItem.data;
-                        console.log('✅ Login data extraído del array:', loginData);
-                    }
-                } else {
-                    console.log('❌ Error en statuscode del array:', firstItem?.statuscode);
-                    responseMessage = firstItem?.mensaje || 'Error en autenticación';
-                }
-            } else if (response && typeof response === 'object') {
-                console.log('📦 Respuesta viene como objeto directo...');
-                
-                if (response.statuscode === 200) {
-                    responseMessage = response.mensaje || 'Login exitoso';
-                    
-                    if (response.data) {
-                        loginData = Array.isArray(response.data) ? response.data[0] : response.data;
-                        console.log('✅ Login data extraído del objeto:', loginData);
-                    }
-                } else {
-                    console.log('❌ Error en statuscode del objeto:', response.statuscode);
-                    responseMessage = response.mensaje || 'Error en autenticación';
-                }
-            } else {
-                console.log('❌ Formato de respuesta no reconocido:', response);
-            }
-            
-            // Verificar si obtuvimos datos válidos del usuario
-            if (loginData && (loginData.id || loginData.usuario)) {
-                console.log('✅ Login exitoso para usuario:', loginData);
-                console.log('🔍 id_session recibido:', loginData.id_session);
-                
-                // Establecer sesión usando SessionService
-                this.sessionService.setSession(loginData);
-
-                // Actualizar menú dinámico después del login
-                this.updateMenuAfterLogin();
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Login Exitoso',
-                    detail: `Bienvenido ${loginData.nombre || loginData.usuario || 'Usuario'}`,
-                    life: 3000
-                });
-                
-                // Redirigir al dashboard
-                setTimeout(() => {
-                    this.router.navigate(['/']);
-                }, 1000);
-            } else {
-                console.error('❌ No se encontraron datos válidos de usuario');
-                console.error('❌ LoginData recibido:', loginData);
-                
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error de Login',
-                    detail: responseMessage || 'Usuario o contraseña incorrectos',
-                    life: 5000
-                });
-            }
-        } catch (error) {
-            console.error('❌ Error procesando respuesta de login:', error);
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error de Sistema',
-                detail: 'Error procesando respuesta del servidor',
-                life: 5000
-            });
-        }
-    }
-
-    /**
-     * Actualizar menú dinámico después de login exitoso
-     */
-    private async updateMenuAfterLogin(): Promise<void> {
-        try {
-            await this.menuLoaderService.updateMenuOnLogin();
-        } catch (error) {
-            // Usar menú cacheado si falla
-        }
-    }
 }

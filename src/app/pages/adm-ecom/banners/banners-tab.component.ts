@@ -1,6 +1,7 @@
 import { Component, OnInit, OnChanges, SimpleChanges, Input, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -15,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { CardModule } from 'primeng/card';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MessageService } from 'primeng/api';
 
 // Servicios y modelos
@@ -24,6 +26,10 @@ import { Componente } from '../../../features/comp/models/comp.interface';
 import { CatConceptosDetService } from '../../../features/catconceptos/services/catconceptosdet.service';
 import { CollService } from '../../../features/coll/services/coll.service';
 import { CatConceptoDet } from '../../../features/catconceptos/models/catconceptosdet.interface';
+import { SucService } from '../../../features/suc/services/suc.service';
+
+// Servicio de carga de imágenes
+import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../core/services/img/';
 
 @Component({
     selector: 'app-banners-tab',
@@ -42,9 +48,10 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
         TooltipModule,
         SelectModule,
         MultiSelectModule,
-        CardModule
+        CardModule,
+        ToggleButtonModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ImageUploadService],
     template: `
         <!-- Tabla CRUD de Banners -->
         <p-table
@@ -56,7 +63,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             responsiveLayout="scroll"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} banners"
             [rowsPerPageOptions]="[10, 25, 50]"
-            [globalFilterFields]="['nombre', 'call']"
+            [globalFilterFields]="['nombre', 'url_banner']"
             dataKey="id_mb"
             [sortMode]="'multiple'"
             [filterDelay]="300"
@@ -72,12 +79,6 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             placeholder="Buscar banners..."
                             class="w-full sm:w-80"
                         />
-                        <p-tag
-                            *ngIf="componenteSeleccionado"
-                            [value]="componenteSeleccionado.nombre"
-                            severity="info"
-                            class="text-xs">
-                        </p-tag>
                     </div>
                     <div class="flex gap-2">
                         <button
@@ -86,7 +87,8 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             raised
                             icon="pi pi-refresh"
                             [loading]="loadingBanners"
-                            pTooltip="Actualizar"
+                            [disabled]="loadingBanners"
+                            [pTooltip]="getRefreshTooltip()"
                         ></button>
                         <button
                             (click)="openBannerForm()"
@@ -123,61 +125,24 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                     <!-- URL Banner Preview -->
                     <td class="text-center">
                         <div class="relative inline-block">
-                            <div class="w-16 h-10 bg-gray-100 border border-gray-300 rounded flex items-center justify-center overflow-hidden">
+                            <div class="w-38 h-24 bg-gray-100 border border-gray-300 rounded flex items-center justify-center overflow-hidden">
                                 <img
                                     *ngIf="banner.url_banner"
                                     [src]="banner.url_banner"
                                     [alt]="banner.nombre"
-                                    class="w-full h-full object-cover"
+                                    [style]="{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain'
+                                    }"
                                     (error)="onImageError($event)"
                                 />
-                                <i *ngIf="!banner.url_banner" class="pi pi-image text-gray-400"></i>
+                                <i *ngIf="!banner.url_banner" class="pi pi-image text-gray-400 text-2xl"></i>
                                 <i class="pi pi-image text-gray-400 hidden"></i>
                             </div>
                         </div>
                     </td>
 
-                    <!-- Nombre -->
-                    <td>
-                        <span
-                            (click)="editInlineBanner(banner, 'nombre'); $event.stopPropagation()"
-                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                            title="Clic para editar"
-                        >
-                            {{ banner.nombre }}
-                        </span>
-                        <div
-                            *ngIf="editingCell === banner.id_mb + '_nombre'"
-                            class="inline-edit-container"
-                        >
-                            <input
-                                pInputText
-                                type="text"
-                                [(ngModel)]="banner.nombre"
-                                (keyup.enter)="saveInlineEditBanner(banner, 'nombre')"
-                                (keyup.escape)="cancelInlineEdit()"
-                                class="p-inputtext-sm flex-1"
-                                #input
-                                (focus)="input.select()"
-                                autofocus
-                                placeholder="Nombre del banner"
-                            />
-                            <button
-                                pButton
-                                icon="pi pi-check"
-                                (click)="saveInlineEditBanner(banner, 'nombre')"
-                                class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                pTooltip="Guardar (Enter)"
-                            ></button>
-                            <button
-                                pButton
-                                icon="pi pi-undo"
-                                (click)="cancelInlineEdit()"
-                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                pTooltip="Deshacer (Escape)"
-                            ></button>
-                        </div>
-                    </td>
 
                     <!-- Nombre -->
                     <td>
@@ -221,44 +186,35 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         </div>
                     </td>
 
-                    <!-- Tipo Call -->
-                    <td>
-                        <p-tag
-                            [value]="banner.tipo_call"
-                            [severity]="getTipoCallSeverity(banner.tipo_call)"
-                        ></p-tag>
-                    </td>
-
-                    <!-- Call -->
-                    <td>
+                    <!-- Orden -->
+                    <td class="text-center">
                         <span
-                            *ngIf="editingCell !== banner.id_mb + '_call'"
-                            (click)="editInlineBanner(banner, 'call'); $event.stopPropagation()"
+                            (click)="editInlineBanner(banner, 'orden'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
                         >
-                            {{ banner.call || '—' }}
+                            {{ banner.orden }}
                         </span>
                         <div
-                            *ngIf="editingCell === banner.id_mb + '_call'"
+                            *ngIf="editingCell === banner.id_mb + '_orden'"
                             class="inline-edit-container"
                         >
                             <input
                                 pInputText
-                                type="text"
-                                [(ngModel)]="banner.call"
-                                (keyup.enter)="saveInlineEditBanner(banner, 'call')"
+                                type="number"
+                                [(ngModel)]="banner.orden"
+                                (keyup.enter)="saveInlineEditBanner(banner, 'orden')"
                                 (keyup.escape)="cancelInlineEdit()"
                                 class="p-inputtext-sm flex-1"
                                 #input
                                 (focus)="input.select()"
                                 autofocus
-                                placeholder="Texto de acción"
+                                placeholder="Orden"
                             />
                             <button
                                 pButton
                                 icon="pi pi-check"
-                                (click)="saveInlineEditBanner(banner, 'call')"
+                                (click)="saveInlineEditBanner(banner, 'orden')"
                                 class="p-button-sm p-button-success p-button-text inline-action-btn"
                                 pTooltip="Guardar (Enter)"
                             ></button>
@@ -271,31 +227,18 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             ></button>
                         </div>
                     </td>
-
-                    <!-- Fecha Inicio -->
-                    <td>{{ banner.fecha_ini | date:'dd/MM/yyyy' }}</td>
-
-                    <!-- Fecha Fin -->
-                    <td>{{ banner.fecha_fin | date:'dd/MM/yyyy' }}</td>
 
                     <!-- Habilitado -->
                     <td class="text-center">
                         <p-tag
-                            [value]="banner.swEnable ? 'Si' : 'No'"
-                            [severity]="banner.swEnable ? 'success' : 'danger'"
+                            [value]="banner.swEnable === 1 ? 'Si' : 'No'"
+                            [severity]="banner.swEnable === 1 ? 'success' : 'danger'"
                             (click)="toggleSwEnable(banner); $event.stopPropagation()"
                             class="cursor-pointer hover:opacity-80 transition-opacity"
                             title="Clic para cambiar"
                         ></p-tag>
                     </td>
 
-                    <!-- Programado -->
-                    <td class="text-center">
-                        <p-tag
-                            [value]="banner.swsched ? 'Si' : 'No'"
-                            [severity]="banner.swsched ? 'warning' : 'info'"
-                        ></p-tag>
-                    </td>
 
                     <!-- Acciones -->
                     <td (click)="$event.stopPropagation()">
@@ -334,18 +277,55 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             <form [formGroup]="bannerForm" (ngSubmit)="saveBanner()">
                 <!-- Campos principales -->
                 <div class="grid grid-cols-1 gap-4 mb-6">
-                    <!-- Nombre -->
+                    <!-- Nombre y Slug -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                formControlName="nombre"
-                                placeholder="Nombre descriptivo del banner"
-                                class="w-full"
-                                maxlength="100"
-                            />
-                            <label>Nombre *</label>
-                        </p-floatLabel>
+                        <div style="height: 0; margin-top: 1rem;"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <!-- Nombre -->
+                            <div class="md:col-span-1">
+                                <p-floatLabel variant="on">
+                                    <input
+                                        pInputText
+                                        formControlName="nombre"
+                                        placeholder="Nombre descriptivo del banner"
+                                        class="w-full"
+                                        maxlength="100"
+                                        (input)="onNombreInput($event)"
+                                    />
+                                    <label>Nombre *</label>
+                                </p-floatLabel>
+                            </div>
+
+                            <!-- ToggleButton swSlug -->
+                            <div class="md:col-span-1 flex flex-col items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700 text-center">swSlug</label>
+                                <p-togglebutton
+                                    formControlName="swslug"
+                                    (onChange)="onSwSlugChange($event)"
+                                    onLabel="ON"
+                                    offLabel="OFF"
+                                    onIcon="pi pi-check"
+                                    offIcon="pi pi-times"
+                                    styleClass="w-full"
+                                    inputId="swslug"
+                                ></p-togglebutton>
+                            </div>
+
+                            <!-- Input Slug -->
+                            <div class="md:col-span-1">
+                                <p-floatLabel variant="on">
+                                    <input
+                                        pInputText
+                                        formControlName="slug"
+                                        placeholder="slug-generado-automaticamente"
+                                        class="w-full"
+                                        maxlength="255"
+                                        (input)="onSlugInput($event)"
+                                    />
+                                    <label>Slug</label>
+                                </p-floatLabel>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- URL Banner con preview -->
@@ -358,6 +338,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                                     formControlName="url_banner"
                                     placeholder="https://ejemplo.com/imagen.jpg"
                                     class="w-full"
+                                    (input)="onUrlBannerChange($event)"
                                 />
                             </div>
                             <button
@@ -368,56 +349,75 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                                 pTooltip="Validar URL"
                                 class="p-button-secondary"
                             ></button>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-upload"
+                                (click)="triggerFileInput()"
+                                [loading]="uploadingImage"
+                                pTooltip="Cargar imagen desde archivo"
+                                class="p-button-success"
+                            ></button>
+                            <button
+                                pButton
+                                type="button"
+                                [icon]="imagePreviewCollapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+                                (click)="toggleImagePreview()"
+                                pTooltip="Mostrar/ocultar preview"
+                                class="p-button-text"
+                                [disabled]="!bannerForm.get('url_banner')?.value || uploadingImage"
+                            ></button>
+                            <!-- Input file oculto -->
+                            <input
+                                #fileInput
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif"
+                                (change)="onFileSelected($event)"
+                                style="display: none;"
+                            />
                         </div>
-                        <!-- Preview del banner -->
-                        <div class="mt-3" *ngIf="bannerForm.get('url_banner')?.value">
-                            <label class="text-sm font-medium text-gray-700 mb-2 block">Preview del Banner</label>
-                            <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                                <div class="max-w-md mx-auto">
-                                    <img
-                                        [src]="bannerForm.get('url_banner')?.value"
-                                        [alt]="bannerForm.get('nombre')?.value"
-                                        class="w-full h-32 object-cover rounded border"
-                                        (error)="onImageError($event)"
-                                    />
+                        <!-- Estado de carga de imagen -->
+                        <div class="mt-3" *ngIf="uploadingImage">
+                            <div class="border border-blue-300 rounded-lg p-4 bg-blue-50">
+                                <div class="flex items-center gap-3">
+                                    <i class="pi pi-spin pi-spinner text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-800">Subiendo imagen...</div>
+                                        <div class="text-sm text-blue-600" *ngIf="selectedImageFile">
+                                            {{ selectedImageFile.name }} ({{ formatFileSize(selectedImageFile.size) }})
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview del banner colapsable -->
+                        <div class="mt-3" *ngIf="bannerForm.get('url_banner')?.value && !uploadingImage && !imagePreviewCollapsed">
+                            <div class="border border-green-300 rounded-lg p-4 bg-green-50">
+                                <div class="max-w-2xl mx-auto">
+                                    <div class="relative overflow-hidden rounded-lg">
+                                        <img
+                                            [src]="bannerForm.get('url_banner')?.value"
+                                            [alt]="bannerForm.get('nombre')?.value"
+                                            class="w-full max-h-96 object-contain rounded border"
+                                            (error)="onImageError($event)"
+                                        />
+                                        <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                            <i class="pi pi-check"></i>
+                                            Cargado
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-600 text-center">
+                                        URL_IMG obtenida automáticamente
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tipo Call -->
+                    <!-- URL Landing -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <p-select
-                                formControlName="tipo_call"
-                                [options]="tipoCallOptions"
-                                optionLabel="label"
-                                optionValue="value"
-                                (onChange)="onTipoCallChange($event)"
-                                placeholder="Seleccionar tipo de acción"
-                                class="w-full"
-                            ></p-select>
-                            <label>Tipo de Acción *</label>
-                        </p-floatLabel>
-                    </div>
-
-                    <!-- Call (solo si valor1 es 1) -->
-                    <div *ngIf="mostrarCampoCall">
-                        <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                formControlName="call"
-                                [placeholder]="callLabel"
-                                class="w-full"
-                                maxlength="255"
-                            />
-                            <label>{{ callLabel }}</label>
-                        </p-floatLabel>
-                    </div>
-
-                    <!-- URL Banner Call con preview -->
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 mb-2 block">URL de Acción</label>
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">URL Landing</label>
                         <div class="flex gap-2">
                             <div class="flex-1">
                                 <input
@@ -438,14 +438,131 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             <button
                                 pButton
                                 type="button"
-                                icon="pi pi-eye"
-                                (click)="previewUrl(bannerForm.get('url_banner_call')?.value)"
-                                pTooltip="Vista previa"
-                                class="p-button-info"
-                                [disabled]="!bannerForm.get('url_banner_call')?.value"
+                                icon="pi pi-upload"
+                                (click)="triggerLandingFileInput()"
+                                [loading]="uploadingLandingImage"
+                                pTooltip="Subir imagen de destino"
+                                class="p-button-success"
                             ></button>
+                            <button
+                                pButton
+                                type="button"
+                                [icon]="landingPreviewCollapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+                                (click)="toggleLandingPreview()"
+                                pTooltip="Mostrar/ocultar preview"
+                                class="p-button-text"
+                                [disabled]="!bannerForm.get('url_banner_call')?.value || uploadingLandingImage"
+                            ></button>
+                            <!-- Input file oculto para landing -->
+                            <input
+                                #landingFileInput
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif"
+                                (change)="onLandingFileSelected($event)"
+                                style="display: none;"
+                            />
+                        </div>
+
+                        <!-- Estado de carga de imagen landing -->
+                        <div class="mt-2" *ngIf="uploadingLandingImage">
+                            <div class="border border-blue-300 rounded-lg p-3 bg-blue-50">
+                                <div class="flex items-center gap-2">
+                                    <i class="pi pi-spin pi-spinner text-blue-600"></i>
+                                    <div class="text-sm text-blue-800">Subiendo imagen de destino...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview del landing colapsable -->
+                        <div class="mt-3" *ngIf="bannerForm.get('url_banner_call')?.value && !uploadingLandingImage && !landingPreviewCollapsed">
+                            <div class="border border-green-300 rounded-lg p-4 bg-green-50">
+                                <div class="max-w-2xl mx-auto">
+                                    <div class="relative overflow-hidden rounded-lg">
+                                        <img
+                                            [src]="bannerForm.get('url_banner_call')?.value"
+                                            [alt]="bannerForm.get('nombre')?.value"
+                                            class="w-full max-h-96 object-contain rounded border"
+                                            (error)="onImageError($event)"
+                                        />
+                                        <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                            <i class="pi pi-check"></i>
+                                            Cargado
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-600 text-center">
+                                        URL_IMG obtenida automáticamente
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Tipo Redireccionamiento, Sucursales y Orden en el mismo renglón -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Tipo Redireccionamiento -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-select
+                                    formControlName="tipo_call"
+                                    [options]="tipoCallOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    (onChange)="onTipoCallChange($event)"
+                                 
+                                    class="w-full"
+                                ></p-select>
+                                <label>Tipo Redireccionamiento *</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Sucursales -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <p-multiSelect
+                                    formControlName="sucursales"
+                                    [options]="sucursalesOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Seleccionar sucursales"
+                                    class="w-full"
+                                    [maxSelectedLabels]="3"
+                                    appendTo="body"
+                                    [style]="{'z-index': '9999'}"
+                                ></p-multiSelect>
+                                <label>Sucursales</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <!-- Orden -->
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    type="number"
+                                    formControlName="orden"
+                                    placeholder="Orden"
+                                    class="w-20"
+                                    min="1"
+                                />
+                                <label>Orden *</label>
+                            </p-floatLabel>
+                        </div>
+                    </div>
+
+                    <!-- Call (solo si valor1 es 1) -->
+                    <div *ngIf="mostrarCampoCall">
+                        <p-floatLabel variant="on">
+                            <input
+                                pInputText
+                                formControlName="call"
+                                [placeholder]="callLabel"
+                                class="w-full"
+                                maxlength="255"
+                            />
+                            <label>{{ callLabel }}</label>
+                        </p-floatLabel>
+                    </div>
+
 
                     <!-- Collection selector (solo si tipo_call es 'COLL') -->
                     <div *ngIf="mostrarCollectionSelector">
@@ -462,47 +579,15 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         </p-floatLabel>
                     </div>
 
-                    <!-- Sucursales (mockup) -->
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 mb-2 block">Sucursales</label>
-                        <p-multiSelect
-                            formControlName="sucursales"
-                            [options]="sucursalesOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Seleccionar sucursales"
-                            class="w-full"
-                            [maxSelectedLabels]="3"
-                        ></p-multiSelect>
-                        <small class="text-gray-500 mt-1 block">Funcionalidad pendiente de implementación del servicio de sucursales</small>
-                    </div>
-
-                    <!-- Orden -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input
-                                    pInputText
-                                    type="number"
-                                    formControlName="orden"
-                                    placeholder="Orden de visualización"
-                                    class="w-full"
-                                    min="1"
-                                />
-                                <label>Orden *</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <!-- Programado -->
-                        <div class="flex items-center gap-4">
+                    <!-- Programado -->
+                    <div class="flex items-center gap-4">
                             <p-tag
-                                [value]="bannerForm.get('swsched')?.value ? 'Programado' : 'Inmediato'"
+                                [value]="bannerForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
                                 [severity]="bannerForm.get('swsched')?.value ? 'warning' : 'info'"
                                 (click)="toggleFormField('swsched')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
-                                pTooltip="Activar/desactivar programación"
+                                pTooltip="Click para activar/desactivar programación. Si está programado, se mostrarán campos de fecha inicio y fin."
                             ></p-tag>
-                            <label class="text-sm text-gray-600">Programado</label>
                         </div>
                     </div>
 
@@ -529,25 +614,24 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                             />
                         </div>
                     </div>
-                </div>
 
                 <!-- Sección informativa -->
                 <div *ngIf="isEditingBanner && bannerSeleccionado" class="mb-6 p-4 bg-gray-50 rounded-lg">
                     <h4 class="text-lg font-semibold mb-3">Información del Registro</h4>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
+                    <div class="flex flex-wrap gap-6 text-sm">
+                        <div class="flex-1 min-w-0">
                             <label class="font-medium text-gray-700">Creado por:</label>
                             <p class="text-gray-600">{{ bannerSeleccionado.usr_a }}</p>
                         </div>
-                        <div>
+                        <div class="flex-1 min-w-0">
                             <label class="font-medium text-gray-700">Fecha creación:</label>
                             <p class="text-gray-600">{{ bannerSeleccionado.fecha_a | date:'dd/MM/yyyy HH:mm' }}</p>
                         </div>
-                        <div *ngIf="bannerSeleccionado.usr_m">
+                        <div *ngIf="bannerSeleccionado.usr_m" class="flex-1 min-w-0">
                             <label class="font-medium text-gray-700">Modificado por:</label>
                             <p class="text-gray-600">{{ bannerSeleccionado.usr_m }}</p>
                         </div>
-                        <div *ngIf="bannerSeleccionado.fecha_m">
+                        <div *ngIf="bannerSeleccionado.fecha_m" class="flex-1 min-w-0">
                             <label class="font-medium text-gray-700">Última modificación:</label>
                             <p class="text-gray-600">{{ bannerSeleccionado.fecha_m | date:'dd/MM/yyyy HH:mm' }}</p>
                         </div>
@@ -567,6 +651,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         pButton
                         type="submit"
                         [label]="isEditingBanner ? 'Actualizar' : 'Crear'"
+                        [attr.data-debug]="isEditingBanner ? 'modo-editar' : 'modo-crear'"
                         [disabled]="!bannerForm.valid || savingBanner"
                         [loading]="savingBanner"
                         class="p-button-success"
@@ -625,14 +710,21 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
+            (onHide)="onPreviewModalClose()"
         >
             <div class="w-full h-full">
                 <iframe
-                    *ngIf="previewUrlValue"
-                    [src]="previewUrlValue"
+                    *ngIf="sanitizedPreviewUrl"
+                    [src]="sanitizedPreviewUrl"
                     class="w-full h-full border-0 rounded"
                     title="Vista previa"
                 ></iframe>
+                <div *ngIf="!sanitizedPreviewUrl && previewUrlValue" class="flex items-center justify-center h-full">
+                    <div class="text-center">
+                        <i class="pi pi-exclamation-triangle text-3xl text-yellow-500 mb-2"></i>
+                        <p class="text-gray-600">Cargando vista previa...</p>
+                    </div>
+                </div>
             </div>
         </p-dialog>
 
@@ -644,26 +736,26 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             align-items: center;
             gap: 0.25rem;
         }
-
+    
         .inline-action-btn {
             padding: 0.25rem;
             min-width: 2rem;
         }
-
+    
         .editable-cell {
             display: block;
             min-height: 1.5rem;
         }
-
+    
         .p-datatable .p-datatable-tbody > tr > td {
             padding: 0.5rem;
             vertical-align: middle;
         }
-
+    
         .p-datatable .p-datatable-tbody > tr:hover {
             background-color: #f8fafc;
         }
-
+    
         /* Estilos para botones de tabla */
         .p-button.p-button-text.p-button-sm {
             width: 2rem !important;
@@ -672,34 +764,107 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             padding: 0 !important;
             border-radius: 0.25rem !important;
         }
-
+    
         .p-button.p-button-text.p-button-sm .p-button-icon {
             font-size: 0.875rem !important;
         }
-
+    
         /* Estilos para labels flotantes */
         :host ::ng-deep .p-floatlabel {
             width: 100%;
         }
-
+    
         :host ::ng-deep .p-floatlabel label {
             background: white;
             padding: 0 4px;
             font-size: 0.875rem;
         }
-
+    
         :host ::ng-deep .p-floatlabel input:focus + label,
         :host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label {
             color: #6366f1; /* Indigo */
         }
-
+    
         /* Estilos para campos booleanos */
         :host ::ng-deep .p-tag {
             font-size: 0.875rem;
             padding: 0.25rem 0.5rem;
             font-weight: 500;
         }
+    
+        /* Estilos para ToggleButton personalizado */
+        :host ::ng-deep .p-togglebutton {
+            width: 100%;
+            height: 2.5rem;
+        }
+    
+        :host ::ng-deep .p-togglebutton .p-button {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+    
+        /* Estado OFF - Gris */
+        :host ::ng-deep .p-togglebutton .p-button:not(.p-highlight) {
+            background-color: #f3f4f6 !important;
+            border-color: #d1d5db !important;
+            color: #6b7280 !important;
+        }
+
+        :host ::ng-deep .p-togglebutton .p-button:not(.p-highlight):hover {
+            background-color: #e5e7eb !important;
+            border-color: #9ca3af !important;
+        }
+
+        /* Estado ON - Verde Ultra Brillante - Múltiples selectores para máxima compatibilidad */
+        :host ::ng-deep .p-togglebutton.p-togglebutton-checked .p-button,
+        :host ::ng-deep .p-togglebutton .p-button.p-highlight,
+        :host ::ng-deep p-togglebutton.p-togglebutton-checked .p-button,
+        :host ::ng-deep p-togglebutton .p-button.p-highlight,
+        /* Selector específico por ID para máxima especificidad */
+        :host ::ng-deep p-togglebutton[inputId="swslug"].p-togglebutton-checked .p-button,
+        :host ::ng-deep p-togglebutton[inputId="swslug"] .p-button.p-highlight {
+            background: #22c55e !important; /* Verde sólido primero para probar */
+            background: linear-gradient(135deg, #00ff88 0%, #22c55e 50%, #16a34a 100%) !important;
+            border-color: #22c55e !important;
+            color: white !important;
+            box-shadow: 0 4px 8px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.3) !important;
+            font-weight: 700 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        :host ::ng-deep .p-togglebutton.p-togglebutton-checked .p-button:hover,
+        :host ::ng-deep .p-togglebutton .p-button.p-highlight:hover,
+        :host ::ng-deep p-togglebutton.p-togglebutton-checked .p-button:hover,
+        :host ::ng-deep p-togglebutton .p-button.p-highlight:hover,
+        /* Selector específico por ID para máxima especificidad */
+        :host ::ng-deep p-togglebutton[inputId="swslug"].p-togglebutton-checked .p-button:hover,
+        :host ::ng-deep p-togglebutton[inputId="swslug"] .p-button.p-highlight:hover {
+            background: #16a34a !important; /* Verde sólido hover primero para probar */
+            background: linear-gradient(135deg, #00dd77 0%, #16a34a 50%, #15803d 100%) !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 6px 12px rgba(34, 197, 94, 0.7), 0 0 30px rgba(34, 197, 94, 0.4) !important;
+            transform: translateY(-2px) scale(1.02) !important;
+        }
+    
+        /* Iconos del ToggleButton */
+        :host ::ng-deep .p-togglebutton .p-button .p-button-icon {
+            margin-right: 0.5rem;
+        }
+    
+        /* Estado disabled */
+        :host ::ng-deep .p-togglebutton.p-disabled .p-button {
+            background-color: #e5e7eb !important;
+            border-color: #d1d5db !important;
+            color: #9ca3af !important;
+            box-shadow: none !important;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     `]
+    
 })
 export class BannersTabComponent implements OnInit, OnChanges {
     // Input para recibir el componente seleccionado
@@ -712,6 +877,16 @@ export class BannersTabComponent implements OnInit, OnChanges {
     loadingBanners = false;
     savingBanner = false;
     deletingBanner = false;
+
+    // Estados para carga de imágenes
+    uploadingImage = false;
+    selectedImageFile: File | null = null;
+
+    // Estados para previews colapsables
+    imagePreviewCollapsed = true; // Inicia colapsado
+    landingPreviewCollapsed = true; // Inicia colapsado
+    uploadingLandingImage = false;
+    selectedLandingFile: File | null = null;
 
     // Modales
     showBannerModal = false;
@@ -741,6 +916,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // Modal de preview
     showUrlPreviewModal = false;
     previewUrlValue = '';
+    sanitizedPreviewUrl: SafeResourceUrl | null = null;
 
     // Banner seleccionado para edición
     bannerSeleccionado: Banner | null = null;
@@ -749,11 +925,21 @@ export class BannersTabComponent implements OnInit, OnChanges {
     private bannerService = inject(BannerService);
     private catConceptosDetService = inject(CatConceptosDetService);
     private collService = inject(CollService);
+    private sucService = inject(SucService);
+    private imageUploadService = inject(ImageUploadService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
+    public sanitizer = inject(DomSanitizer);
 
-    // ViewChild para tabla
+    // Método público para acceder al servicio desde el template
+    public formatFileSize(bytes: number): string {
+        return this.imageUploadService.formatFileSize(bytes);
+    }
+
+    // ViewChild para tabla y file inputs
     @ViewChild('dtBanners') dtBanners!: Table;
+    @ViewChild('fileInput') fileInput!: any;
+    @ViewChild('landingFileInput') landingFileInput!: any;
 
     ngOnInit(): void {
         console.log('🎨 BannersTabComponent inicializado');
@@ -773,10 +959,13 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // ========== INICIALIZACIÓN ==========
 
     initializeForms(): void {
-        // Fechas por defecto
+        // Fechas por defecto como strings
         const fechaHoy = new Date();
         const fechaFin = new Date();
         fechaFin.setDate(fechaFin.getDate() + 7);
+        
+        const fechaHoyStr = this.formatDate(fechaHoy);
+        const fechaFinStr = this.formatDate(fechaFin);
 
         this.bannerForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.maxLength(100)]],
@@ -787,20 +976,84 @@ export class BannersTabComponent implements OnInit, OnChanges {
             id_coll: [null],
             sucursales: [[]],
             swsched: [0],
-            fecha_ini: [fechaHoy],
-            fecha_fin: [fechaFin],
+            fecha_ini: [fechaHoyStr],
+            fecha_fin: [fechaFinStr],
             orden: [1, [Validators.required, Validators.min(1)]],
-            swEnable: [1]
+            swEnable: [1],
+            swslug: [0],
+            slug: [{value: '', disabled: true}] // Slug deshabilitado inicialmente
         });
     }
 
     // ========== CARGA DE DATOS ==========
 
-    cargarBanners(): void {
+    /**
+     * Retorna el tooltip apropiado para el botón de refresh
+     */
+    getRefreshTooltip(): string {
+        if (this.loadingBanners) {
+            return 'Cargando...';
+        }
         if (!this.componenteSeleccionado) {
-            console.log('ℹ️ No hay componente seleccionado, limpiando banners');
+            return 'Seleccione un contenedor del tab "Contenedores" para ver sus banners';
+        }
+        return `Actualizar banners de "${this.componenteSeleccionado.nombre}"`;
+    }
+
+    /**
+     * Carga los banners del componente seleccionado
+     * Si no hay componente seleccionado, muestra mensaje informativo
+     */
+    cargarBanners(): void {
+        // Si no hay componente seleccionado, intentar cargar todos los banners o mostrar mensaje
+        if (!this.componenteSeleccionado) {
+            console.log('ℹ️ No hay componente seleccionado para cargar banners específicos');
+
+            // Opción 1: Limpiar lista y mostrar mensaje
             this.banners = [];
+            this.loadingBanners = false;
+
+            this.messageService.add({
+                severity: 'info',
+                summary: 'Seleccione un Contenedor',
+                detail: 'Seleccione un contenedor del tab "Contenedores" para ver sus banners',
+                life: 3000
+            });
             return;
+
+            // Opción 2: Si quieres cargar TODOS los banners sin filtro (descomenta si lo prefieres):
+            /*
+            this.loadingBanners = true;
+            console.log('📊 Cargando TODOS los banners (sin filtro de componente)');
+
+            this.bannerService.getAllBanners().subscribe({
+                next: (response) => {
+                    console.log('✅ Todos los banners cargados:', response.data);
+                    this.banners = response.data;
+                    this.loadingBanners = false;
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Datos Actualizados',
+                        detail: `${this.banners.length} banners cargados (todos)`
+                    });
+                },
+                error: (error) => {
+                    console.error('❌ Error cargando todos los banners:', error);
+                    this.loadingBanners = false;
+
+                    const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar banners';
+
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error al cargar banners',
+                        detail: errorMessage,
+                        life: 5000
+                    });
+                }
+            });
+            return;
+            */
         }
 
         this.loadingBanners = true;
@@ -839,9 +1092,16 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     openBannerForm(banner?: Banner): void {
         this.isEditingBanner = !!banner;
+        console.log('🎯 openBannerForm - isEditingBanner:', this.isEditingBanner);
+        console.log('🎯 openBannerForm - banner recibido:', banner);
 
         if (banner) {
+            // Modo edición
             console.log('✏️ Editando banner:', banner);
+            console.log('✏️ Banner ID:', banner.id_mb);
+            this.bannerSeleccionado = banner;
+            console.log('✏️ bannerSeleccionado configurado:', this.bannerSeleccionado);
+
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
                 url_banner: banner.url_banner,
@@ -852,33 +1112,55 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 sucursales: banner.sucursales || [],
                 orden: banner.orden,
                 swsched: banner.swsched,
-                swEnable: banner.swEnable
+                swEnable: banner.swEnable,
+                swslug: banner.swslug,
+                slug: banner.slug
             });
+
+            // Configurar el estado del campo slug según swslug
+            if (banner.swslug && banner.swslug === 1) {
+                this.bannerForm.get('slug')?.enable();
+            } else {
+                this.bannerForm.get('slug')?.disable();
+            }
 
             // Agregar fechas si están programadas
             if (banner.swsched && banner.fecha_ini) {
                 this.bannerForm.patchValue({
-                    fecha_ini: new Date(banner.fecha_ini)
+                    fecha_ini: this.formatDate(new Date(banner.fecha_ini))
                 });
             }
             if (banner.swsched && banner.fecha_fin) {
                 this.bannerForm.patchValue({
-                    fecha_fin: new Date(banner.fecha_fin)
+                    fecha_fin: this.formatDate(new Date(banner.fecha_fin))
                 });
             }
 
             // Trigger change para actualizar campos condicionales
             this.onTipoCallChange({ value: banner.tipo_call });
         } else {
-            console.log('➕ Creando nuevo banner');
+            // Modo creación
+            console.log('🆕 Creando banner nuevo');
+            this.bannerSeleccionado = null;
+            console.log('🆕 bannerSeleccionado limpiado:', this.bannerSeleccionado);
+
+            const fechaHoy = new Date();
+            const fechaFin = new Date();
+            fechaFin.setDate(fechaFin.getDate() + 7);
+
             this.bannerForm.reset({
                 tipo_call: 'NONE',
-                fecha_ini: new Date(),
-                fecha_fin: new Date(),
+                fecha_ini: this.formatDate(fechaHoy),
+                fecha_fin: this.formatDate(fechaFin),
                 orden: this.banners.length + 1,
                 swsched: 0,
-                swEnable: 1
+                swEnable: 1,
+                swslug: 0,
+                slug: ''
             });
+
+            // Asegurar que el campo slug esté deshabilitado para nuevos banners
+            this.bannerForm.get('slug')?.disable();
         }
 
         this.showBannerModal = true;
@@ -887,11 +1169,18 @@ export class BannersTabComponent implements OnInit, OnChanges {
     closeBannerForm(): void {
         this.showBannerModal = false;
         this.bannerForm.reset();
+        // Asegurar que el campo slug esté deshabilitado al cerrar el formulario
+        this.bannerForm.get('slug')?.disable();
         this.isEditingBanner = false;
     }
 
     saveBanner(): void {
+        console.log('💾 saveBanner - isEditingBanner:', this.isEditingBanner);
+        console.log('💾 saveBanner - bannerSeleccionado:', this.bannerSeleccionado);
+        console.log('💾 saveBanner - bannerSeleccionado.id_mb:', this.bannerSeleccionado?.id_mb);
+
         if (this.bannerForm.valid && this.componenteSeleccionado) {
+            console.log('✅ Formulario válido, procediendo con guardado');
             this.savingBanner = true;
             const formData = this.bannerForm.value;
 
@@ -905,7 +1194,9 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 url_banner_call: formData.url_banner_call || '',
                 orden: formData.orden,
                 swsched: formData.swsched ? 1 : 0,
-                swEnable: formData.swEnable ? 1 : 0
+                swEnable: formData.swEnable ? 1 : 0,
+                swslug: formData.swslug ? 1 : 0,
+                slug: formData.slug || ''
             };
 
             // Agregar fechas si está programado
@@ -923,11 +1214,14 @@ export class BannersTabComponent implements OnInit, OnChanges {
             }
 
             if (this.isEditingBanner && this.bannerSeleccionado) {
+                console.log('🔄 Ejecutando UPDATE - banner existente');
+                console.log('🔄 Banner ID:', this.bannerSeleccionado.id_mb);
                 // Actualizar
                 const updateData: UpdateBannerRequest = {
                     id_mb: this.bannerSeleccionado.id_mb,
                     ...processedData
                 };
+                console.log('🔄 Datos para UPDATE:', updateData);
 
                 this.bannerService.updateBanner(updateData).subscribe({
                     next: (response) => {
@@ -936,6 +1230,8 @@ export class BannersTabComponent implements OnInit, OnChanges {
                     error: (error) => this.handleSaveError(error, 'actualizar')
                 });
             } else {
+                console.log('🆕 Ejecutando CREATE - banner nuevo');
+                console.log('🆕 Datos para CREATE:', processedData);
                 // Crear
                 this.bannerService.createBanner(processedData).subscribe({
                     next: (response) => {
@@ -961,11 +1257,42 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     private handleSaveError(error: any, operation: string): void {
         console.error(`❌ Error al ${operation} banner:`, error);
+        console.log('🔍 Estructura completa del error:', JSON.stringify(error, null, 2));
+        console.log('🔍 Tipo del error:', typeof error);
+        console.log('🔍 Keys del error:', error ? Object.keys(error) : 'null/undefined');
 
         let errorMessage = `Error al ${operation} el banner`;
-        if (error && error.mensaje) {
-            errorMessage = error.mensaje;
+
+        // Intentar extraer mensaje del error de diferentes formas
+        if (error) {
+            // Forma 1: error.mensaje (como viene del backend)
+            if (error.mensaje) {
+                errorMessage = error.mensaje;
+                console.log('✅ Mensaje encontrado en error.mensaje:', errorMessage);
+            }
+            // Forma 2: error.message (Error estándar)
+            else if (error.message) {
+                errorMessage = error.message;
+                console.log('✅ Mensaje encontrado en error.message:', errorMessage);
+            }
+            // Forma 3: error.error?.mensaje (respuesta HTTP anidada)
+            else if (error.error && error.error.mensaje) {
+                errorMessage = error.error.mensaje;
+                console.log('✅ Mensaje encontrado en error.error.mensaje:', errorMessage);
+            }
+            // Forma 4: error.error?.message
+            else if (error.error && error.error.message) {
+                errorMessage = error.error.message;
+                console.log('✅ Mensaje encontrado en error.error.message:', errorMessage);
+            }
+            // Forma 5: string directo
+            else if (typeof error === 'string') {
+                errorMessage = error;
+                console.log('✅ Error es string directo:', errorMessage);
+            }
         }
+
+        console.log('📤 Mensaje final que se mostrará:', errorMessage);
 
         this.messageService.add({
             severity: 'error',
@@ -994,9 +1321,16 @@ export class BannersTabComponent implements OnInit, OnChanges {
             return;
         }
 
+        // Aplicar formateo según el campo
+        let formattedValue = (banner as any)[field];
+        if (field === 'nombre') {
+            formattedValue = this.toPascalCase(formattedValue);
+            (banner as any)[field] = formattedValue;
+        }
+
         const updateData: UpdateBannerRequest = {
             id_mb: banner.id_mb,
-            [field]: (banner as any)[field]
+            [field]: formattedValue
         };
 
         this.bannerService.updateBanner(updateData).subscribe({
@@ -1128,16 +1462,8 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     toggleFormField(fieldName: string): void {
         const currentValue = this.bannerForm.get(fieldName)?.value;
-
-        if (fieldName === 'visibles') {
-            // Para visibles, alternar entre 0 y 5
-            const newValue = currentValue > 0 ? 0 : 5;
-            this.bannerForm.patchValue({ [fieldName]: newValue });
-        } else {
-            // Para otros campos booleanos
-            const newValue = !currentValue;
-            this.bannerForm.patchValue({ [fieldName]: newValue });
-        }
+        const newValue = currentValue === 1 ? 0 : 1;
+        this.bannerForm.patchValue({ [fieldName]: newValue });
     }
 
     private formatDate(date: Date): string {
@@ -1199,25 +1525,122 @@ export class BannersTabComponent implements OnInit, OnChanges {
     }
 
     private cargarCollectionsOptions(): void {
-        // Mockup por ahora - implementar cuando esté disponible el servicio
-        this.collectionsOptions = [
-            { label: 'Colección Principal', value: 1 },
-            { label: 'Colección Secundaria', value: 2 },
-            { label: 'Colección Promocional', value: 3 }
-        ];
-        console.log('📊 Opciones de colecciones (mockup):', this.collectionsOptions);
+        // Cargar colecciones desde el servicio
+        this.collService.getAllCollections().subscribe({
+            next: (response) => {
+                if (response && response.data) {
+                    this.collectionsOptions = response.data.map(coll => ({
+                        label: coll.nombre || `Colección ${coll.id_coll}`,
+                        value: coll.id_coll
+                    }));
+                    console.log('📊 Opciones de colecciones cargadas:', this.collectionsOptions);
+                } else {
+                    // Fallback a mockup si no hay datos
+                    this.collectionsOptions = [
+                        { label: 'Colección Principal', value: 1 },
+                        { label: 'Colección Secundaria', value: 2 },
+                        { label: 'Colección Promocional', value: 3 }
+                    ];
+                    console.log('📊 Opciones de colecciones (fallback):', this.collectionsOptions);
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error cargando colecciones:', error);
+                // Fallback a mockup en caso de error
+                this.collectionsOptions = [
+                    { label: 'Colección Principal', value: 1 },
+                    { label: 'Colección Secundaria', value: 2 },
+                    { label: 'Colección Promocional', value: 3 }
+                ];
+                console.log('📊 Opciones de colecciones (fallback por error):', this.collectionsOptions);
+            }
+        });
     }
 
     private cargarSucursalesOptions(): void {
-        // Mockup por ahora - implementar cuando esté disponible el servicio
-        this.sucursalesOptions = [
-            { label: 'Sucursal Centro', value: 1 },
-            { label: 'Sucursal Norte', value: 2 },
-            { label: 'Sucursal Sur', value: 3 },
-            { label: 'Sucursal Este', value: 4 },
-            { label: 'Sucursal Oeste', value: 5 }
-        ];
-        console.log('📊 Opciones de sucursales (mockup):', this.sucursalesOptions);
+        console.log('🏪 Cargando sucursales activas del proyecto 2...');
+        console.log('🔧 SucService disponible:', !!this.sucService);
+
+        // Verificar que el servicio esté disponible antes de usarlo
+        if (!this.sucService) {
+            console.error('❌ SucService no está disponible');
+            return;
+        }
+
+        this.sucService.getAllSucursales({
+            filters: {
+                id_proy: 2,
+                estado: 'A'
+            }
+        }).subscribe({
+            next: (response) => {
+                if (response && response.data) {
+                    // Filtrar adicionalmente por id_proy = 2 y estado = 'A' por si acaso
+                    const sucursalesFiltradas = response.data.filter(suc =>
+                        suc.id_proy === 2 && suc.estado === 'A'
+                    );
+
+                    this.sucursalesOptions = sucursalesFiltradas.map(suc => ({
+                        label: suc.tienda,
+                        value: suc.sucursal
+                    }));
+
+                    console.log('✅ Sucursales cargadas:', this.sucursalesOptions.length);
+                    console.log('📊 Detalles de sucursales:', this.sucursalesOptions);
+                } else {
+                    console.warn('⚠️ No se encontraron sucursales activas');
+                    this.sucursalesOptions = [];
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error cargando sucursales:', error);
+                console.log('🔍 Detalles del error en componente:', {
+                    statuscode: error.statuscode,
+                    titulo: error.titulo,
+                    mensaje: error.mensaje,
+                    originalError: error.originalError
+                });
+
+                // Fallback a opciones mockup para desarrollo/testing
+                this.sucursalesOptions = [
+                    {
+                        label: '🏪 [MOCKUP] Sucursal Centro - Tijuana',
+                        value: 1
+                    },
+                    {
+                        label: '🏪 [MOCKUP] Sucursal Norte - Tijuana',
+                        value: 2
+                    },
+                    {
+                        label: '🏪 [MOCKUP] Sucursal Sur - Tijuana',
+                        value: 3
+                    }
+                ];
+
+                console.log('📊 Usando sucursales mockup por error del backend:', this.sucursalesOptions);
+
+                // Mostrar mensaje de error específico del backend
+                const errorTitle = error.titulo || 'Error al cargar sucursales';
+                const errorMessage = error.mensaje || 'No se pudieron cargar las sucursales disponibles. Se muestran datos de ejemplo.';
+
+                this.messageService.add({
+                    severity: 'warn', // Cambiado a 'warn' porque hay fallback
+                    summary: errorTitle,
+                    detail: errorMessage,
+                    life: 8000 // Más tiempo para leer sobre el fallback
+                });
+
+                // También mostrar información sobre el mockup
+                setTimeout(() => {
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Datos de ejemplo',
+                        detail: 'Se están mostrando sucursales de ejemplo porque el servicio backend no está disponible.',
+                        life: 5000
+                    });
+                }, 1000);
+            }
+        });
     }
 
     // ========== MANEJO DE FORMULARIO ==========
@@ -1235,7 +1658,9 @@ export class BannersTabComponent implements OnInit, OnChanges {
         }
 
         // Mostrar/ocultar selector de colección
-        this.mostrarCollectionSelector = selectedTipo === 'COLL';
+        console.log('🔍 Valor de selectedTipo recibido:', selectedTipo);
+        console.log('🔍 Comparación case-insensitive:', selectedTipo?.toLowerCase() === 'coll');
+        this.mostrarCollectionSelector = selectedTipo?.toLowerCase() === 'coll';
 
         // Reset campos dependientes
         if (!this.mostrarCampoCall) {
@@ -1293,7 +1718,9 @@ export class BannersTabComponent implements OnInit, OnChanges {
             return;
         }
 
+        // ✅ Sanitizar la URL para uso seguro en iframe
         this.previewUrlValue = url;
+        this.sanitizedPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
         this.showUrlPreviewModal = true;
     }
 
@@ -1303,6 +1730,357 @@ export class BannersTabComponent implements OnInit, OnChanges {
     }
 
     // ========== UTILIDADES ==========
+
+    onUrlBannerChange(event: any): void {
+        const urlBanner = event.target.value;
+        // Replicar la URL del banner en la URL Landing si está vacía
+        if (urlBanner && !this.bannerForm.get('url_banner_call')?.value) {
+            this.bannerForm.patchValue({ url_banner_call: urlBanner });
+        }
+    }
+
+    // ========== CARGA DE IMÁGENES ==========
+
+    /**
+     * Activa el input file oculto cuando se hace click en el botón
+     */
+    triggerFileInput(): void {
+        if (this.fileInput) {
+            this.fileInput.nativeElement.click();
+        }
+    }
+
+    /**
+     * Maneja la selección de archivos
+     */
+    onFileSelected(event: any): void {
+        const file = event.target.files[0] as File;
+        if (file) {
+            console.log('📎 Archivo seleccionado:', file.name, '(', this.formatFileSize(file.size), ')');
+
+            // Validar archivo
+            const validation = this.imageUploadService.validateFiles([file]);
+            if (!validation.isValid) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Archivo Inválido',
+                    detail: validation.errors.join('. '),
+                    life: 5000
+                });
+                return;
+            }
+
+            // Mostrar warnings si existen
+            if (validation.warnings.length > 0) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Advertencia',
+                    detail: validation.warnings.join('. '),
+                    life: 3000
+                });
+            }
+
+            // Guardar archivo y proceder con la carga
+            this.selectedImageFile = file;
+            this.uploadImage(file);
+        }
+    }
+
+    /**
+     * Sube la imagen y actualiza el campo URL_BANNER automáticamente
+     */
+    uploadImage(file: File): void {
+        this.uploadingImage = true;
+
+        console.log('🚀 Iniciando carga de imagen:', file.name);
+
+        this.imageUploadService.uploadSingleBannerImage(file).subscribe({
+            next: (response) => {
+                this.uploadingImage = false;
+
+                if (response.images && response.images.length > 0) {
+                    const imageData = response.images[0];
+                    const urlImg = imageData.img;
+
+                    console.log('✅ Imagen subida exitosamente:', urlImg);
+
+                    // Actualizar automáticamente el campo URL_BANNER
+                    this.bannerForm.patchValue({
+                        url_banner: urlImg
+                    });
+
+                    // Actualizar también URL Landing si está vacía
+                    if (!this.bannerForm.get('url_banner_call')?.value) {
+                        this.bannerForm.patchValue({
+                            url_banner_call: urlImg
+                        });
+                    }
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Imagen Cargada',
+                        detail: `La imagen "${imageData.name}" se ha subido correctamente`,
+                        life: 3000
+                    });
+
+                    // Limpiar archivo seleccionado
+                    this.selectedImageFile = null;
+
+                    // Resetear el input file
+                    if (this.fileInput) {
+                        this.fileInput.nativeElement.value = '';
+                    }
+                }
+            },
+            error: (error) => {
+                this.uploadingImage = false;
+                console.error('❌ Error al subir imagen:', error);
+
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al subir la imagen';
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al Subir Imagen',
+                    detail: errorMessage,
+                    life: 5000
+                });
+
+                // Limpiar archivo seleccionado en caso de error
+                this.selectedImageFile = null;
+            }
+        });
+    }
+
+    /**
+     * Maneja el cierre del modal de preview
+     */
+    onPreviewModalClose(): void {
+        this.clearPreviewData();
+    }
+
+    /**
+     * Toggle para mostrar/ocultar preview de imagen
+     */
+    toggleImagePreview(): void {
+        this.imagePreviewCollapsed = !this.imagePreviewCollapsed;
+    }
+
+    /**
+     * Toggle para mostrar/ocultar preview de URL landing
+     */
+    toggleLandingPreview(): void {
+        this.landingPreviewCollapsed = !this.landingPreviewCollapsed;
+    }
+
+    /**
+     * Activa el input file para landing
+     */
+    triggerLandingFileInput(): void {
+        if (this.landingFileInput) {
+            this.landingFileInput.nativeElement.click();
+        }
+    }
+
+    /**
+     * Maneja la selección de archivos para landing
+     */
+    onLandingFileSelected(event: any): void {
+        const file = event.target.files[0] as File;
+        if (file) {
+            console.log('📎 Archivo landing seleccionado:', file.name, '(', this.formatFileSize(file.size), ')');
+
+            // Validar archivo
+            const validation = this.imageUploadService.validateFiles([file]);
+            if (!validation.isValid) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Archivo Inválido',
+                    detail: validation.errors.join('. '),
+                    life: 5000
+                });
+                return;
+            }
+
+            // Mostrar warnings si existen
+            if (validation.warnings.length > 0) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Advertencia',
+                    detail: validation.warnings.join('. '),
+                    life: 3000
+                });
+            }
+
+            // Guardar archivo y proceder con la carga
+            this.selectedLandingFile = file;
+            this.uploadLandingImage(file);
+        }
+    }
+
+    /**
+     * Sube la imagen de landing
+     */
+    uploadLandingImage(file: File): void {
+        this.uploadingLandingImage = true;
+
+        console.log('🚀 Iniciando carga de imagen landing:', file.name);
+
+        this.imageUploadService.uploadSingleBannerImage(file).subscribe({
+            next: (response) => {
+                this.uploadingLandingImage = false;
+
+                if (response.images && response.images.length > 0) {
+                    const imageData = response.images[0];
+                    const urlImg = imageData.img;
+
+                    console.log('✅ Imagen landing subida exitosamente:', urlImg);
+
+                    // Actualizar el campo URL_BANNER_CALL con la nueva URL
+                    this.bannerForm.patchValue({
+                        url_banner_call: urlImg
+                    });
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Imagen de Destino Cargada',
+                        detail: `La imagen "${imageData.name}" se ha subido correctamente`,
+                        life: 3000
+                    });
+
+                    // Limpiar archivo seleccionado
+                    this.selectedLandingFile = null;
+
+                    // Resetear el input file
+                    if (this.landingFileInput) {
+                        this.landingFileInput.nativeElement.value = '';
+                    }
+                }
+            },
+            error: (error) => {
+                this.uploadingLandingImage = false;
+                console.error('❌ Error al subir imagen landing:', error);
+
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al subir la imagen';
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al Subir Imagen de Destino',
+                    detail: errorMessage,
+                    life: 5000
+                });
+
+                // Limpiar archivo seleccionado en caso de error
+                this.selectedLandingFile = null;
+            }
+        });
+    }
+
+    /**
+     * Limpia las URLs del preview cuando se cierra el modal
+     */
+    clearPreviewData(): void {
+        this.previewUrlValue = '';
+        this.sanitizedPreviewUrl = null;
+    }
+
+    // ========== FORMATEO DE TEXTO ==========
+
+    onNombreInput(event: any): void {
+        const input = event.target;
+        const pascalCaseValue = this.toPascalCase(input.value);
+        input.value = pascalCaseValue;
+        this.bannerForm.patchValue({ nombre: pascalCaseValue });
+
+        // Generar slug automáticamente si swSlug está activado y el campo slug está habilitado
+        if (this.bannerForm.get('swslug')?.value && this.bannerForm.get('slug')?.enabled) {
+            const slug = this.generateSlug(pascalCaseValue);
+            this.bannerForm.patchValue({ slug: slug });
+        }
+    }
+
+    onSwSlugChange(event: any): void {
+        // Obtener el valor correcto del ToggleButton
+        let swSlugValue: number;
+
+        if (event && typeof event.checked === 'boolean') {
+            // ToggleButton devuelve boolean directamente
+            swSlugValue = event.checked ? 1 : 0;
+        } else if (event && typeof event === 'boolean') {
+            // En algunos casos el evento es directamente un boolean
+            swSlugValue = event ? 1 : 0;
+        } else {
+            // Fallback: obtener el valor actual del form control
+            const currentValue = this.bannerForm.get('swslug')?.value;
+            swSlugValue = currentValue ? 0 : 1; // Toggle del valor actual
+        }
+
+        // Actualizar el form control
+        this.bannerForm.patchValue({ swslug: swSlugValue });
+
+        if (swSlugValue) {
+            // Si se activa el botón, generar slug desde el nombre actual
+            const nombre = this.bannerForm.get('nombre')?.value || '';
+            const slug = this.generateSlug(nombre);
+            this.bannerForm.patchValue({ slug: slug });
+            // Habilitar el campo slug
+            this.bannerForm.get('slug')?.enable();
+        } else {
+            // Si se desactiva, limpiar el slug y deshabilitar el campo
+            this.bannerForm.patchValue({ slug: '' });
+            this.bannerForm.get('slug')?.disable();
+        }
+    }
+
+    onSlugInput(event: any): void {
+        // Permitir edición manual del slug cuando swSlug está activado y el campo está habilitado
+        if (this.bannerForm.get('swslug')?.value && this.bannerForm.get('slug')?.enabled) {
+            const slugValue = this.sanitizeSlug(event.target.value);
+            this.bannerForm.patchValue({ slug: slugValue });
+        }
+    }
+
+    private generateSlug(text: string): string {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        return text
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
+            .replace(/[\s_-]+/g, '-') // Reemplazar espacios y guiones bajos con guiones
+            .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
+    }
+
+    private sanitizeSlug(slug: string): string {
+        if (!slug || typeof slug !== 'string') {
+            return '';
+        }
+
+        return slug
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w-]/g, '') // Solo letras, números, guiones
+            .replace(/-+/g, '-') // Evitar múltiples guiones consecutivos
+            .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
+    }
+
+    private toPascalCase(text: string): string {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        // Separar por espacios, guiones o guiones bajos
+        const words = text.split(/[\s\-_]+/);
+
+        // Convertir cada palabra: primera letra mayúscula, resto minúscula
+        const pascalCaseWords = words.map(word => {
+            if (word.length === 0) return '';
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
+
+        return pascalCaseWords.join(' ');
+    }
 
     // ========== MÉTODO TOGGLE VISIBLE ==========
     // Nota: El campo "visibles" no existe en el modelo Banner actual

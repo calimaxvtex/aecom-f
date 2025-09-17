@@ -1,15 +1,31 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
 import { Tabloide, TabloideResponse, TabloideAction, ApiResponse } from '../models/tabloide.interface';
 
 @Injectable({
     providedIn: 'root'
 })
 export class TabloideService {
-    private readonly apiUrl = 'http://localhost:3000/api/admtab/v1';
+    private readonly API_ID: number = 7; // ID del endpoint de Tabloide
 
-    constructor(private http: HttpClient) {}
+    constructor(
+        private http: HttpClient,
+        private apiConfig: ApiConfigService
+    ) {}
+
+    /**
+     * Obtiene la URL del endpoint por ID
+     */
+    private getApiUrl(): string {
+        const endpoint = this.apiConfig.getEndpointById(this.API_ID);
+        if (!endpoint) {
+            console.warn(`⚠️ Endpoint con ID ${this.API_ID} no encontrado. Usando configuración centralizada.`);
+            return this.apiConfig.getBaseUrl() + '/api/admtab/v1'; // Fallback usando configuración centralizada
+        }
+        return endpoint.url;
+    }
 
     /**
      * Obtener todos los tabloides
@@ -18,7 +34,7 @@ export class TabloideService {
      */
     getTableides(payload: TabloideAction): Observable<any> {
         console.log('📊 TabloideService: Consultando tabloides con payload:', payload);
-        return this.http.post<any>(this.apiUrl, payload);
+        return this.http.post<any>(this.getApiUrl(), payload);
     }
 
     /**
@@ -28,7 +44,7 @@ export class TabloideService {
      */
     createTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('➕ TabloideService: Creando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.apiUrl, payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
     }
 
     /**
@@ -38,7 +54,7 @@ export class TabloideService {
      */
     updateTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('✏️ TabloideService: Actualizando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.apiUrl, payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
     }
 
     /**
@@ -48,7 +64,7 @@ export class TabloideService {
      */
     deleteTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('🗑️ TabloideService: Eliminando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.apiUrl, payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
     }
 
     /**
@@ -60,8 +76,8 @@ export class TabloideService {
      * @returns Observable con la respuesta
      */
     updateTabloideField(
-        tabloideId: number, 
-        field: string, 
+        tabloideId: number,
+        field: string,
         value: any,
         additionalData: { usr?: string | number; id_session?: number }
     ): Observable<ApiResponse> {
@@ -71,9 +87,9 @@ export class TabloideService {
             [field]: value,
             ...additionalData
         };
-        
+
         console.log('🔄 TabloideService: Actualizando campo inline:', field, 'con payload:', payload);
-        return this.http.post<ApiResponse>(this.apiUrl, payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
     }
 
     /**

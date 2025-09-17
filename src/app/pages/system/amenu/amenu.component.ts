@@ -825,7 +825,12 @@ export class AmenuComponent implements OnInit {
     this.menuService.getMenuItems().subscribe({
       next: res => {
         this.items = res.data || [];
-        this.parentOptions = [{ label: 'Sin padre', value: null }, ...this.items.map(i => ({ label: `${i.label} (#${i.id_menu})`, value: i.id_menu }))];
+        this.parentOptions = [
+          { label: 'Sin padre', value: null },
+          ...this.items
+            .filter(i => !i.routerLink || i.routerLink.trim() === '')
+            .map(i => ({ label: `${i.label} (#${i.id_menu})`, value: i.id_menu }))
+        ];
         this.loading = false;
       },
       error: () => {

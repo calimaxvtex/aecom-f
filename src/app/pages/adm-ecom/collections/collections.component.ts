@@ -14,9 +14,10 @@ import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputMaskModule } from 'primeng/inputmask';
+// import { Calendar } from 'primeng/calendar'; // No disponible en PrimeNG v20
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { SplitButtonModule } from 'primeng/splitbutton';
+// import { SplitButtonModule } from 'primeng/splitbutton'; // Ya no se usa, filtros ahora son botones
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -26,6 +27,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { CollItem, CollTypeItem, ColldItem, CreateColldRequest, UpdateColldRequest } from '@/features/coll/models/coll.interface';
 import { CollService } from '@/features/coll/services/coll.service';
 import { ColldService } from '@/features/coll/services/colld.service';
+import { CatConceptosDetService } from '@/features/catconceptos/services/catconceptosdet.service';
 import { SessionService } from '@/core/services/session.service';
 
 // Import del ItemsComponent
@@ -49,9 +51,10 @@ import { ItemsComponent } from './items.component';
         SelectModule,
         SelectButtonModule,
         InputMaskModule,
+        // Calendar, // No disponible en PrimeNG v20
         ToggleSwitchModule,
         FloatLabelModule,
-        SplitButtonModule,
+        // SplitButtonModule, // Ya no se usa, filtros ahora son botones
         CardModule,  // Para las tarjetas de información
         TooltipModule,  // Para tooltips
         // Import del ItemsComponent
@@ -75,8 +78,16 @@ import { ItemsComponent } from './items.component';
                             Colecciones
                         </p-tab>
                         <p-tab value="1" (click)="onTabClick(1)">
-                            <i class="pi pi-list mr-2"></i>
-                            Items
+                            <span class="flex items-center gap-2">
+                                <i class="pi pi-list"></i>
+                                Items
+                                <p-tag
+                                    *ngIf="collectionSeleccionada"
+                                    [value]="collectionSeleccionada.nombre"
+                                    severity="info"
+                                    class="text-xs ml-2">
+                                </p-tag>
+                            </span>
                         </p-tab>
                         <p-tab value="2">
                             <i class="pi pi-plus mr-2"></i>
@@ -103,10 +114,6 @@ import { ItemsComponent } from './items.component';
                 <p-tabpanels>
                     <!-- Panel 1: Colecciones CRUD -->
                     <p-tabpanel value="0">
-                        <div class="mb-4">
-                            <h1 class="text-2xl font-bold mb-2">🗂️ Administración de Colecciones</h1>
-                             
-                        </div>
 
 
                         <p-table
@@ -132,15 +139,20 @@ import { ItemsComponent } from './items.component';
                                         placeholder="Buscar colecciones..."
                                         class="w-full sm:w-80 order-1 sm:order-0"
                                     />
-                                    <div class="flex gap-2 order-0 sm:order-1 items-center">
-                                        <!-- SplitButton para filtros -->
-                                        <p-splitButton
-                                            label="Filtrar"
-                                            icon="pi pi-filter"
-                                            (onClick)="clearFilters()"
-                                            [model]="filterMenuItems"
+                                    <div class="flex gap-2 order-0 sm:order-1 items-end">
+                                        <!-- Botones de filtro por tipo colección -->
+                                        <button
+                                            *ngFor="let tipo of tipoCollOptions"
+                                            (click)="onTipoFiltroClick(tipo.value)"
+                                            pButton
+                                            raised
+                                            [class]="tipoFiltroSeleccionado === tipo.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                                            [label]="tipo.label"
+                                            pTooltip="Filtrar por {{ tipo.label }}"
+                                            tooltipPosition="top"
                                             styleClass="p-button-sm"
-                                        ></p-splitButton>
+                                        ></button>
+
 
                                         <!-- Botones solo con iconos justificados a la derecha -->
                                         <div class="flex gap-1">
@@ -148,7 +160,7 @@ import { ItemsComponent } from './items.component';
                                                 icon="pi pi-refresh"
                                                 (onClick)="cargarCollections()"
                                                 [loading]="loadingCollections"
-                                                styleClass="p-button-sm p-button-outlined"
+                                                styleClass="p-button-sm p-button-primary p-button-raised"
                                                 pTooltip="Actualizar"
                                                 tooltipPosition="top"
                                                 tooltipStyleClass="custom-tooltip"
@@ -156,7 +168,7 @@ import { ItemsComponent } from './items.component';
                                             <p-button
                                                 icon="pi pi-plus"
                                                 (onClick)="openCollectionForm()"
-                                                styleClass="p-button-sm p-button-outlined"
+                                                styleClass="p-button-sm p-button-primary p-button-raised"
                                                 pTooltip="Agregar Colección"
                                             ></p-button>
                                         </div>
@@ -169,8 +181,8 @@ import { ItemsComponent } from './items.component';
                                     <th pSortableColumn="id_coll" style="width: 80px">ID <p-sortIcon field="id_coll"></p-sortIcon></th>
                                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
                                     <th pSortableColumn="products" style="width: 100px">Products</th>
+                                    <th style="width: 120px">Tipo</th>
                                     <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
-                                    <th style="width: 100px">Banner</th>
                                     <th style="width: 150px">Acciones</th>
                                 </tr>
                             </ng-template>
@@ -231,32 +243,58 @@ import { ItemsComponent } from './items.component';
                                     <!-- Products - SOLO LECTURA -->
                                     <td>{{collection.products}}</td>
 
+                                    <!-- Tipo Colección - EDITABLE -->
+                                    <td>
+                                        <span
+                                            *ngIf="editingCell !== collection.id_coll + '_tipo'"
+                                            (click)="editInlineCollection(collection, 'tipo'); $event.stopPropagation()"
+                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                            title="Clic para editar"
+                                        >
+                                            {{getTipoCollectionLabel(collection.id_tipoc)}}
+                                        </span>
+                                        <div
+                                            *ngIf="editingCell === collection.id_coll + '_tipo'"
+                                            class="inline-edit-container"
+                                        >
+                                            <p-select
+                                                [(ngModel)]="collection.id_tipoc"
+                                                [options]="tipoCollOptions"
+                                                optionLabel="label"
+                                                optionValue="value"
+                                                placeholder="Seleccionar tipo"
+                                                styleClass="text-sm inline-select"
+                                                appendTo="body"
+                                                [style]="{'z-index': '9999', 'height': '2rem', 'min-width': '120px'}"
+                                            ></p-select>
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditCollection(collection, 'tipo')"
+                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                                pTooltip="Guardar (Enter)"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                                pTooltip="Deshacer (Escape)"
+                                            ></button>
+                                        </div>
+                                    </td>
+
                                     <!-- Estado - TOGGLE BUTTON -->
                                     <td>
-                            <span (click)="toggleEstado(collection); $event.stopPropagation()">
   <p-tag
     [value]="getEstadoLabel(collection.estado)"
     [severity]="getEstadoSeverity(collection.estado)"
+    (click)="toggleEstado(collection); $event.stopPropagation()"
     class="cursor-pointer hover:opacity-80 transition-opacity">
   </p-tag>
-</span>
 
                                     </td>
 
-                                    <!-- Banner Preview Button -->
-                                    <td>
-                                        <div class="flex justify-center">
-                                            <p-button
-                                                icon="pi pi-eye"
-                                                styleClass="p-button-sm p-button-text p-button-info"
-                                                [disabled]="!collection.url_banner"
-                                                (onClick)="previewBanner(collection.url_banner, collection.nombre); $event.stopPropagation()"
-                                                [pTooltip]="collection.url_banner ? 'Ver banner completo' : 'No hay banner disponible'"
-                                                tooltipPosition="top"
-                                                tooltipStyleClass="custom-tooltip"
-                                            ></p-button>
-                                        </div>
-                                    </td>
 
                                     <!-- Acciones -->
                                     <td (click)="$event.stopPropagation()">
@@ -272,7 +310,7 @@ import { ItemsComponent } from './items.component';
   #delBtn
   pButton
   icon="pi pi-trash"
-  (click)="eliminarCollection(collection)"
+  (click)="eliminarCollection(collection); $event.stopPropagation()"
   class="p-button-sm p-button-text p-button-danger"
   pTooltip="Eliminar Colección">
 </button>
@@ -287,7 +325,6 @@ import { ItemsComponent } from './items.component';
                     <!-- Panel 2: Detalles de la Coleccion -->
                     <p-tabpanel value="1">
                         <div class="mb-4">
-                            <h1 class="text-lg font-semibold mb-1">📋 Detalles de la Colección</h1>
                             <div class="text-sm text-gray-500">
                                 Items cargados: {{filteredColldItems.length}} | Reordenamiento: {{filteredColldItems.length > 1 ? 'Disponible' : 'Necesita al menos 2 items'}}
                             </div>
@@ -320,7 +357,7 @@ import { ItemsComponent } from './items.component';
                                             icon="pi pi-refresh"
                                             (onClick)="refreshColldData()"
                                             [loading]="loadingColld"
-                                            styleClass="p-button-sm p-button-raised"
+                                            styleClass="p-button-sm p-button-primary p-button-raised"
                                             pTooltip="Forzar recarga de datos"
                                             tooltipPosition="top"
                                             tooltipStyleClass="custom-tooltip"
@@ -328,7 +365,7 @@ import { ItemsComponent } from './items.component';
                                         <p-button
                                             icon="pi pi-plus"
                                             (onClick)="openColldForm()"
-                                            styleClass="p-button-sm p-button-raised"
+                                            styleClass="p-button-sm p-button-primary p-button-raised"
                                             pTooltip="Agregar Detalle"
                                         ></p-button>
                                     </div>
@@ -388,7 +425,7 @@ import { ItemsComponent } from './items.component';
                                         <button
                                             pButton
                                             icon="pi pi-trash"
-                                            (click)="eliminarColld(colld)"
+                                            (click)="eliminarColld(colld); $event.stopPropagation()"
                                             class="p-button-sm p-button-text p-button-danger"
                                             pTooltip="Eliminar detalle"
                                         ></button>
@@ -422,22 +459,39 @@ import { ItemsComponent } from './items.component';
         >
             <form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
                 <div class="grid grid-cols-1 gap-4" style="max-height: 65vh; overflow-y: auto; padding: 0 8px 8px 0;">
-                    <!-- Nombre -->
-                    <div>
-                        <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                formControlName="nombre"
-                                placeholder="Ingrese el nombre de la colección"
-                                class="w-full"
-                                maxlength="100"
-                            />
-                            <label>Nombre *</label>
-                        </p-floatLabel>
-                        <small *ngIf="collectionForm.get('nombre')?.invalid && collectionForm.get('nombre')?.touched"
-                               class="text-red-500 text-xs mt-1">
-                            El nombre es obligatorio
-                        </small>
+                    <div style="height: 0; margin-top: 1rem;"></div>
+                    <!-- Nombre y Estado en el mismo renglón -->
+                    <div class="flex gap-4" style="align-items: flex-start;">
+                        <!-- Nombre -->
+                        <div class="flex-1">
+                            <p-floatLabel variant="on">
+                                <input
+                                    pInputText
+                                    formControlName="nombre"
+                                    placeholder="Ingrese el nombre de la colección"
+                                    class="w-full"
+                                    maxlength="100"
+                                    style="height: 2.5rem;"
+                                    (input)="onNombreInput($event)"
+                                />
+                                <label>Nombre *</label>
+                            </p-floatLabel>
+                            <small *ngIf="collectionForm.get('nombre')?.invalid && collectionForm.get('nombre')?.touched"
+                                   class="text-red-500 text-xs mt-1">
+                                El nombre es obligatorio
+                            </small>
+                        </div>
+
+                        <!-- Estado (Activo) -->
+                        <div class="flex items-center gap-2 pt-1">
+                            <p-tag
+                                [value]="collectionForm.get('estado')?.value ? 'Activo' : 'Inactivo'"
+                                [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
+                                (click)="toggleFormField('estado')"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar">
+                            </p-tag>
+                        </div>
                     </div>
 
                     <!-- Descripción -->
@@ -446,94 +500,79 @@ import { ItemsComponent } from './items.component';
                             <textarea
                                 pInputTextarea
                                 formControlName="descripcion"
-                                placeholder="Descripción de la colección (opcional)"
-                                class="w-full"
-                                rows="2"
-                                maxlength="500"
+                                placeholder="Descripción detallada de la colección"
+                                class="w-full p-inputtext"
+                                rows="3"
+                                maxlength="255"
+                                style="resize: vertical; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; min-height: 5rem;"
                             ></textarea>
                             <label>Descripción</label>
                         </p-floatLabel>
                     </div>
 
-                    <!-- URL Banner -->
-                    <div>
-                        <p-floatLabel variant="on">
-                            <input
-                                pInputText
-                                formControlName="url_banner"
-                                placeholder="https://imagenes.calimaxjs.com/banner.jpg"
-                                class="w-full"
-                                maxlength="255"
-                            />
-                            <label>URL Banner</label>
-                        </p-floatLabel>
-                    </div>
 
                     <!-- Tipo de Colección -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <p-select
-                            formControlName="id_tipoc"
-                            [options]="tipoCollOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Seleccionar tipo de colección"
-                            styleClass="w-full text-sm"
-                            appendTo="body"
-                            [style]="{'z-index': '9999'}"
-                        ></p-select>
-                            <label>Tipo de Colección *</label>
-                        </p-floatLabel>
+                        <p-select
+                        formControlName="id_tipoc"
+                        [options]="tipoCollOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccionar tipo de colección"
+                        styleClass="w-full text-sm"
+                        appendTo="body"
+                        [style]="{'z-index': '9999', 'height': '2.5rem'}"
+                    ></p-select>
                     </div>
 
-                    <!-- Fecha Inicio, SWSCHED y Fecha Fin en el mismo renglón -->
-                    <div class="grid grid-cols-3 gap-4 items-end">
-                        <!-- Fecha Inicio -->
-                        <div>
-                            <p-floatLabel variant="on">
-                                <p-inputMask
-                                    formControlName="fecha_ini"
-                                    mask="99/99/9999"
-                                    placeholder="MM/DD/YYYY"
-                                    class="w-full"
-                                    [autoClear]="false"
-                                    [unmask]="false"
-                                ></p-inputMask>
-                                <label>Fecha Inicio</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <!-- SWSCHED -->
-                        <div class="flex justify-center">
+                    <!-- SWSCHED con fechas dependientes -->
+                    <div class="flex items-end gap-4">
+                        <!-- Botón SWSCHED a la izquierda -->
+                        <div class="flex-shrink-0">
                             <div class="flex flex-col items-center gap-1">
                                 <p-tag
-                                    [value]="collectionForm.get('swsched')?.value ? 'Sí' : 'No'"
-                                    [severity]="collectionForm.get('swsched')?.value ? 'success' : 'danger'"
+                                    [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Fijo'"
+                                    [severity]="collectionForm.get('swsched')?.value ? 'info' : 'success'"
                                     (click)="toggleSwsched()"
-                                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                                    class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
                                     title="Clic para cambiar">
                                 </p-tag>
-                                <span class="text-xs text-gray-600 text-center">programado por sched</span>
                             </div>
                         </div>
 
-                        <!-- Fecha Fin (solo si swsched está activo) -->
-                        <div *ngIf="collectionForm.get('swsched')?.value; else fechaFinPlaceholder">
-                            <p-floatLabel variant="on">
+                        <!-- Fechas a la derecha (solo si swsched está activo) -->
+                        <div *ngIf="collectionForm.get('swsched')?.value" class="flex-1 grid grid-cols-2 gap-4">
+                            <!-- Fecha Inicio -->
+                            <div>
                                 <p-inputMask
-                                    formControlName="fecha_fin"
+                                    formControlName="fecha_ini"
                                     mask="99/99/9999"
-                                    placeholder="MM/DD/YYYY"
+                                    placeholder="DD/MM/YYYY"
                                     class="w-full"
                                     [autoClear]="false"
                                     [unmask]="false"
+                                    [style]="{'height': '2.5rem'}"
                                 ></p-inputMask>
-                                <label>Fecha Fin</label>
-                            </p-floatLabel>
+                            </div>
+
+                            <!-- Fecha Fin -->
+                            <div>
+                                <p-inputMask
+                                    formControlName="fecha_fin"
+                                    mask="99/99/9999"
+                                    placeholder="DD/MM/YYYY"
+                                    class="w-full"
+                                    [autoClear]="false"
+                                    [unmask]="false"
+                                    [style]="{'height': '2.5rem'}"
+                                ></p-inputMask>
+                            </div>
                         </div>
+
+                        <!-- Placeholder cuando swsched está inactivo -->
                         <ng-template #fechaFinPlaceholder>
-                            <div class="h-12 flex items-center justify-center">
-                                <span class="text-xs text-gray-400">Activar sched para fecha fin</span>
+                            <div *ngIf="!collectionForm.get('swsched')?.value" class="flex-1 flex items-center justify-center">
+                                <span class="text-xs text-gray-400">Activar programado para mostrar fechas</span>
                             </div>
                         </ng-template>
                     </div>
@@ -542,35 +581,45 @@ import { ItemsComponent } from './items.component';
                     <div class="grid grid-cols-3 gap-3">
                         <div class="flex items-center gap-2">
                             <p-tag
-                                [value]="collectionForm.get('swtag')?.value ? 'Sí' : 'No'"
-                                [severity]="collectionForm.get('swtag')?.value ? 'success' : 'danger'"
+                                [value]="collectionForm.get('swtag')?.value ? 'Tag' : 'No Tag'"
+                                [severity]="collectionForm.get('swtag')?.value ? 'success' : 'info'"
                                 (click)="toggleFormField('swtag')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
                                 title="Clic para cambiar">
                             </p-tag>
-                            <span>tag</span>
+                            <!-- Input para tag (solo cuando swtag está activado) -->
+                            <input
+                                *ngIf="collectionForm.get('swtag')?.value"
+                                pInputText
+                                formControlName="tag"
+                                placeholder="Etiqueta de la colección"
+                                class="ml-2 w-40 text-sm"
+                                maxlength="50"
+                            />
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <p-tag
-                                [value]="collectionForm.get('swsrc')?.value ? 'Sí' : 'No'"
-                                [severity]="collectionForm.get('swsrc')?.value ? 'success' : 'danger'"
-                                (click)="toggleFormField('swsrc')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
-                                title="Clic para cambiar">
-                            </p-tag>
-                            <span>srch</span>
-                        </div>
+                    </div>
 
+                    <!-- Campos slug -->
+                    <div class="grid grid-cols-3 gap-3 mt-2">
                         <div class="flex items-center gap-2">
                             <p-tag
-                                [value]="collectionForm.get('estado')?.value ? 'Sí' : 'No'"
-                                [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
-                                (click)="toggleFormField('estado')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                [value]="collectionForm.get('swslug')?.value ? 'Slug' : 'No Slug'"
+                                [severity]="collectionForm.get('swslug')?.value ? 'success' : 'info'"
+                                (click)="toggleSwSlug()"
+                                class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
                                 title="Clic para cambiar">
                             </p-tag>
-                            <span>¿Activo?</span>
+                            <!-- Input para slug (solo cuando swslug está activado) -->
+                            <input
+                                *ngIf="collectionForm.get('swslug')?.value"
+                                pInputText
+                                formControlName="slug"
+                                placeholder="slug-generado-automaticamente"
+                                class="ml-2 w-40 text-sm"
+                                maxlength="100"
+                                (input)="onSlugInput($event)"
+                            />
                         </div>
                     </div>
 
@@ -578,21 +627,15 @@ import { ItemsComponent } from './items.component';
                     <div *ngIf="isEditingCollection" class="border-t pt-3 grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium mb-1">Última Modificación</label>
-                            <input
-                                pInputText
-                                [value]="collectionSeleccionada?.fecha_mod | date:'short'"
-                                readonly
-                                class="w-full bg-gray-100 text-xs"
-                            />
+                            <p class="text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded">
+                                {{ collectionSeleccionada?.fecha_mod | date:'short' }}
+                            </p>
                         </div>
                         <div>
                             <label class="block text-xs font-medium mb-1">Usuario</label>
-                            <input
-                                pInputText
-                                [value]="collectionSeleccionada?.usr_m"
-                                readonly
-                                class="w-full bg-gray-100 text-xs"
-                            />
+                            <p class="text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded">
+                                {{ collectionSeleccionada?.usr_m }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -612,7 +655,7 @@ import { ItemsComponent } from './items.component';
                         [label]="isEditingCollection ? 'Actualizar' : 'Crear'"
                         [disabled]="!collectionForm.valid || savingCollection"
                         [loading]="savingCollection"
-                        class="p-button-success"
+                        class="p-button-primary"
                         raised
                     ></button>
                 </div>
@@ -723,11 +766,6 @@ import { ItemsComponent } from './items.component';
 
     `,
     styles: [`
-        .inline-edit-container {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
 
         .inline-action-btn {
             padding: 0.25rem;
@@ -759,6 +797,67 @@ import { ItemsComponent } from './items.component';
 
         .p-button.p-button-text.p-button-sm .p-button-icon {
             font-size: 0.875rem !important;
+        }
+
+        /* Estilos para botones de filtro compactos */
+        .compact-filter-button.p-button {
+            padding: 0.25rem 0.5rem !important;
+            min-height: 1.75rem !important;
+            font-size: 0.75rem !important;
+            line-height: 1.25 !important;
+            border-radius: 0.25rem !important;
+        }
+
+        .compact-filter-button.p-button .p-button-label {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Estilos para select en edición inline */
+        .inline-select .p-select {
+            height: 2rem !important;
+            min-height: 2rem !important;
+            vertical-align: middle !important;
+            display: inline-block !important;
+        }
+
+        .inline-select .p-select .p-select-label {
+            font-size: 0.875rem !important;
+            line-height: 1.5 !important;
+            padding: 0.125rem 0.5rem !important;
+            vertical-align: middle !important;
+            height: 1.5rem !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .inline-select .p-select .p-select-dropdown {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+            vertical-align: middle !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Estilos para el panel del dropdown */
+        .inline-select .p-select-panel {
+            min-width: 120px !important;
+            max-width: 200px !important;
+        }
+
+        /* Ajuste adicional para el contenedor inline */
+        .inline-edit-container {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 0.25rem;
+            padding: 0.125rem 0;
+            vertical-align: middle !important;
+            height: 100% !important;
+            min-height: 2rem;
+            position: relative !important;
         }
 
         /* Fila seleccionada */
@@ -839,7 +938,6 @@ import { ItemsComponent } from './items.component';
         }
 
         :host ::ng-deep .custom-modal .p-dialog-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
             border-bottom: none !important;
             padding: 1rem 1.5rem !important;
@@ -995,6 +1093,200 @@ import { ItemsComponent } from './items.component';
             transition: none !important;
         }
 
+        /* Estilos para botones de tabla */
+        .p-datatable .p-datatable-tbody > tr > td {
+            padding: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .p-datatable .p-datatable-tbody > tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Estilos para botones */
+        :host ::ng-deep .p-button.p-button-text.p-button-sm {
+            width: 2rem !important;
+            height: 2rem !important;
+            min-width: 2rem !important;
+            padding: 0 !important;
+            border-radius: 0.25rem !important;
+        }
+
+        :host ::ng-deep .p-button.p-button-text.p-button-sm .p-button-icon {
+            font-size: 0.875rem !important;
+        }
+
+        /* Fila seleccionada */
+        .bg-blue-50 {
+            background-color: #eff6ff !important;
+        }
+
+        /* Scroll personalizado para formularios */
+        .grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .grid::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .grid::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Estilos para el modal personalizado */
+        :host ::ng-deep .p-dialog {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            border-radius: 0.5rem !important;
+            overflow: hidden !important;
+        }
+
+        :host ::ng-deep .p-dialog-header {
+            color: #374151 !important;
+            background: #f9fafb !important;
+            border-bottom: 1px solid #e5e7eb !important;
+            padding: 1rem 1.5rem !important;
+        }
+
+        :host ::ng-deep .p-dialog-content {
+            padding: 1.5rem !important;
+            background: white !important;
+        }
+
+        :host ::ng-deep .p-dialog-footer {
+            border-top: 1px solid #e5e7eb !important;
+            padding: 1rem 1.5rem !important;
+            background: #f9fafb !important;
+        }
+
+        /* Evitar fondo negro al abrir el modal */
+        :host ::ng-deep .p-dialog-mask {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            transition: opacity 0.2s ease-in-out !important;
+        }
+
+        :host ::ng-deep .p-dialog-mask.p-dialog-mask-leave {
+            opacity: 0 !important;
+        }
+
+        /* Asegurar que el modal aparezca correctamente */
+        :host ::ng-deep .p-dialog {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+
+        /* Estilos para tooltips */
+        :host ::ng-deep .p-tooltip {
+            background-color: #374151 !important;
+            color: white !important;
+            border-radius: 0.375rem !important;
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            z-index: 10000 !important;
+            opacity: 1 !important;
+        }
+
+        /* Evitar parpadeo en botones con loading */
+        :host ::ng-deep .p-button.p-button-loading {
+            opacity: 1 !important;
+            pointer-events: none !important;
+        }
+
+        :host ::ng-deep .p-button .p-button-loading-icon {
+            animation: p-button-spin 1s linear infinite !important;
+        }
+
+        /* Estilos específicos para botones con tooltip */
+        :host ::ng-deep .p-button[ptooltip] {
+            transition: none !important;
+        }
+
+        :host ::ng-deep .p-button[ptooltip]:hover {
+            transform: none !important;
+        }
+
+        /* Prevenir parpadeo de tooltips */
+        :host ::ng-deep .p-tooltip.p-tooltip-hide {
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        :host ::ng-deep .p-tooltip.p-tooltip-show {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        :host ::ng-deep .p-tooltip .p-tooltip-arrow {
+            color: #374151 !important;
+        }
+
+        :host ::ng-deep .p-tooltip.p-tooltip-top .p-tooltip-arrow {
+            border-top-color: #374151 !important;
+        }
+
+        /* Estilos para tooltips personalizados */
+        :host ::ng-deep .custom-tooltip {
+            background-color: #374151 !important;
+            color: white !important;
+            border-radius: 0.375rem !important;
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            z-index: 10001 !important;
+            opacity: 1 !important;
+            transition: opacity 0.2s ease-in-out !important;
+            pointer-events: none !important;
+        }
+
+        /* Prevenir cualquier transformación o animación en botones con tooltip */
+        :host ::ng-deep .p-button[tooltipStyleClass="custom-tooltip"] {
+            transition: none !important;
+            transform: none !important;
+        }
+
+        :host ::ng-deep .p-button[tooltipStyleClass="custom-tooltip"]:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        :host ::ng-deep .p-button[tooltipStyleClass="custom-tooltip"]:focus {
+            box-shadow: none !important;
+        }
+
+        /* Eliminar completamente cualquier animación en botones refresh */
+        :host ::ng-deep .p-button[icon="pi pi-refresh"] {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        :host ::ng-deep .p-button[icon="pi pi-refresh"]:hover {
+            transform: none !important;
+            animation: none !important;
+        }
+
+        :host ::ng-deep .p-button[icon="pi pi-refresh"]:active {
+            transform: none !important;
+            animation: none !important;
+        }
+
+        /* Asegurar que el loading spinner no cause parpadeo */
+        :host ::ng-deep .p-button[icon="pi pi-refresh"] .p-button-loading-icon {
+            animation: p-button-spin 1s linear infinite !important;
+        }
+
+        /* Eliminar cualquier efecto visual en el contenedor del botón */
+        :host ::ng-deep .p-button[icon="pi pi-refresh"] .p-button-icon {
+            transition: none !important;
+        }
+
         /* Estilos para el botón de banner preview */
         :host ::ng-deep .p-button[icon="pi pi-eye"] {
             transition: none !important;
@@ -1091,6 +1383,29 @@ import { ItemsComponent } from './items.component';
             resize: vertical;
         }
 
+        /* Estilos para botones tag personalizados */
+        :host ::ng-deep .p-tag {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            min-width: 4rem;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Estado hover para tags */
+        :host ::ng-deep .p-tag.cursor-pointer:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Altura estándar para inputs de tag y slug */
+        :host ::ng-deep input[formControlName="tag"],
+        :host ::ng-deep input[formControlName="slug"] {
+            height: 2.5rem !important;
+        }
+
     `]
 })
 export class CollectionsComponent implements OnInit {
@@ -1120,7 +1435,7 @@ export class CollectionsComponent implements OnInit {
 
     // Filtros
     selectedTipoFilter: number[] = [];
-    filterMenuItems: any[] = [];
+    tipoFiltroSeleccionado: string = '';
 
     // Banner preview
     bannerPreviewSrc = '';
@@ -1166,17 +1481,17 @@ export class CollectionsComponent implements OnInit {
         private fb: FormBuilder,
         private collService: CollService,
         private colldService: ColldService,
+        private catConceptosDetService: CatConceptosDetService,
         private sessionService: SessionService,
         private messageService: MessageService,
     ) {
         this.initializeForms();
-        this.initializeFilterMenu();
         this.initializeColldForms();
     }
 
     ngOnInit(): void {
         console.log('🚀 CollectionsComponent inicializado');
-        this.cargarCollections();
+        // Cargar tipos primero, luego colecciones para asegurar que los labels estén disponibles
         this.cargarTipoCollOptions();
     }
 
@@ -1187,9 +1502,10 @@ export class CollectionsComponent implements OnInit {
         this.collectionForm = this.fb.group({
             nombre: ['', [Validators.required]],
             descripcion: [''],
-            url_banner: [''],
             swtag: [false],
-            swsrc: [false],
+            tag: [{value: '', disabled: true}],
+            swslug: [false],
+            slug: [{value: '', disabled: true}],
             estado: [true],
             id_tipoc: [null, [Validators.required]],
             fecha_ini: [currentDate],
@@ -1198,35 +1514,25 @@ export class CollectionsComponent implements OnInit {
         });
     }
 
-    initializeFilterMenu(): void {
-        this.filterMenuItems = [
-            {
-                label: 'Limpiar filtros',
-                icon: 'pi pi-filter-slash',
-                command: () => this.clearFilters()
-            },
-            {
-                label: 'Todos los tipos',
-                icon: 'pi pi-list',
-                command: () => this.showAllTypes()
-            },
-            { separator: true }
-        ];
-
-        // Agregar tipos de colección dinámicamente
-        this.tipoCollOptions.forEach(tipo => {
-            this.filterMenuItems.push({
-                label: `- ${tipo.label}`,
-                icon: 'pi pi-filter',
-                command: () => this.filterByType(tipo.value)
-            });
-        });
-    }
 
     clearFilters(): void {
         this.selectedTipoFilter = [];
-        this.filteredCollections = [...this.collections];
-        console.log('Filtros limpiados');
+        this.tipoFiltroSeleccionado = '';
+        this.cargarCollections(); // Cargar todas las colecciones sin filtro
+        console.log('Filtros limpiados - recargando datos desde API');
+    }
+
+    onTipoFiltroClick(tipoValue: string): void {
+        if (this.tipoFiltroSeleccionado === tipoValue) {
+            // Si se hace clic en el mismo filtro, se desactiva (cargar todas)
+            this.tipoFiltroSeleccionado = '';
+            this.cargarCollections(); // Cargar todas las colecciones sin filtro
+        } else {
+            // Activar el filtro seleccionado
+            this.tipoFiltroSeleccionado = tipoValue;
+            this.cargarCollections({ id_tipoc: parseInt(tipoValue) }); // Cargar con filtro aplicado
+        }
+        console.log(`Filtro aplicado: ${this.tipoFiltroSeleccionado}`);
     }
 
     showAllTypes(): void {
@@ -1257,10 +1563,16 @@ export class CollectionsComponent implements OnInit {
 
     // ========== MÉTODOS DE DATOS ==========
 
-    cargarCollections(): void {
+    cargarCollections(filtros?: { id_tipoc?: number }): void {
         this.loadingCollections = true;
 
-        this.collService.getAllCollections().subscribe({
+        // Preparar parámetros con filtros si se proporcionan
+        const params: any = {};
+        if (filtros?.id_tipoc) {
+            params.filters = { id_tipoc: filtros.id_tipoc };
+        }
+
+        this.collService.getAllCollections(params).subscribe({
             next: (response) => {
                 const responseData = Array.isArray(response) ? response[0] : response;
 
@@ -1268,7 +1580,7 @@ export class CollectionsComponent implements OnInit {
                     // El servicio ya procesó los datos, responseData.data ya es el array directo
                     console.log('✅ Asignando datos al componente:', responseData.data.length, 'colecciones');
                     this.collections = responseData.data;
-                    this.filteredCollections = [...this.collections];
+                    this.filteredCollections = [...this.collections]; // Ahora filteredCollections contiene los datos filtrados desde el API
                     console.log('📊 Colecciones asignadas:', this.collections);
                 } else {
                     console.warn('⚠️ No hay datos válidos para asignar');
@@ -1291,23 +1603,40 @@ export class CollectionsComponent implements OnInit {
     }
 
     cargarTipoCollOptions(): void {
-        this.collService.getCollTypes().subscribe({
-            next: (response) => {
-                const responseData = Array.isArray(response) ? response[0] : response;
+        console.log('📋 Cargando tipos de colección desde catconceptosdet con clave TIPOCOLL');
 
-                if (responseData && responseData.statuscode === 200 && responseData.data) {
-                    this.tipoCollOptions = responseData.data.map((tipo: CollTypeItem) => ({
-                        label: tipo.nomTipo,
-                        value: tipo.id_tipoc
+        this.catConceptosDetService.queryDetalles({
+            clave: 'TIPOCOLL'
+        }).subscribe({
+            next: (response) => {
+                console.log('✅ Respuesta de tipos de colección:', response);
+
+                if (response && response.statuscode === 200 && response.data) {
+                    this.tipoCollOptions = response.data.map((tipo: any) => ({
+                        label: tipo.descripcion || tipo.nombre || `Tipo ${tipo.concepto}`,
+                        value: tipo.valor1 // Usar valor1 como el valor a setear
                     }));
-                    this.initializeFilterMenu();
+                    console.log('📋 Opciones de tipo colección cargadas:', this.tipoCollOptions);
+
+                    // Después de cargar los tipos, cargar las colecciones para que los labels estén disponibles
+                    this.cargarCollections();
                 } else {
+                    console.warn('⚠️ No se encontraron tipos de colección');
                     this.tipoCollOptions = [];
                 }
             },
             error: (error) => {
-                console.error('Error al cargar tipos:', error.message || error);
+                console.error('❌ Error al cargar tipos de colección desde catconceptosdet:', error.message || error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'No se pudieron cargar los tipos de colección disponibles',
+                    life: 5000
+                });
                 this.tipoCollOptions = [];
+
+                // Aún así cargar las colecciones, aunque sin tipos disponibles
+                this.cargarCollections();
             }
         });
     }
@@ -1820,13 +2149,9 @@ export class CollectionsComponent implements OnInit {
     }
 
     onTipoFilterChange(event: any): void {
-        if (event.value && event.value.length > 0) {
-            this.filteredCollections = this.collections.filter(coll =>
-                event.value.includes(coll.id_tipoc)
-            );
-        } else {
-            this.filteredCollections = [...this.collections];
-        }
+        // Esta función ya no se usa para filtrado local,
+        // ahora los filtros se aplican en la llamada al API
+        console.log('onTipoFilterChange: Filtros manejados por API', event);
     }
 
     onCollectionSelect(event: any): void {
@@ -1871,9 +2196,19 @@ export class CollectionsComponent implements OnInit {
         // Cambiar el valor del formulario
         this.collectionForm.patchValue({ [fieldName]: newValue });
 
-        // Si se desactiva swsched, resetear fecha_fin
+        // Manejar campos dependientes
         if (fieldName === 'swsched' && !newValue) {
             this.collectionForm.patchValue({ fecha_fin: this.getCurrentDate() });
+        }
+
+        // Manejar swtag - habilitar/deshabilitar campo tag
+        if (fieldName === 'swtag') {
+            if (newValue) {
+                this.collectionForm.get('tag')?.enable();
+            } else {
+                this.collectionForm.patchValue({ tag: '' });
+                this.collectionForm.get('tag')?.disable();
+            }
         }
     }
 
@@ -1881,9 +2216,95 @@ export class CollectionsComponent implements OnInit {
         this.toggleFormField('swsched');
     }
 
+    toggleSwSlug(): void {
+        const currentValue = this.collectionForm.get('swslug')?.value;
+        const newValue = !currentValue;
+
+        // Cambiar el valor del formulario
+        this.collectionForm.patchValue({ swslug: newValue });
+
+        if (newValue) {
+            // Si se activa el slug, generar desde el nombre actual
+            const nombre = this.collectionForm.get('nombre')?.value || '';
+            const slug = this.generateSlug(nombre);
+            this.collectionForm.patchValue({ slug: slug });
+            // Habilitar el campo slug
+            this.collectionForm.get('slug')?.enable();
+        } else {
+            // Si se desactiva, limpiar el slug y deshabilitar el campo
+            this.collectionForm.patchValue({ slug: '' });
+            this.collectionForm.get('slug')?.disable();
+        }
+    }
+
     onSwschedChange(event: any): void {
         // Método legacy para compatibilidad
         this.toggleSwsched();
+    }
+
+
+    onSlugInput(event: any): void {
+        // Permitir edición manual del slug cuando swslug está activado y el campo está habilitado
+        if (this.collectionForm.get('swslug')?.value && this.collectionForm.get('slug')?.enabled) {
+            const slugValue = this.sanitizeSlug(event.target.value);
+            this.collectionForm.patchValue({ slug: slugValue });
+        }
+    }
+
+    onNombreInput(event: any): void {
+        const input = event.target;
+        const pascalCaseValue = this.toPascalCase(input.value);
+        input.value = pascalCaseValue;
+        this.collectionForm.patchValue({ nombre: pascalCaseValue });
+
+        // Generar slug automáticamente si swslug está activado y el campo slug está habilitado
+        if (this.collectionForm.get('swslug')?.value && this.collectionForm.get('slug')?.enabled) {
+            const slug = this.generateSlug(pascalCaseValue);
+            this.collectionForm.patchValue({ slug: slug });
+        }
+    }
+
+    private toPascalCase(text: string): string {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        // Separar por espacios, guiones o guiones bajos
+        const words = text.split(/[\s\-_]+/);
+
+        // Convertir cada palabra: primera letra mayúscula, resto minúscula
+        const pascalCaseWords = words.map(word => {
+            if (word.length === 0) return '';
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
+
+        return pascalCaseWords.join(' ');
+    }
+
+    private generateSlug(text: string): string {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        return text
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
+            .replace(/[\s_-]+/g, '-') // Reemplazar espacios y guiones bajos con guiones
+            .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
+    }
+
+    private sanitizeSlug(slug: string): string {
+        if (!slug || typeof slug !== 'string') {
+            return '';
+        }
+
+        return slug
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w-]/g, '') // Solo letras, números, guiones
+            .replace(/-+/g, '-') // Evitar múltiples guiones consecutivos
+            .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
     }
 
     // ========== MÉTODOS DE FORMULARIO ==========
@@ -1895,8 +2316,10 @@ export class CollectionsComponent implements OnInit {
             this.collectionForm.patchValue({
                 nombre: collection.nombre,
                 descripcion: collection.descripcion || '',
-                url_banner: collection.url_banner || '',
                 swtag: collection.swtag === 1,
+                tag: collection.tag || '',
+                swslug: collection.swslug === 1,
+                slug: collection.slug || '',
                 swsrc: collection.swsrc === 1,
                 estado: collection.estado === 'A',
                 id_tipoc: collection.id_tipoc,
@@ -1904,17 +2327,37 @@ export class CollectionsComponent implements OnInit {
                 swsched: collection.sw_fijo === 1,
                 fecha_fin: this.formatDateForInput(collection.fecha_fin)
             });
+
+            // Configurar estado de los campos dependientes
+            if (collection.swtag === 1) {
+                this.collectionForm.get('tag')?.enable();
+            } else {
+                this.collectionForm.get('tag')?.disable();
+            }
+
+            if (collection.swslug === 1) {
+                this.collectionForm.get('slug')?.enable();
+            } else {
+                this.collectionForm.get('slug')?.disable();
+            }
+
             this.collectionSeleccionada = collection;
         } else {
             const currentDate = this.getCurrentDate();
             this.collectionForm.reset({
                 estado: true,
                 swtag: false,
-                swsrc: false,
+                tag: '',
+                swslug: false,
+                slug: '',
                 swsched: false,
                 fecha_ini: currentDate,
                 fecha_fin: currentDate
             });
+
+            // Asegurar que los campos estén deshabilitados para nuevos registros
+            this.collectionForm.get('tag')?.disable();
+            this.collectionForm.get('slug')?.disable();
             this.collectionSeleccionada = null;
         }
 
@@ -1947,7 +2390,7 @@ export class CollectionsComponent implements OnInit {
             const processedData = {
                 ...formData,
                 swtag: formData.swtag ? 1 : 0,
-                swsrc: formData.swsrc ? 1 : 0,
+                swslug: formData.swslug ? 1 : 0,
                 estado: formData.estado ? 'A' : 'I',
                 swsched: formData.swsched ? 1 : 0,
                 fecha_ini: this.convertDateToISO(formData.fecha_ini),
@@ -2254,6 +2697,23 @@ export class CollectionsComponent implements OnInit {
 
     getEstadoSeverity(estado: string): 'success' | 'danger' {
         return estado === 'A' ? 'success' : 'danger';
+    }
+
+    getTipoCollectionLabel(idTipoc: any): string {
+        if (!idTipoc || !this.tipoCollOptions.length) {
+            return 'Cargando...';
+        }
+
+        // Buscar por valor exacto (comparar como string para evitar problemas de tipos)
+        const tipo = this.tipoCollOptions.find(option => String(option.value) === String(idTipoc));
+
+        if (tipo && tipo.label) {
+            return tipo.label;
+        }
+
+        // Si no encuentra por valor, intentar por índice o devolver un valor por defecto
+        console.warn('Tipo de colección no encontrado:', idTipoc, 'en opciones:', this.tipoCollOptions);
+        return 'Sin tipo';
     }
 
     private formatDateForInput(dateString: string): string {

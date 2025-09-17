@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+
 import {
   Rol,
   RolApiResponse,
@@ -17,37 +19,51 @@ import { ROL_API_CONFIG } from '../models/rol.constants';
 
 /**
  * Servicio para la gestión de roles
- * Endpoint: /api/adminUsr/rol
- * Base URL: http://localhost:3000
+ * Endpoint dinámico: ID 2 (Roles)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class RolService {
-  private baseUrl: string = ROL_API_CONFIG.DEFAULT_BASE_URL;
+  private readonly API_ID: number = 2; // ID del endpoint de Roles
   private readonly endpoints = {
-    ROLES: ROL_API_CONFIG.ENDPOINTS.ROLES
+    ROLES: ROL_API_CONFIG.ENDPOINTS.ROLES // Mantener por compatibilidad
   };
 
   private readonly httpOptions = {
     headers: new HttpHeaders(ROL_API_CONFIG.DEFAULT_HEADERS)
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiConfig: ApiConfigService
+  ) {}
 
   /**
-   * Configura la URL base del servicio
+   * Obtiene la URL del endpoint por ID
    */
-  setBaseUrl(url: string): void {
-    this.baseUrl = url;
-    console.log(`🔧 URL base configurada para roles: ${this.baseUrl}`);
+  private getApiUrl(): string {
+    const endpoint = this.apiConfig.getEndpointById(this.API_ID);
+    if (!endpoint) {
+      console.warn(`⚠️ Endpoint con ID ${this.API_ID} no encontrado. Usando URL por defecto.`);
+      return this.apiConfig.getBaseUrl() + this.endpoints.ROLES;
+    }
+    return endpoint.url;
   }
 
   /**
-   * Obtiene la URL base actual
+   * Configura la URL base del servicio (para compatibilidad)
+   */
+  setBaseUrl(url: string): void {
+    console.log(`🔧 RolService usa ApiConfigService - URL configurada: ${url}`);
+    // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
+  }
+
+  /**
+   * Obtiene la URL base actual desde ApiConfigService
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.apiConfig.getBaseUrl();
   }
 
   /**
@@ -55,8 +71,8 @@ export class RolService {
    * Si no se especifica id, regresa todos los roles
    */
   getRoles(id?: number): Observable<Rol[]> {
-    let url = `${this.baseUrl}${this.endpoints.ROLES}`;
-    
+    let url = this.getApiUrl();
+
     if (id) {
       url += `/${id}`;
     }
@@ -86,8 +102,8 @@ export class RolService {
    * Si se manda el id lo toma como update
    */
   createRol(rol: RolForm): Observable<RolApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROLES}`;
-    
+    const url = this.getApiUrl();
+
     return this.http.post<RolApiResponse>(url, rol, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -102,8 +118,8 @@ export class RolService {
    * PATCH - Actualizar atributos específicos del rol
    */
   updateRol(id: number, rol: Partial<RolForm>): Observable<RolApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROLES}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.patch<RolApiResponse>(url, rol, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -118,8 +134,8 @@ export class RolService {
    * PUT - Actualización completa del rol
    */
   updateRolCompleto(id: number, rol: RolForm): Observable<RolApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROLES}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.put<RolApiResponse>(url, rol, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -134,8 +150,8 @@ export class RolService {
    * DELETE - Eliminar rol
    */
   deleteRol(id: number): Observable<RolApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROLES}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.delete<RolApiResponse>(url, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -154,11 +170,11 @@ export class RolService {
    * DL -> eliminar el registro señalado por el id
    */
   executeAction(action: RolAction, data?: any): Observable<RolApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROLES}`;
+    const url = this.getApiUrl();
     const body = { action, ...data };
-    
+
     console.log(`🔧 Ejecutando acción de rol: ${action}`, body);
-    
+
     return this.http.post<RolApiResponse>(url, body, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -347,7 +363,7 @@ export class RolService {
    * Probar conectividad con la API
    */
   testConnection(): Observable<boolean> {
-    return this.http.get<RolApiResponse>(`${this.baseUrl}${this.endpoints.ROLES}`, this.httpOptions).pipe(
+    return this.http.get<RolApiResponse>(this.getApiUrl(), this.httpOptions).pipe(
       map(response => {
         console.log('✅ Conexión exitosa con la API de roles');
         return true;

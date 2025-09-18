@@ -16,9 +16,8 @@ import { FloatLabelModule } from 'primeng/floatlabel';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Servicios específicos del dominio
-import { RecetaMockService } from '@/pages/service/receta.service';
+import { RecetaService, RecetaItem, RecetaFormItem } from '@/features/receta/services/receta.service';
 import { SessionService } from '@/core/services/session.service';
-import { Receta } from '@/types/receta';
 
 @Component({
     selector: 'receta-list',
@@ -86,68 +85,120 @@ import { Receta } from '@/types/receta';
 
                 <ng-template #header>
                     <tr>
-                        <th class="white-space-nowrap" style="width:8%">ID</th>
-                        <th class="white-space-nowrap" style="width:20%">Título</th>
-                        <th class="white-space-nowrap" style="width:12%">Imagen</th>
-                        <th class="white-space-nowrap" style="width:12%">Categoría</th>
-                        <th class="white-space-nowrap" style="width:10%">Dificultad</th>
-                        <th class="white-space-nowrap" style="width:10%">Tiempo</th>
-                        <th class="white-space-nowrap" style="width:8%">Porciones</th>
-                        <th class="white-space-nowrap" style="width:10%">Estado</th>
-                        <th class="white-space-nowrap" style="width:12%">Modificado</th>
-                        <th class="white-space-nowrap" style="width:10%">Usuario</th>
-                        <th class="white-space-nowrap" style="width:10%">Acciones</th>
+                        <th class="white-space-nowrap" style="width:6%">ID</th>
+                        <th class="white-space-nowrap" style="width:15%">Título</th>
+                        <th class="white-space-nowrap" style="width:10%">Imagen</th>
+                        <th class="white-space-nowrap" style="width:10%">Categoría</th>
+                        <th class="white-space-nowrap" style="width:15%">Descripción</th>
+                        <th class="white-space-nowrap" style="width:8%">Dificultad</th>
+                        <th class="white-space-nowrap" style="width:8%">Tiempo</th>
+                        <th class="white-space-nowrap" style="width:6%">Porc.</th>
+                        <th class="white-space-nowrap" style="width:8%">Acciones</th>
                     </tr>
                 </ng-template>
 
                 <ng-template #body let-Receta let-editing="editing" let-ri="rowIndex">
                     <tr>
                         <!-- ID (solo vista) -->
-                        <td>{{ Receta.id_receta }}</td>
+                        <td>{{ Receta.id }}</td>
 
                         <!-- Título (edición inline) -->
-                        <td>
-                            <!-- Vista normal -->
-                            <span
-                                *ngIf="editingCell !== Receta.id_receta + '_title'"
-                                (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
-                                class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                title="Clic para editar"
-                            >
-                                {{Receta.title}}
-                            </span>
+                        <td class="text-xs">
+                            <div class="flex flex-col gap-1">
+                                <!-- Título Principal -->
+                                <div>
+                                    <span
+                                        *ngIf="editingCell !== Receta.id + '_title'"
+                                        (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
+                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors font-medium"
+                                        pTooltip="Clic para editar título principal"
+                                    >
+                                        {{Receta.title}}
+                                    </span>
 
-                            <!-- Vista de edición -->
-                            <div
-                                *ngIf="editingCell === Receta.id_receta + '_title'"
-                                class="inline-edit-container"
-                            >
-                                <input
-                                   pInputText
-                                   type="text"
-                                   [(ngModel)]="Receta.title"
-                                    (keyup.enter)="saveInlineEditReceta(Receta, 'title')"
-                                    (keyup.escape)="cancelInlineEdit()"
-                                    class="p-inputtext-sm flex-1"
-                                    #input
-                                    (focus)="input.select()"
-                                    autofocus
-                                    placeholder="Título de la receta"
-                                />
-                                <button
-                                    pButton
-                                    icon="pi pi-check"
-                                    (click)="saveInlineEditReceta(Receta, 'title')"
-                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                    pTooltip="Guardar (Enter)"
-                                ></button>
-                                <button
-                                    pButton
-                                    icon="pi pi-undo"
-                                    (click)="cancelInlineEdit()"
-                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                    pTooltip="Deshacer (Escape)"
-                                ></button>
+                                    <!-- Vista de edición título principal -->
+                                    <div
+                                        *ngIf="editingCell === Receta.id + '_title'"
+                                        class="inline-edit-container mb-1"
+                                    >
+                                        <input
+                                           pInputText
+                                           type="text"
+                                           [(ngModel)]="Receta.title"
+                                            (keyup.enter)="saveInlineEditReceta(Receta, 'title')"
+                                            (keyup.escape)="cancelInlineEdit()"
+                                            class="p-inputtext-xs w-full"
+                                            #input
+                                            (focus)="input.select()"
+                                            autofocus
+                                            placeholder="Título principal"
+                                        />
+                                        <div class="flex gap-1 mt-1">
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditReceta(Receta, 'title')"
+                                                class="p-button-xs p-button-success p-button-text"
+                                                pTooltip="Guardar título"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-xs p-button-secondary p-button-text"
+                                                pTooltip="Cancelar"
+                                            ></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Título Corto (si existe) -->
+                                <div *ngIf="Receta.title_min" class="text-gray-500">
+                                    <span
+                                        *ngIf="editingCell !== Receta.id + '_title_min'"
+                                        (click)="editInlineReceta(Receta, 'title_min'); $event.stopPropagation()"
+                                        class="editable-cell cursor-pointer hover:bg-blue-100 px-1 py-0.5 rounded transition-colors text-xs"
+                                        title="Clic para editar título corto"
+                                    >
+                                        ({{Receta.title_min}})
+                                    </span>
+
+                                    <!-- Vista de edición título corto -->
+                                    <div
+                                        *ngIf="editingCell === Receta.id + '_title_min'"
+                                        class="inline-edit-container"
+                                    >
+                                        <input
+                                           pInputText
+                                           type="text"
+                                           [(ngModel)]="Receta.title_min"
+                                            (keyup.enter)="saveInlineEditReceta(Receta, 'title_min')"
+                                            (keyup.escape)="cancelInlineEdit()"
+                                            class="p-inputtext-xs w-full"
+                                            #input
+                                            (focus)="input.select()"
+                                            autofocus
+                                            placeholder="Título corto"
+                                        />
+                                        <div class="flex gap-1 mt-1">
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditReceta(Receta, 'title_min')"
+                                                class="p-button-xs p-button-success p-button-text"
+                                                pTooltip="Guardar título corto"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-xs p-button-secondary p-button-text"
+                                                pTooltip="Cancelar"
+                                            ></button>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </td>
 
@@ -156,7 +207,7 @@ import { Receta } from '@/types/receta';
                             <div class="flex justify-center">
                                 <!-- Vista normal -->
                                 <div
-                                    *ngIf="editingCell !== Receta.id_receta + '_url_mini'"
+                                    *ngIf="editingCell !== Receta.id + '_url_mini'"
                                     (click)="editInlineReceta(Receta, 'url_mini'); $event.stopPropagation()"
                                     class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                     title="Clic para editar"
@@ -171,7 +222,7 @@ import { Receta } from '@/types/receta';
 
                                 <!-- Vista de edición -->
                                 <div
-                                    *ngIf="editingCell === Receta.id_receta + '_url_mini'"
+                                    *ngIf="editingCell === Receta.id + '_url_mini'"
                                     class="inline-edit-container"
                                 >
                                     <input
@@ -208,7 +259,7 @@ import { Receta } from '@/types/receta';
                         <td>
                             <!-- Vista normal -->
                             <span
-                                *ngIf="editingCell !== Receta.id_receta + '_category'"
+                                *ngIf="editingCell !== Receta.id + '_category'"
                                 (click)="editInlineReceta(Receta, 'category'); $event.stopPropagation()"
                                 class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 title="Clic para editar"
@@ -218,7 +269,7 @@ import { Receta } from '@/types/receta';
 
                             <!-- Vista de edición -->
                             <div
-                                *ngIf="editingCell === Receta.id_receta + '_category'"
+                                *ngIf="editingCell === Receta.id + '_category'"
                                 class="inline-edit-container"
                             >
                                 <input
@@ -250,11 +301,121 @@ import { Receta } from '@/types/receta';
                             </div>
                         </td>
 
+                        <!-- Descripción e Ingredientes -->
+                        <td class="text-xs">
+                            <div class="flex flex-col gap-1">
+                                <!-- Descripción -->
+                                <div>
+                                    <span
+                                        *ngIf="editingCell !== Receta.id + '_description'"
+                                        (click)="editInlineReceta(Receta, 'description'); $event.stopPropagation()"
+                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+                                        title="Clic para editar descripción"
+                                        [class.text-gray-500]="!Receta.description"
+                                    >
+                                        <strong>Desc:</strong> {{ Receta.description || 'Sin descripción' | slice:0:20 }}{{ Receta.description && Receta.description.length > 20 ? '...' : '' }}
+                                    </span>
+
+                                    <!-- Vista de edición descripción -->
+                                    <div
+                                        *ngIf="editingCell === Receta.id + '_description'"
+                                        class="inline-edit-container mb-1"
+                                    >
+                                        <textarea
+                                            [(ngModel)]="Receta.description"
+                                            (keyup.enter)="saveInlineEditReceta(Receta, 'description')"
+                                            (keyup.escape)="cancelInlineEdit()"
+                                            class="p-inputtext-xs w-full border rounded px-1 py-0.5"
+                                            rows="2"
+                                            #input
+                                            (focus)="input.select()"
+                                            autofocus
+                                            placeholder="Descripción de la receta"
+                                            style="resize: none;"
+                                        ></textarea>
+                                        <div class="flex gap-1 mt-1">
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditReceta(Receta, 'description')"
+                                                class="p-button-xs p-button-success p-button-text"
+                                                pTooltip="Guardar descripción"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-xs p-button-secondary p-button-text"
+                                                pTooltip="Cancelar"
+                                            ></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Ingredientes -->
+                                <div *ngIf="Receta.ingredients" class="text-gray-600">
+                                    <span
+                                        *ngIf="editingCell !== Receta.id + '_ingredients'"
+                                        (click)="editInlineReceta(Receta, 'ingredients'); $event.stopPropagation()"
+                                        class="editable-cell cursor-pointer hover:bg-green-50 px-1 py-0.5 rounded transition-colors"
+                                        title="Clic para editar ingredientes"
+                                    >
+                                        <strong>Ing:</strong> {{ Receta.ingredients | slice:0:25 }}{{ Receta.ingredients && Receta.ingredients.length > 25 ? '...' : '' }}
+                                    </span>
+
+                                    <!-- Vista de edición ingredientes -->
+                                    <div
+                                        *ngIf="editingCell === Receta.id + '_ingredients'"
+                                        class="inline-edit-container"
+                                    >
+                                        <textarea
+                                            [(ngModel)]="Receta.ingredients"
+                                            (keyup.enter)="saveInlineEditReceta(Receta, 'ingredients')"
+                                            (keyup.escape)="cancelInlineEdit()"
+                                            class="p-inputtext-xs w-full border rounded px-1 py-0.5"
+                                            rows="3"
+                                            #input
+                                            (focus)="input.select()"
+                                            autofocus
+                                            placeholder="Lista de ingredientes separados por comas"
+                                            style="resize: none;"
+                                        ></textarea>
+                                        <div class="flex gap-1 mt-1">
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditReceta(Receta, 'ingredients')"
+                                                class="p-button-xs p-button-success p-button-text"
+                                                pTooltip="Guardar ingredientes"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-xs p-button-secondary p-button-text"
+                                                pTooltip="Cancelar"
+                                            ></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón para agregar ingredientes si no existen -->
+                                <button
+                                    *ngIf="!Receta.ingredients && editingCell !== Receta.id + '_description' && editingCell !== Receta.id + '_ingredients'"
+                                    (click)="editInlineReceta(Receta, 'ingredients'); $event.stopPropagation()"
+                                    pButton
+                                    icon="pi pi-plus"
+                                    class="p-button-xs p-button-text p-button-secondary"
+                                    pTooltip="Agregar ingredientes"
+                                ></button>
+                            </div>
+                        </td>
+
                         <!-- Dificultad -->
                         <td>
                             <!-- Vista normal -->
                             <span
-                                *ngIf="editingCell !== Receta.id_receta + '_difficulty'"
+                                *ngIf="editingCell !== Receta.id + '_difficulty'"
                                 (click)="editInlineReceta(Receta, 'difficulty'); $event.stopPropagation()"
                                 class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 title="Clic para editar"
@@ -267,7 +428,7 @@ import { Receta } from '@/types/receta';
 
                             <!-- Vista de edición -->
                             <div
-                                *ngIf="editingCell === Receta.id_receta + '_difficulty'"
+                                *ngIf="editingCell === Receta.id + '_difficulty'"
                                 class="inline-edit-container"
                             >
                                 <select
@@ -296,28 +457,7 @@ import { Receta } from '@/types/receta';
 
                         <!-- Porciones -->
                         <td class="text-center">
-                            <span class="text-sm">{{ Receta.servings || '-' }}</span>
-                        </td>
-
-                        <!-- Estado (botón) -->
-                        <td>
-                            <p-tag
-                                [value]="getStatusLabel(Receta.status)"
-                                [severity]="getStatusSeverity(Receta.status)"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
-                                (click)="toggleEstado(Receta); $event.stopPropagation()"
-                                title="Clic para cambiar"
-                            ></p-tag>
-                        </td>
-
-                        <!-- Modificado -->
-                        <td class="text-center">
-                            <span class="text-xs text-gray-600">{{ Receta.fecha_mod || Receta.updated_at | date:'short' }}</span>
-                        </td>
-
-                        <!-- Usuario -->
-                        <td class="text-center">
-                            <span class="text-xs text-gray-600">{{ Receta.usr_m || '-' }}</span>
+                            <span class="text-sm">{{ Receta.people || Receta.servings || '-' }}</span>
                         </td>
 
                         <!-- Acciones -->
@@ -428,23 +568,28 @@ import { Receta } from '@/types/receta';
             [(visible)]="showRecetaModal"
             [header]="isEditingReceta ? 'Editar Receta' : 'Nueva Receta'"
             [modal]="true"
-            [style]="{width: '700px', maxHeight: '80vh'}"
+            [style]="{width: '1000px', maxHeight: '90vh', maxWidth: '95vw'}"
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
         >
             <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
-                <div class="grid grid-cols-1 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
-                    <!-- Campos principales -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-6 p-2" style="max-height: 75vh; overflow-y: auto; padding-right: 12px;">
+                    <!-- Información Básica -->
+                    <div class="form-section border-b border-gray-200 pb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="pi pi-info-circle mr-2 text-blue-500"></i>
+                            Información Básica
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p-floatLabel variant="on">
                                 <input pInputText
                                        formControlName="title"
-                                       placeholder="Título de la receta"
+                                       placeholder="Título completo de la receta"
                                        class="w-full"
                                        autofocus />
-                                <label>Título *</label>
+                                <label>Título Principal *</label>
                             </p-floatLabel>
                         </div>
 
@@ -452,49 +597,64 @@ import { Receta } from '@/types/receta';
                             <p-floatLabel variant="on">
                                 <input pInputText
                                        formControlName="title_min"
-                                       placeholder="Título corto"
+                                       placeholder="Título corto/acortado"
                                        class="w-full" />
                                 <label>Título Corto</label>
                             </p-floatLabel>
                         </div>
                         </div>
+                    </div>
 
-                    <!-- Imágenes -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Detalles Adicionales -->
+                    <div class="form-section border-b border-gray-200 pb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="pi pi-cog mr-2 text-green-500"></i>
+                            Detalles Adicionales
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p-floatLabel variant="on">
                                 <input pInputText
+                                       formControlName="category"
+                                       placeholder="Categoría de la receta"
+                                       class="w-full" />
+                                <label>Categoría</label>
+                            </p-floatLabel>
+                        </div>
+
+                        <div>
+                            <p-floatLabel variant="on">
+                                <input pInputText
+                                       type="url"
                                        formControlName="url_mini"
                                        placeholder="https://ejemplo.com/imagen.jpg"
                                        class="w-full" />
-                                <label>URL Imagen Mini *</label>
+                                <label>URL Imagen Miniatura *</label>
                             </p-floatLabel>
                         </div>
-
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="url_banner"
-                                       placeholder="https://ejemplo.com/banner.jpg"
-                                       class="w-full" />
-                                <label>URL Imagen Banner</label>
-                            </p-floatLabel>
                         </div>
                     </div>
 
-                    <!-- Descripción -->
+                    <!-- Contenido de la Receta -->
+                    <div class="form-section border-b border-gray-200 pb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="pi pi-book mr-2 text-purple-500"></i>
+                            Contenido de la Receta
+                        </h3>
+
+                        <!-- Descripción -->
                     <div>
                         <p-floatLabel variant="on">
                             <textarea
                                 pInputTextarea
                                 formControlName="description"
-                                placeholder="Describe la receta brevemente"
+                                placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
                                 class="w-full"
                                 rows="3">
                             </textarea>
                             <label>Descripción</label>
                         </p-floatLabel>
-                        </div>
+                    </div>
 
                     <!-- Ingredientes -->
                     <div>
@@ -502,13 +662,13 @@ import { Receta } from '@/types/receta';
                             <textarea
                                 pInputTextarea
                                 formControlName="ingredients"
-                                placeholder="Lista de ingredientes separados por comas"
+                                placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g, judías verdes 250g..."
                                 class="w-full"
-                                rows="3">
+                                rows="4">
                             </textarea>
                             <label>Ingredientes</label>
                         </p-floatLabel>
-                        </div>
+                    </div>
 
                     <!-- Instrucciones -->
                     <div>
@@ -516,15 +676,23 @@ import { Receta } from '@/types/receta';
                             <textarea
                                 pInputTextarea
                                 formControlName="instructions"
-                                placeholder="Pasos para preparar la receta"
+                                placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
                                 class="w-full"
-                                rows="4">
+                                rows="5">
                             </textarea>
                             <label>Instrucciones</label>
                         </p-floatLabel>
-                        </div>
+                    </div>
+                    </div>
 
-                    <!-- Campos numéricos y selectores -->
+                    <!-- Especificaciones -->
+                    <div class="form-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="pi pi-clock mr-2 text-orange-500"></i>
+                            Especificaciones
+                        </h3>
+
+                        <!-- Campos numéricos -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <p-floatLabel variant="on">
@@ -539,38 +707,13 @@ import { Receta } from '@/types/receta';
                         <div>
                             <p-floatLabel variant="on">
                                 <p-inputNumber
-                                    formControlName="servings"
+                                    formControlName="people"
                                     [min]="1"
                                     [max]="50"
                                     placeholder="1"
                                     class="w-full">
                                 </p-inputNumber>
                                 <label>Porciones</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <div>
-                            <p-floatLabel variant="on">
-                                <p-inputNumber
-                                    formControlName="id_coll"
-                                    [min]="1"
-                                    placeholder="1"
-                                    class="w-full">
-                                </p-inputNumber>
-                                <label>ID Colección</label>
-                            </p-floatLabel>
-                        </div>
-                        </div>
-
-                    <!-- Categoría y dificultad -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="category"
-                                       placeholder="Categoría de la receta"
-                                       class="w-full" />
-                                <label>Categoría</label>
                             </p-floatLabel>
                         </div>
 
@@ -593,26 +736,7 @@ import { Receta } from '@/types/receta';
                             </p-floatLabel>
                         </div>
                     </div>
-
-                    <!-- Estado -->
-                    <div>
-                        <p-floatLabel variant="on">
-                            <p-select
-                                formControlName="status"
-                                [options]="[
-                                    { label: 'Activo', value: 'activo' },
-                                    { label: 'Inactivo', value: 'inactivo' },
-                                    { label: 'Borrador', value: 'borrador' }
-                                ]"
-                                optionLabel="label"
-                                optionValue="value"
-                                placeholder="Seleccione estado"
-                                class="w-full"
-                                appendTo="body">
-                            </p-select>
-                            <label>Estado *</label>
-                        </p-floatLabel>
-                </div>
+                    </div>
                 </div>
 
                 <!-- Botones -->
@@ -702,12 +826,72 @@ import { Receta } from '@/types/receta';
         .grid::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        /* Estilos para textareas en el modal */
+        .p-inputtextarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .p-float-label textarea:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 1px #4f46e5;
+        }
+
+        /* Mejorar legibilidad de placeholders en textareas */
+        .p-inputtextarea::placeholder {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        /* Espaciado adicional para campos largos */
+        .p-float-label:has(textarea) {
+            margin-bottom: 1rem;
+        }
+
+        /* Estilos para las secciones del formulario */
+        .form-section h3 {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-section h3 i {
+            font-size: 1.1rem;
+        }
+
+        /* Mejorar apariencia del modal */
+        .p-dialog .p-dialog-content {
+            padding: 1.5rem;
+        }
+
+        .p-dialog .p-dialog-header {
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .p-dialog .p-dialog-footer {
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Responsive design para campos */
+        @media (max-width: 768px) {
+            .grid-cols-1.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-cols-1.md\\:grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+        }
     `]
 })
 export class RecetaList implements OnInit {
     // Datos
-    recetas: Receta[] = [];
-    RecetaSeleccionado: Receta | null = null;
+    recetas: RecetaItem[] = [];
+    RecetaSeleccionado: RecetaItem | null = null;
 
     // Estados de carga
     loadingRecetas = false;
@@ -727,7 +911,7 @@ export class RecetaList implements OnInit {
     originalValue: any = null;
 
     // Confirmaciones
-    RecetaToDelete: Receta | null = null;
+    RecetaToDelete: RecetaItem | null = null;
     confirmMessage = '';
     confirmHeader = '';
     accionConfirmada: (() => void) | null = null;
@@ -737,7 +921,7 @@ export class RecetaList implements OnInit {
 
     constructor(
         private fb: FormBuilder,
-        private RecetaService: RecetaMockService,
+        private RecetaService: RecetaService,
         private sessionService: SessionService,
         private confirmationService: ConfirmationService,
         private messageService: MessageService
@@ -751,37 +935,55 @@ export class RecetaList implements OnInit {
 
     // Inicialización
     initializeForms(): void {
+        /**
+         * FORMULARIO DE RECETAS - CAMPOS Y SU MAPEO A LA BASE DE DATOS:
+         *
+         * Campos del Formulario → Campos de la BD:
+         * - title (requerido) → titulo (Título principal completo)
+         * - title_min → titulo_min (Título corto/acortado)
+         * - description → descripcion (Descripción detallada)
+         * - ingredients → ingredientes (Lista de ingredientes)
+         * - instructions → instrucciones (Pasos de preparación)
+         * - category → categoria (Categoría de la receta)
+         * - url_mini (requerido) → url_mini (URL de imagen miniatura)
+         * - time → tiempo (Tiempo de preparación)
+         * - people → personas (Número de porciones)
+         * - difficulty (requerido) → dificultad (Nivel de dificultad)
+         *
+         * NOTA: Los campos opcionales se envían como strings vacías si no se llenan
+         */
         this.RecetaForm = this.fb.group({
-            title: ['', [Validators.required, Validators.minLength(3)]],
-            title_min: [''],
-            description: [''],
-            ingredients: [''],
-            instructions: [''],
-            url_mini: ['', [Validators.required]],
-            url_banner: [''],
-            time: [''],
-            servings: [1, [Validators.min(1), Validators.max(50)]],
-            category: [''],
-            difficulty: ['medio', [Validators.required]],
-            status: ['borrador', [Validators.required]],
-            id_coll: [1, [Validators.required, Validators.min(1)]]
+            title: ['', [Validators.required, Validators.minLength(3)]],      // → titulo
+            title_min: [''],                                                   // → titulo_min
+            description: [''],                                                 // → descripcion
+            ingredients: [''],                                                 // → ingredientes
+            instructions: [''],                                                // → instrucciones
+            category: [''],                                                    // → categoria
+            url_mini: ['', [Validators.required]],                            // → url_mini
+            time: [''],                                                        // → tiempo
+            people: [1, [Validators.min(1), Validators.max(50)]],             // → personas
+            difficulty: ['medio', [Validators.required]]                      // → dificultad
         });
     }
 
     loadRecetas() {
         this.loadingRecetas = true;
-        this.RecetaService.getRecetas().then((Recetas) => {
-            this.recetas = Recetas;
-            this.loadingRecetas = false;
-        }).catch((error) => {
-            console.error('❌ Error al cargar recetas:', error);
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Error al cargar las recetas',
-                life: 5000
-            });
-            this.loadingRecetas = false;
+        this.RecetaService.getRecetas().subscribe({
+            next: (response) => {
+                this.recetas = response.data;
+                this.loadingRecetas = false;
+                console.log('✅ Recetas cargadas desde backend:', this.recetas);
+            },
+            error: (error) => {
+                console.error('❌ Error al cargar recetas:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al cargar las recetas',
+                    life: 5000
+                });
+                this.loadingRecetas = false;
+            }
         });
     }
 
@@ -833,67 +1035,21 @@ export class RecetaList implements OnInit {
         return severities[difficulty as keyof typeof severities] || 'info';
     }
 
-    toggleEstado(Receta: Receta): void {
-        const nuevoEstado = Receta.status === 'activo' ? 'inactivo' : 'activo';
-
-        if (nuevoEstado === 'inactivo') {
-            // ⚠️ REGLA: Confirmar desactivación
-            this.confirmMessage = `¿Está seguro de que desea desactivar "${Receta.title}"?`;
-            this.confirmHeader = 'Confirmar Desactivación';
-            this.accionConfirmada = () => this.procesarCambioEstado(Receta, nuevoEstado);
-            this.showConfirmDialog = true;
-        } else {
-            // Activar directamente
-            this.procesarCambioEstado(Receta, nuevoEstado);
-        }
-    }
-
-    private procesarCambioEstado(Receta: Receta, nuevoEstado: string): void {
-        const estadoAnterior = Receta.status;
-        Receta.status = nuevoEstado as any;
-
-        const sessionBase = this.sessionService.getApiPayloadBase();
-
-        this.RecetaService.updateRecetaField(
-            Receta.id_receta!,
-            'status',
-            nuevoEstado,
-            sessionBase
-        ).subscribe({
-            next: (response) => {
-                console.log('✅ Estado actualizado:', response);
-
-                Receta.fecha_mod = new Date().toISOString();
-                Receta.usr_m = String(sessionBase.usr) || Receta.usr_m;
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Estado Actualizado',
-                    detail: `Receta ${nuevoEstado === 'activo' ? 'activada' : 'desactivada'} correctamente`
-                });
-            },
-            error: (error) => {
-                console.error('❌ Error al cambiar estado:', error);
-
-                // Revertir cambio local
-                Receta.status = estadoAnterior;
-
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al cambiar el estado',
-                    life: 5000
-                });
-            }
+    // Función simplificada ya que el backend no maneja estados
+    toggleEstado(Receta: RecetaItem): void {
+        this.messageService.add({
+            severity: 'info',
+            summary: 'Información',
+            detail: 'El backend no maneja estados de activación/desactivación'
         });
     }
 
-    editReceta(Receta: Receta) {
+    editReceta(Receta: RecetaItem) {
         this.openRecetaForm(Receta);
     }
 
     // ⚠️ REGLA: Siempre pedir confirmación para eliminar
-    eliminarReceta(Receta: Receta): void {
+    eliminarReceta(Receta: RecetaItem): void {
         this.RecetaToDelete = Receta;
         this.showConfirmDeleteReceta = true;
     }
@@ -905,11 +1061,11 @@ export class RecetaList implements OnInit {
             const sessionBase = this.sessionService.getApiPayloadBase();
             const payload = {
                 action: 'DL' as const,
-                id: this.RecetaToDelete.id_receta,
+                id: this.RecetaToDelete.id,
                 ...sessionBase
             };
 
-            this.RecetaService.deleteReceta(this.RecetaToDelete.id_receta!).then((response) => {
+            this.RecetaService.deleteReceta(this.RecetaToDelete.id!).then((response) => {
                 console.log('✅ Receta eliminada:', response);
 
                 this.messageService.add({
@@ -919,7 +1075,7 @@ export class RecetaList implements OnInit {
                 });
 
                 // Si el item eliminado estaba seleccionado, deseleccionar
-                if (this.RecetaSeleccionado?.id_receta === this.RecetaToDelete?.id_receta) {
+                if (this.RecetaSeleccionado?.id === this.RecetaToDelete?.id) {
                     this.RecetaSeleccionado = null;
                 }
 
@@ -963,36 +1119,52 @@ export class RecetaList implements OnInit {
     }
 
     // Abrir formulario
-    openRecetaForm(Receta?: Receta): void {
-        this.isEditingReceta = !!Receta;
-
+    openRecetaForm(Receta?: RecetaItem): void {
         if (Receta) {
-            console.log('✏️ Editando Receta:', Receta);
+            this.isEditingReceta = true;
+            console.log('✏️ Editando Receta - Datos originales:', Receta);
             this.RecetaSeleccionado = Receta;
-            this.RecetaForm.patchValue({
-                title: Receta.title,
+
+            // Asegurar que todos los campos opcionales existan con valores por defecto
+            const formData = {
+                title: Receta.title || '',
                 title_min: Receta.title_min || '',
                 description: Receta.description || '',
                 ingredients: Receta.ingredients || '',
                 instructions: Receta.instructions || '',
-                url_mini: Receta.url_mini || '',
-                url_banner: Receta.url_banner || '',
-                time: Receta.time || '',
-                servings: Receta.servings || 1,
                 category: Receta.category || '',
-                difficulty: Receta.difficulty || 'medio',
-                status: Receta.status,
-                id_coll: Receta.id_coll ? Number(Receta.id_coll) : 1
-            });
+                url_mini: Receta.url_mini || '',
+                time: Receta.time || '',
+                people: Receta.people || 1,
+                difficulty: Receta.difficulty || 'medio'
+            };
+
+            console.log('📝 Datos preparados para formulario:', formData);
+
+            // Usar setValue en lugar de patchValue para asegurar que todos los campos se actualicen
+            this.RecetaForm.setValue(formData);
+
+            console.log('✅ Formulario actualizado con datos de la receta');
         } else {
+            this.isEditingReceta = false;
             console.log('➕ Creando nueva Receta');
             this.RecetaSeleccionado = null;
+
+            // Reset completo del formulario con valores por defecto
             this.RecetaForm.reset({
-                status: 'borrador',
-                difficulty: 'medio',
-                servings: 1,
-                id_coll: 1
+                title: '',
+                title_min: '',
+                description: '',
+                ingredients: '',
+                instructions: '',
+                category: '',
+                url_mini: '',
+                time: '',
+                people: 1,
+                difficulty: 'medio'
             });
+
+            console.log('✅ Formulario reseteado para nueva receta');
         }
 
         this.showRecetaModal = true;
@@ -1007,38 +1179,81 @@ export class RecetaList implements OnInit {
 
     // Guardar
     saveReceta(): void {
+        console.log('💾 Iniciando guardado de receta...');
+        console.log('📋 Estado del formulario:', {
+            isValid: this.RecetaForm.valid,
+            isEditing: this.isEditingReceta,
+            formErrors: this.RecetaForm.errors,
+            formValue: this.RecetaForm.value
+        });
+
         if (this.RecetaForm.valid) {
             this.savingReceta = true;
             const formData = this.RecetaForm.value;
 
+            console.log('✅ Formulario válido. Datos del formulario:', JSON.stringify(formData, null, 2));
+
             const sessionBase = this.sessionService.getApiPayloadBase();
+            console.log('🔑 Datos de sesión:', sessionBase);
 
             if (this.isEditingReceta && this.RecetaSeleccionado) {
-                // Actualizar
-                const payload = {
-                    action: 'UP' as const,
-                    id: this.RecetaSeleccionado.id_receta,
-                    ...formData,
-                    ...sessionBase
+                console.log('✏️ Modo edición activado');
+
+                // Actualizar - preparar datos con el ID correcto
+                const updateData: RecetaFormItem = {
+                    id: this.RecetaSeleccionado.id,
+                    ...formData
                 };
 
-                this.RecetaService.updateReceta(this.RecetaSeleccionado).then((response) => {
-                    console.log('✅ Receta actualizada:', response);
-                    this.handleSaveSuccess('Receta actualizada correctamente');
-                }).catch((error) => this.handleSaveError(error, 'actualizar'));
+                console.log('🚀 Datos finales a enviar al servicio:', {
+                    updateData: JSON.stringify(updateData, null, 2),
+                    idReceta: this.RecetaSeleccionado.id,
+                    todosLosCampos: Object.keys(updateData)
+                });
+
+                this.RecetaService.actualizarReceta(updateData).subscribe({
+                    next: (response) => {
+                        console.log('✅ Respuesta del servicio de actualización:', response);
+                        this.handleSaveSuccess('Receta actualizada correctamente');
+                    },
+                    error: (error) => {
+                        console.error('❌ Error en actualización:', error);
+                        console.error('❌ Detalles del error:', {
+                            message: error.message,
+                            status: error.status,
+                            body: error.error
+                        });
+                        this.handleSaveError(error, 'actualizar');
+                    }
+                });
             } else {
-                // Crear
-                const payload = {
-                    action: 'IN' as const,
-                    ...formData,
-                    ...sessionBase
-                };
+                console.log('➕ Modo creación activado');
+
+                // Crear - preparar datos para el servicio
+                console.log('🚀 Datos a enviar para creación:', {
+                    formData: JSON.stringify(formData, null, 2),
+                    sessionBase: sessionBase,
+                    todosLosCampos: Object.keys(formData)
+                });
 
                 this.RecetaService.createReceta(formData).then((response) => {
-                    console.log('✅ Receta creada:', response);
+                    console.log('✅ Respuesta del servicio de creación:', response);
                     this.handleSaveSuccess('Receta creada correctamente');
-                }).catch((error) => this.handleSaveError(error, 'crear'));
+                }).catch((error) => {
+                    console.error('❌ Error en creación:', error);
+                    this.handleSaveError(error, 'crear');
+                });
             }
+
+            // Finalizar el estado de carga
+            this.savingReceta = false;
+            console.log('🏁 Proceso de guardado finalizado');
+        } else {
+            console.log('❌ Formulario inválido. Errores:', this.RecetaForm.errors);
+            // Marcar todos los campos como tocados para mostrar errores
+            Object.keys(this.RecetaForm.controls).forEach(key => {
+                this.RecetaForm.get(key)?.markAsTouched();
+            });
         }
     }
 
@@ -1049,14 +1264,14 @@ export class RecetaList implements OnInit {
     // ========== EDICIÓN INLINE ESTÁNDAR ==========
 
     // Iniciar edición
-    editInlineReceta(Receta: Receta, field: string): void {
-        this.editingCell = Receta.id_receta + '_' + field;
+    editInlineReceta(Receta: RecetaItem, field: string): void {
+        this.editingCell = Receta.id + '_' + field;
         this.originalValue = (Receta as any)[field];
         console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
     }
 
     // Guardar edición
-    saveInlineEditReceta(Receta: Receta, field: string): void {
+    saveInlineEditReceta(Receta: RecetaItem, field: string): void {
         console.log('💾 Guardando inline:', field, 'Nuevo valor:', (Receta as any)[field]);
 
         if ((Receta as any)[field] === this.originalValue) {
@@ -1069,7 +1284,7 @@ export class RecetaList implements OnInit {
         const sessionBase = this.sessionService.getApiPayloadBase();
 
         this.RecetaService.updateRecetaField(
-            Receta.id_receta!,
+            Receta.id!,
             field,
             (Receta as any)[field],
             sessionBase
@@ -1118,15 +1333,16 @@ export class RecetaList implements OnInit {
 
     getFieldLabel(field: string): string {
         const labels: { [key: string]: string } = {
-            'title': 'Título',
+            'title': 'Título Principal',
             'title_min': 'Título Corto',
             'description': 'Descripción',
             'ingredients': 'Ingredientes',
             'instructions': 'Instrucciones',
-            'url_mini': 'URL Imagen Mini',
+            'url_mini': 'URL Imagen Miniatura',
             'url_banner': 'URL Imagen Banner',
             'time': 'Tiempo',
-            'servings': 'Porciones',
+            'servings': 'Porciones',  // Para edición inline
+            'people': 'Porciones',    // Para formulario
             'category': 'Categoría',
             'difficulty': 'Dificultad',
             'status': 'Estado',
@@ -1175,23 +1391,15 @@ export class RecetaList implements OnInit {
         this.savingReceta = false;
     }
 
-    private createEmptyReceta(): Receta {
+    private createEmptyReceta(): RecetaItem {
         return {
-            id_receta: 0,
+            id: 0,
             title: '',
-            title_min: '',
-            description: '',
-            ingredients: '',
-            instructions: '',
-            url_mini: '',
-            url_banner: '',
-            time: '',
-            servings: 1,
-            status: 'borrador',
-            estado: 'BO',
-            difficulty: 'medio',
             category: '',
-            id_coll: 1
+            url_mini: '',
+            time: '',
+            people: 1,
+            difficulty: 'medio'
         };
     }
 }

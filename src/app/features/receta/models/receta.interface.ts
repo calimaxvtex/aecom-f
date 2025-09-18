@@ -22,6 +22,7 @@ export interface RecetaItem {
     usr_m?: string;
     createdAt?: string;
     updatedAt?: string;
+    date?: string; // Campo date de la base de datos
 }
 
 /**

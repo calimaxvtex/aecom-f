@@ -40,6 +40,11 @@ export default [
         loadComponent: () => import('./adm-ecom/tabadm/tabadm.component').then(c => c.TabAdmComponent)
     },
     {
+        path: 'adm-ecom/sucursal',
+        data: { breadcrumb: 'Administración de Sucursales', proy: 1 },
+        loadComponent: () => import('./adm-ecom/sucursal/sucursal.component').then(c => c.SucursalComponent)
+    },
+    {
         path: 'system/usuarios',
         data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
         loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)

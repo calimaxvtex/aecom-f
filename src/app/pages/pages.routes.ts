@@ -66,7 +66,7 @@ export default [
     },
     {
         path: 'adm-ecom/banners',
-        data: { breadcrumb: 'Gestión de Banners', proy: 1 },
+        data: { breadcrumb: 'Banners', proy: 1 },
         loadComponent: () => import('./adm-ecom/banners/banners.component').then(c => c.BannersComponent)
     },
     {

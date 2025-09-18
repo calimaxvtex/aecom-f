@@ -36,6 +36,7 @@ import { InputOtpModule } from 'primeng/inputotp';
 @Component({
     selector: 'app-input-demo',
     standalone: true,
+    host: { 'input-demo-radio-group': 'true' },
     imports: [
         CommonModule,
         FormsModule,

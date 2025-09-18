@@ -125,6 +125,10 @@ export class ApiConfigService {
     getColldCrudUrl(): string {
         return API_URLS.COLLD_CRUD;
     }
+
+    getSucCrudUrl(): string {
+        return API_URLS.SUC_CRUD;
+    }
     
     // Método para cambiar URL en tiempo de ejecución
     setBaseUrl(url: string): void {

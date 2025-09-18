@@ -46,13 +46,15 @@ export class LayoutService {
     private readonly CONFIG_KEY = 'calimax-layout-config';
     
     _config: layoutConfig = this.loadConfigFromStorage() || {
-        primary: 'indigo',
-        surface: 'slate',
-        darkTheme: false,
-        menuMode: 'static',
-        menuTheme: 'light',
-        topbarTheme: 'indigo',
-        menuProfilePosition: 'end'
+        // ⚙️ CONFIGURACIÓN POR DEFECTO PERSONALIZADA
+        // Cambia estos valores según tus preferencias
+        primary: 'blue',           // Color primario (blue, indigo, purple, etc.)
+        surface: 'zinc',           // Superficie (slate, gray, zinc, neutral, etc.)
+        darkTheme: false,          // Modo oscuro (true/false)
+        menuMode: 'static',        // Modo del menú (static, overlay, slim, etc.)
+        menuTheme: 'blue',         // Tema del menú lateral (light, dark, blue, indigo, etc.)
+        topbarTheme: 'blue',       // Tema del header/topbar (blue, indigo, purple, etc.)
+        menuProfilePosition: 'end' // Posición del perfil (start/end)
     };
 
     _state: LayoutState = {

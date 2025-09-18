@@ -1,4 +1,4 @@
-import { Component, computed, OnDestroy, Renderer2, ViewChild } from '@angular/core';
+import { Component, computed, OnDestroy, Renderer2, ViewChild, OnInit, ChangeDetectorRef, ApplicationRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -11,6 +11,7 @@ import { AppSidebar } from './app.sidebar';
 import { AppRightMenu } from '@/layout/components/app.rightmenu';
 import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { SessionService } from '@/core/services/session.service';
 
 @Component({
     selector: 'app-layout',
@@ -34,7 +35,7 @@ import { MessageService } from 'primeng/api';
     `,
     providers: [MessageService]
 })
-export class AppLayout implements OnDestroy {
+export class AppLayout implements OnInit, OnDestroy {
     overlayMenuOpenSubscription: Subscription;
 
     menuOutsideClickListener: any;
@@ -48,7 +49,10 @@ export class AppLayout implements OnDestroy {
     constructor(
         public layoutService: LayoutService,
         public renderer: Renderer2,
-        public router: Router
+        public router: Router,
+        private cdr: ChangeDetectorRef,
+        private appRef: ApplicationRef,
+        private sessionService: SessionService
     ) {
         this.overlayMenuOpenSubscription = this.layoutService.overlayOpen$.subscribe(() => {
             if (!this.menuOutsideClickListener) {
@@ -81,6 +85,45 @@ export class AppLayout implements OnDestroy {
         this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
             this.hideMenu();
         });
+    }
+
+    ngOnInit(): void {
+        // Forzar inicialización inicial del layout
+        setTimeout(() => {
+            this.forceLayoutReinitialization();
+        }, 100);
+
+        // Suscribirse a cambios de sesión para forzar re-renderizado después del login
+        this.sessionService.session$.subscribe(session => {
+            if (session && session.isLoggedIn) {
+                // Forzar re-inicialización del layout después del login
+                setTimeout(() => {
+                    this.forceLayoutReinitialization();
+                }, 200);
+            }
+        });
+    }
+
+    /**
+     * Fuerza la re-inicialización del layout después del login
+     */
+    private forceLayoutReinitialization(): void {
+        try {
+            // Forzar detección de cambios
+            this.cdr.detectChanges();
+            
+            // Forzar tick de aplicación
+            this.appRef.tick();
+            
+            // Re-aplicar clases del contenedor
+            setTimeout(() => {
+                this.cdr.detectChanges();
+            }, 100);
+            
+            console.log('🔄 Layout re-inicializado después del login');
+        } catch (error) {
+            console.warn('⚠️ Error re-inicializando layout:', error);
+        }
     }
 
     blockBodyScroll(): void {

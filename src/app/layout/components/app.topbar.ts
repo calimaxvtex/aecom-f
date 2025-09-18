@@ -1,6 +1,6 @@
 import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {MegaMenuItem} from 'primeng/api';
-import {RouterModule} from '@angular/router';
+import {RouterModule, Router} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {StyleClassModule} from 'primeng/styleclass';
 import {LayoutService} from '@/layout/service/layout.service';
@@ -9,13 +9,12 @@ import {InputText} from 'primeng/inputtext';
 import {ButtonModule} from 'primeng/button';
 import {FormsModule} from '@angular/forms';
 import {MegaMenuModule} from 'primeng/megamenu';
-import {BadgeModule} from 'primeng/badge';
-import {OverlayBadge} from 'primeng/overlaybadge';
+import {MessageService} from 'primeng/api';
 
 @Component({
     selector: '[app-topbar]',
     standalone: true,
-    imports: [RouterModule, CommonModule, StyleClassModule, FormsModule, Ripple, InputText, ButtonModule, MegaMenuModule, BadgeModule, OverlayBadge],
+    imports: [RouterModule, CommonModule, StyleClassModule, FormsModule, Ripple, InputText, ButtonModule, MegaMenuModule],
     template: `
         <div class="layout-topbar-start">
             <a class="layout-topbar-logo" routerLink="/">
@@ -58,7 +57,7 @@ import {OverlayBadge} from 'primeng/overlaybadge';
 
                         <div class="layout-search-panel !hidden p-input-filled">
                             <i class="pi pi-search"></i>
-                            <input #searchInput type="text" pInputText placeholder="Search" />
+                            <input #searchInput type="text" pInputText placeholder="Buscar sección..." (keyup.enter)="onSearchInput($event)" />
                             <button pButton pRipple type="button" icon="pi pi-times" rounded text pStyleClass=".layout-search-panel" leaveToClass="!hidden" leaveActiveClass="animate-fadeout"></button>
                         </div>
                     </li>
@@ -67,139 +66,6 @@ import {OverlayBadge} from 'primeng/overlaybadge';
                             <i class="pi pi-cog"></i>
                         </button>
                     </li>
-                    <li>
-                        <a pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
-                            <p-overlay-badge severity="warn">
-                                <i class="pi pi-bell align-middle!"></i>
-                            </p-overlay-badge>
-                        </a>
-                        <div class="hidden">
-                            <ul class="list-none p-0 m-0">
-                                <li class="px-4 py-1">
-                                    <span>You have <b>4</b> new notifications</span>
-                                </li>
-                                <li class="p-4">
-                                    <div class="flex items-center">
-                                        <img src="/images/avatar/avatar-1.png" />
-                                        <div class="flex flex-col ml-4 flex-1">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="font-bold">Jerome Bell</span>
-                                                <small>42 mins ago</small>
-                                            </div>
-                                            <span class="text-sm leading-normal">How to write content about your photographs?</span>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="p-4">
-                                    <div class="flex items-center">
-                                        <img src="/images/avatar/avatar-2.png" />
-                                        <div class="flex flex-col ml-4 flex-1">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="fs-small font-bold">Cameron Williamson</span>
-                                                <small>48 mins ago</small>
-                                            </div>
-                                            <span class="text-sm leading-normal">Start a blog to reach your creative peak.</span>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="p-4">
-                                    <div class="flex items-center">
-                                        <img src="/images/avatar/avatar-3.png" />
-                                        <div class="flex flex-col ml-4 flex-1">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="fs-small font-bold">Anna Miles</span>
-                                                <small>1 day ago</small>
-                                            </div>
-                                            <span class="text-sm leading-normal">Caring is the new marketing</span>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="p-4">
-                                    <div class="flex items-center">
-                                        <img src="/images/avatar/avatar-4.png" />
-                                        <div class="flex flex-col ml-4 flex-1">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="font-bold">Arlene Mccoy</span>
-                                                <small>4 day ago</small>
-                                            </div>
-                                            <span class="text-sm leading-normal">Starting your traveling blog with Vasco.</span>
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li>
-                        <a pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
-                            <i class="pi pi-table"></i>
-                        </a>
-                        <div class="hidden">
-                            <div class="flex flex-wrap">
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" icon="pi pi-image"></button>
-                                    <span>Products</span>
-                                </div>
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" severity="success" icon="pi pi-file-pdf"></button>
-                                    <span>Reports</span>
-                                </div>
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" severity="contrast" icon="pi pi-dollar"></button>
-                                    <span>Balance</span>
-                                </div>
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" severity="warn" icon="pi pi-cog"></button>
-                                    <span>Settings</span>
-                                </div>
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" severity="help" icon="pi pi-key"></button>
-                                    <span>Credentials</span>
-                                </div>
-                                <div class="w-4/12 flex flex-col items-center p-4">
-                                    <button pButton pRipple rounded class="mb-2" severity="info" icon="pi pi-sitemap"></button>
-                                    <span>Sitemap</span>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <a pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
-                            <img src="/images/avatar/amyelsner.png" alt="avatar" class="w-8 h-8" />
-                        </a>
-                        <div class="hidden">
-                            <ul class="list-none p-0 m-0">
-                                <li>
-                                    <a class="cursor-pointer flex items-center hover:bg-emphasis duration-150 transition-all px-4 py-2" pRipple>
-                                        <i class="pi pi-cog mr-2"></i>
-                                        <span>Settings</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="cursor-pointer flex items-center hover:bg-emphasis duration-150 transition-all px-4 py-2" pRipple>
-                                        <i class="pi pi-file-o mr-2"></i>
-                                        <span>Terms of Usage</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="cursor-pointer flex items-center hover:bg-emphasis duration-150 transition-all px-4 py-2" pRipple>
-                                        <i class="pi pi-compass mr-2"></i>
-                                        <span>Support</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="cursor-pointer flex items-center hover:bg-emphasis duration-150 transition-all px-4 py-2" pRipple>
-                                        <i class="pi pi-power-off mr-2"></i>
-                                        <span>Logout</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li>
-                        <a (click)="onRightMenuButtonClick()">
-                            <i class="pi pi-arrow-left"></i>
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -207,14 +73,11 @@ import {OverlayBadge} from 'primeng/overlaybadge';
     host: {
         class: 'layout-topbar'
     },
-    styles: `
-        :host ::ng-deep .p-overlaybadge .p-badge {
-            outline-width: 0px;
-        }
-    `
 })
 export class AppTopbar {
     layoutService = inject(LayoutService);
+    private router = inject(Router);
+    private messageService = inject(MessageService);
 
     @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
@@ -293,9 +156,6 @@ export class AppTopbar {
         this.layoutService.onMenuToggle();
     }
 
-    onRightMenuButtonClick() {
-        this.layoutService.openRightMenu();
-    }
 
     toggleConfigSidebar() {
         let layoutState = this.layoutService.layoutState();
@@ -317,7 +177,63 @@ export class AppTopbar {
         }, 150);
     }
 
+    onSearchInput(event: any) {
+        const query = event.target.value?.toLowerCase().trim();
+        if (!query) return;
+
+        // Definir rutas disponibles para búsqueda
+        const searchRoutes = [
+            { keywords: ['dashboard', 'inicio', 'home'], route: '/', label: 'Dashboard' },
+            { keywords: ['banners', 'banner'], route: '/adm-ecom/banners', label: 'Banners' },
+            { keywords: ['colecciones', 'collections', 'productos'], route: '/adm-ecom/collections', label: 'Colecciones' },
+            { keywords: ['usuarios', 'users', 'user'], route: '/system/usuarios', label: 'Usuarios' },
+            { keywords: ['configuracion', 'config', 'settings'], route: '/system/spconfig', label: 'Configuración del Sistema' },
+            { keywords: ['conceptos', 'catconceptos'], route: '/system/catconceptos', label: 'Conceptos' },
+            { keywords: ['componentes', 'comp'], route: '/system/comp', label: 'Componentes' },
+            { keywords: ['perfil', 'profile'], route: '/profile', label: 'Perfil' },
+            { keywords: ['login', 'entrar'], route: '/login2', label: 'Login' }
+        ];
+
+        // Buscar coincidencias
+        const match = searchRoutes.find(route =>
+            route.keywords.some(keyword => keyword.includes(query) || query.includes(keyword))
+        );
+
+        if (match) {
+            // Cerrar el panel de búsqueda
+            const searchPanel = document.querySelector('.layout-search-panel');
+            if (searchPanel) {
+                searchPanel.classList.add('!hidden');
+            }
+
+            // Limpiar el input
+            this.searchInput.nativeElement.value = '';
+
+            // Mostrar mensaje de navegación
+            this.messageService.add({
+                severity: 'info',
+                summary: 'Navegando...',
+                detail: `Redirigiendo a ${match.label}`,
+                life: 2000
+            });
+
+            // Navegar después de un breve delay
+            setTimeout(() => {
+                this.router.navigate([match.route]);
+            }, 500);
+        } else {
+            // No se encontró coincidencia
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'No encontrado',
+                detail: `No se encontró una sección para: "${query}"`,
+                life: 3000
+            });
+        }
+    }
+
     onTopbarMenuToggle() {
         this.layoutService.layoutState.update((val) => ({ ...val, topbarMenuActive: !val.topbarMenuActive }));
     }
+
 }

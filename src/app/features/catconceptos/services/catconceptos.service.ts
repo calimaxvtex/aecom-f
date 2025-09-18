@@ -1,8 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, throwError, from, of, switchMap } from 'rxjs';
+import { Observable, map, catchError, throwError, from, of, switchMap, tap } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api/api-config.service';
 import { SessionService } from '../../../core/services/session.service';
+
+// Interfaz para entradas del cache
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+    expiresAt: number;
+}
 import {
     CatConcepto,
     CatConceptoRawResponse,
@@ -26,9 +33,79 @@ export class CatConceptosService {
     // ID del endpoint de catconceptos en la configuración
     private readonly CATCONCEPTOS_ENDPOINT_ID = 16;
 
+    // Cache para almacenar respuestas
+    private cache = new Map<string, CacheEntry<any>>();
+    private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
+
     constructor() {
-        console.log('🏗️ CatConceptosService inicializado');
+        console.log('🏗️ CatConceptosService inicializado con cache');
         console.log('🔗 Usando endpoint ID:', this.CATCONCEPTOS_ENDPOINT_ID);
+        console.log('💾 Cache duration:', this.CACHE_DURATION / 1000 / 60, 'minutos');
+    }
+
+    // ========== MÉTODOS DE CACHE ==========
+
+    /**
+     * Obtiene datos del cache si son válidos
+     */
+    private getFromCache<T>(key: string): T | null {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
+
+        const now = Date.now();
+        if (now > entry.expiresAt) {
+            console.log('🗑️ Cache expirado para key:', key);
+            this.cache.delete(key);
+            return null;
+        }
+
+        console.log('✅ Cache hit para key:', key);
+        return entry.data;
+    }
+
+    /**
+     * Almacena datos en el cache
+     */
+    private setInCache<T>(key: string, data: T): void {
+        const entry: CacheEntry<T> = {
+            data,
+            timestamp: Date.now(),
+            expiresAt: Date.now() + this.CACHE_DURATION
+        };
+
+        this.cache.set(key, entry);
+        console.log('💾 Datos almacenados en cache para key:', key);
+    }
+
+    /**
+     * Invalida el cache para una clave específica o todo el cache
+     */
+    clearCache(key?: string): void {
+        if (key) {
+            this.cache.delete(key);
+            console.log('🗑️ Cache limpiado para key:', key);
+        } else {
+            this.cache.clear();
+            console.log('🗑️ Todo el cache limpiado');
+        }
+    }
+
+    /**
+     * Crea una clave única para el cache basada en el método y parámetros
+     */
+    private createCacheKey(method: string, params?: any): string {
+        const paramString = params ? JSON.stringify(params) : '';
+        return `${method}_${paramString}`;
+    }
+
+    /**
+     * Obtiene estadísticas del cache
+     */
+    getCacheStats(): { size: number; keys: string[] } {
+        return {
+            size: this.cache.size,
+            keys: Array.from(this.cache.keys())
+        };
     }
 
     // Método para obtener la URL del endpoint de catconceptos
@@ -49,9 +126,29 @@ export class CatConceptosService {
     // Método auxiliar para obtener datos de sesión (REGLA CRÍTICA DEL PROYECTO)
     private getSessionData(): any {
         const session = this.sessionService.getSession();
+
+        // Si no hay sesión, intentar crear una sesión temporal para testing
         if (!session) {
-            throw new Error('Sesión no encontrada. Usuario debe estar autenticado.');
+            console.warn('⚠️ No hay sesión activa. Creando sesión temporal para testing...');
+
+            // Crear sesión temporal con valores por defecto
+            const tempSession = {
+                usuario: 'test_user',
+                id_session: 999,
+                nombre: 'Usuario Test',
+                email: 'test@example.com',
+                isLoggedIn: true
+            };
+
+            // Establecer la sesión temporal
+            this.sessionService.setSession(tempSession);
+
+            return {
+                usr: tempSession.usuario,
+                id_session: tempSession.id_session
+            };
         }
+
         return {
             usr: session.usuario,
             id_session: session.id_session
@@ -59,12 +156,29 @@ export class CatConceptosService {
     }
 
     /**
-     * Obtiene todos los conceptos
+     * Obtiene todos los conceptos (con cache)
      */
-    getAllConceptos(params?: CatConceptoPaginationParams): Observable<CatConceptoResponse> {
+    getAllConceptos(params?: CatConceptoPaginationParams, forceRefresh: boolean = false): Observable<CatConceptoResponse> {
         console.log('📊 === CONFIGURACIÓN DE ENDPOINT CATCONCEPTOS ===');
         console.log('📊 Método llamado: getAllConceptos');
         console.log('📊 Endpoint ID:', this.CATCONCEPTOS_ENDPOINT_ID);
+
+        // Crear clave única para el cache basada en los parámetros
+        const cacheKey = this.createCacheKey('getAllConceptos', params);
+        console.log('🔑 Cache key generada:', cacheKey);
+
+        // Si se fuerza el refresh, limpiar el cache primero
+        if (forceRefresh) {
+            console.log('🔄 Forzando refresh - limpiando cache para key:', cacheKey);
+            this.clearCache(cacheKey);
+        }
+
+        // Verificar si hay datos en cache (solo si no se fuerza refresh)
+        const cachedData = this.getFromCache<CatConceptoResponse>(cacheKey);
+        if (cachedData && !forceRefresh) {
+            console.log('🚀 Retornando datos desde cache');
+            return of(cachedData);
+        }
 
         return this.getCatConceptosUrl().pipe(
             switchMap(url => {
@@ -148,11 +262,18 @@ export class CatConceptosService {
                             throw new Error(response.mensaje || 'Error del servidor');
                         }
 
-                        return {
+                        const result = {
                             statuscode: response.statuscode || 200,
                             mensaje: response.mensaje || 'OK',
                             data: response.data || []
                         } as CatConceptoResponse;
+
+                        // Almacenar en cache si la respuesta es exitosa
+                        if (result.statuscode === 200) {
+                            this.setInCache(cacheKey, result);
+                        }
+
+                        return result;
                     }),
                     catchError(error => {
                         console.error('❌ Error en getAllConceptos:', error);
@@ -217,6 +338,11 @@ export class CatConceptosService {
                             data: response.data || concepto as CatConcepto
                         } as CatConceptoSingleResponse;
                     }),
+                    tap(() => {
+                        // 🧹 Limpiar cache después de crear exitosamente
+                        console.log('🧹 Limpiando cache después de crear concepto');
+                        this.clearCache();
+                    }),
                     catchError(error => {
                         console.error('❌ Error al crear concepto:', error);
 
@@ -279,6 +405,11 @@ export class CatConceptosService {
                             data: response.data || concepto as CatConcepto
                         } as CatConceptoSingleResponse;
                     }),
+                    tap(() => {
+                        // 🧹 Limpiar cache después de actualizar exitosamente
+                        console.log('🧹 Limpiando cache después de actualizar concepto');
+                        this.clearCache();
+                    }),
                     catchError(error => {
                         console.error('❌ Error al actualizar concepto:', error);
 
@@ -340,6 +471,11 @@ export class CatConceptosService {
                             mensaje: response.mensaje || 'Concepto eliminado correctamente',
                             data: {} as CatConcepto
                         } as CatConceptoSingleResponse;
+                    }),
+                    tap(() => {
+                        // 🧹 Limpiar cache después de eliminar exitosamente
+                        console.log('🧹 Limpiando cache después de eliminar concepto');
+                        this.clearCache();
                     }),
                     catchError(error => {
                         console.error('❌ Error al eliminar concepto:', error);

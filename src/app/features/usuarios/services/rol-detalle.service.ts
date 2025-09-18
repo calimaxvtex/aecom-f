@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+
 import {
   RolDetalle,
   RolDetalleApiResponse,
@@ -19,9 +21,8 @@ import { ROL_DETALLE_API_CONFIG, ROL_DETALLE_MESSAGES } from '../models/rol-deta
 
 /**
  * Servicio para la gestión de detalle de roles
- * Endpoint: /api/admrold/v1/{id}
- * Base URL: http://localhost:3000
- * 
+ * Endpoint dinámico: ID 3 (Rol Detalle)
+ *
  * IMPORTANTE: Las consultas se realizan principalmente con POST
  * GET solo funciona para consultas de items específicos
  */
@@ -29,30 +30,45 @@ import { ROL_DETALLE_API_CONFIG, ROL_DETALLE_MESSAGES } from '../models/rol-deta
   providedIn: 'root'
 })
 export class RolDetalleService {
-  private baseUrl: string = ROL_DETALLE_API_CONFIG.DEFAULT_BASE_URL;
+  private readonly API_ID: number = 3; // ID del endpoint de Rol Detalle
   private readonly endpoints = {
-    ROL_DETALLE: ROL_DETALLE_API_CONFIG.ENDPOINTS.ROL_DETALLE
+    ROL_DETALLE: ROL_DETALLE_API_CONFIG.ENDPOINTS.ROL_DETALLE // Mantener por compatibilidad
   };
 
   private readonly httpOptions = {
     headers: new HttpHeaders(ROL_DETALLE_API_CONFIG.DEFAULT_HEADERS)
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiConfig: ApiConfigService
+  ) {}
 
   /**
-   * Configura la URL base del servicio
+   * Obtiene la URL del endpoint por ID
    */
-  setBaseUrl(url: string): void {
-    this.baseUrl = url;
-    console.log(`🔧 URL base configurada para detalle de roles: ${this.baseUrl}`);
+  private getApiUrl(): string {
+    const endpoint = this.apiConfig.getEndpointById(this.API_ID);
+    if (!endpoint) {
+      console.warn(`⚠️ Endpoint con ID ${this.API_ID} no encontrado. Usando URL por defecto.`);
+      return this.apiConfig.getBaseUrl() + this.endpoints.ROL_DETALLE;
+    }
+    return endpoint.url;
   }
 
   /**
-   * Obtiene la URL base actual
+   * Configura la URL base del servicio (para compatibilidad)
+   */
+  setBaseUrl(url: string): void {
+    console.log(`🔧 RolDetalleService usa ApiConfigService - URL configurada: ${url}`);
+    // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
+  }
+
+  /**
+   * Obtiene la URL base actual desde ApiConfigService
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.apiConfig.getBaseUrl();
   }
 
   /**
@@ -60,8 +76,8 @@ export class RolDetalleService {
    * Se usa para consultas por id_rol o id_rold
    */
   consultarDetalleRol(query: RolDetalleQuery): Observable<RolDetalle[]> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/1`; // ID fijo en URL
-    
+    const url = `${this.getApiUrl()}/1`; // ID fijo en URL
+
     return this.http.post<RolDetalleApiResponse>(url, query, this.httpOptions).pipe(
       map(response => {
         if (response.statuscode === 200 && response.data) {
@@ -96,8 +112,8 @@ export class RolDetalleService {
    * GET - Solo para consultas de items específicos (no para consultas generales)
    */
   getDetalleRolById(id: number): Observable<RolDetalle | null> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.get<RolDetalleApiResponse>(url, this.httpOptions).pipe(
       map(response => {
         if (response.statuscode === 200 && response.data && response.data.length > 0) {
@@ -113,8 +129,8 @@ export class RolDetalleService {
    * POST - Crear nuevo detalle de rol
    */
   createDetalleRol(detalle: RolDetalleForm): Observable<RolDetalleApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/1`;
-    
+    const url = `${this.getApiUrl()}/1`;
+
     return this.http.post<RolDetalleApiResponse>(url, detalle, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -129,8 +145,8 @@ export class RolDetalleService {
    * PATCH - Actualizar atributos específicos del detalle de rol
    */
   updateDetalleRol(id: number, detalle: Partial<RolDetalleForm>): Observable<RolDetalleApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.patch<RolDetalleApiResponse>(url, detalle, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -145,8 +161,8 @@ export class RolDetalleService {
    * PUT - Actualización completa del detalle de rol
    */
   updateDetalleRolCompleto(id: number, detalle: RolDetalleForm): Observable<RolDetalleApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.put<RolDetalleApiResponse>(url, detalle, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -161,8 +177,8 @@ export class RolDetalleService {
    * DELETE - Eliminar detalle de rol
    */
   deleteDetalleRol(id: number): Observable<RolDetalleApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.delete<RolDetalleApiResponse>(url, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -181,11 +197,11 @@ export class RolDetalleService {
    * DL -> eliminar el registro señalado por el id
    */
   executeAction(action: RolDetalleAction, data?: any): Observable<RolDetalleApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_DETALLE}/1`;
+    const url = `${this.getApiUrl()}/1`;
     const body = { action, ...data };
-    
+
     console.log(`🔧 Ejecutando acción de detalle de rol: ${action}`, body);
-    
+
     return this.http.post<RolDetalleApiResponse>(url, body, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -391,8 +407,8 @@ export class RolDetalleService {
    */
   testConnection(): Observable<boolean> {
     return this.http.post<RolDetalleApiResponse>(
-      `${this.baseUrl}${this.endpoints.ROL_DETALLE}/1`, 
-      {}, 
+      `${this.getApiUrl()}/1`,
+      {},
       this.httpOptions
     ).pipe(
       map(response => {

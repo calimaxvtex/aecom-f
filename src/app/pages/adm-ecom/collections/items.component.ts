@@ -146,10 +146,20 @@ import { ColldService } from '@/features/coll/services/colld.service';
 
                     <!-- Sección Avanzada Expandible -->
                     <div class="mb-4">
-                        <p-button [label]="seccionAvanzadaExpandida ? 'Ocultar Opciones Avanzadas' : 'Mostrar Opciones Avanzadas'"
-                            icon="pi pi-chevron-down" [iconPos]="seccionAvanzadaExpandida ? 'right' : 'right'"
-                            styleClass="p-button-text p-button-sm w-full" (onClick)="seccionAvanzadaExpandida = !seccionAvanzadaExpandida">
-                        </p-button>
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-gray-500">
+                                Más opciones
+                            </div>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 transition-colors p-1 rounded hover:bg-gray-50"
+                                (click)="seccionAvanzadaExpandida = !seccionAvanzadaExpandida"
+                                [attr.aria-expanded]="seccionAvanzadaExpandida"
+                            >
+                                <i class="pi pi-chevron-down text-xs transition-transform duration-200"
+                                   [class.rotate-180]="seccionAvanzadaExpandida"></i>
+                            </button>
+                        </div>
 
                         <div *ngIf="seccionAvanzadaExpandida" class="mt-4 space-y-4 border-t pt-4">
                         <div class="flex items-center justify-between mb-4">
@@ -202,11 +212,11 @@ import { ColldService } from '@/features/coll/services/colld.service';
                     <!-- Botones -->
                     <div class="mt-6">
                         <p-button label="🔍 Buscar Items" icon="pi pi-search" (onClick)="buscarItems()" [loading]="loading"
-                            [disabled]="!puedeBuscar()" styleClass="p-button-primary w-full"></p-button>
+                            [disabled]="!puedeBuscar()" styleClass="p-button-primary p-button-raised w-full"></p-button>
                     </div>
                     <div class="mt-2">
                         <p-button label="🗑️ Limpiar Filtros" icon="pi pi-filter-slash" (onClick)="limpiarFiltros()"
-                            styleClass="p-button-secondary w-full p-button-sm"></p-button>
+                            styleClass="p-button-primary p-button-raised w-full"></p-button>
                     </div>
                 </p-card>
             </div>
@@ -224,16 +234,17 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         <p-buttonGroup>
                             <!-- Botón de búsqueda global -->
                             <p-button
+                                *ngIf="items.length > 0"
                                 icon="pi pi-search"
                                 pTooltip="Buscar en resultados"
                                 tooltipPosition="top"
-                                styleClass="p-button-raised"
+                                styleClass="p-button-primary p-button-raised"
                                 (onClick)="toggleFiltroGlobal()">
                             </p-button>
 
                             <!-- Botón Cargar Excel -->
                             <p-button pTooltip="Cargar archivo Excel con lista de artículos a consultar" tooltipPosition="top"
-                                (onClick)="abrirSelectorArchivo()" styleClass="excel-gray-soft p-button-raised">
+                                (onClick)="abrirSelectorArchivo()" styleClass="p-button-primary p-button-raised">
                                 <i class="pi pi-file-excel"></i>
                                 <i class="pi pi-arrow-up subtle-arrow" pTooltip="Subir archivo" tooltipPosition="bottom"></i>
                             </p-button>
@@ -244,7 +255,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
                                 pTooltip="Descargar resultados actuales en formato Excel"
                                 tooltipPosition="top"
                                 (onClick)="exportarExcel()"
-                                styleClass="excel-gray-dark p-button-raised"
+                                styleClass="p-button-primary p-button-raised"
                             >
                                 <i class="pi pi-file-excel"></i>
                                 <i class="pi pi-arrow-down subtle-arrow" pTooltip="Descargar archivo" tooltipPosition="bottom"></i>
@@ -253,7 +264,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
                             <!-- Botón Add (solo cuando hay items seleccionados) -->
                             <p-button *ngIf="selectedItems.length > 0" icon="pi pi-plus"
                                 pTooltip="Agregar {{ selectedItems.length }} item(s) a la colección seleccionada"
-                                tooltipPosition="top" (onClick)="agregarSeleccionados()" styleClass="p-button-success p-button-raised">
+                                tooltipPosition="top" (onClick)="agregarSeleccionados()" styleClass="p-button-primary p-button-raised">
                             </p-button>
                         </p-buttonGroup>
                     </div>
@@ -286,13 +297,9 @@ import { ColldService } from '@/features/coll/services/colld.service';
                              [class.bg-green-50]="isDragOver">
 
                             <!-- Botón de cerrar/cancelar -->
-                            <button type="button"
-                                    class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                                    pTooltip="Cancelar carga"
-                                    tooltipPosition="top"
-                                    (click)="cancelarCargaExcel()">
-                                <i class="pi pi-times text-gray-500 hover:text-gray-700"></i>
-                            </button>
+                            <p-button icon="pi pi-times" size="small" styleClass="p-button-primary p-button-raised absolute top-2 right-2"
+                                pTooltip="Cancelar carga" tooltipPosition="top" (onClick)="cancelarCargaExcel()">
+                            </p-button>
 
                             <div class="flex flex-col items-center">
                                 <i class="pi pi-file-excel text-4xl text-green-600 mb-2"></i>
@@ -307,11 +314,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
                                 </p>
 
                                 <!-- Botón adicional de cancelar al final -->
-                                <button type="button"
-                                        class="mt-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                                        (click)="cancelarCargaExcel()">
-                                    Cancelar
-                                </button>
+                                <p-button label="Cancelar" styleClass="p-button-primary p-button-raised mt-2" (onClick)="cancelarCargaExcel()"></p-button>
                             </div>
                         </div>
                     </div>
@@ -448,7 +451,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
                                     <div class="text-xs text-gray-500">ID: {{ item.articulo }}</div>
                                 </div>
                             </div>
-                            <p-button icon="pi pi-times" size="small" styleClass="p-button-danger p-button-sm" (onClick)="removerItemAgregado(item)"></p-button>
+                            <p-button icon="pi pi-times" size="small" styleClass="p-button-primary p-button-raised" (onClick)="removerItemAgregado(item)"></p-button>
                         </div>
                     </div>
 
@@ -456,8 +459,8 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Total agregados: {{ itemsAgregados.length }}</span>
                             <div class="flex gap-2">
-                                <p-button label="Limpiar Todos" icon="pi pi-trash" styleClass="p-button-danger p-button-sm" (onClick)="limpiarItemsAgregados()"></p-button>
-                                <p-button label="Procesar Items" icon="pi pi-check" styleClass="p-button-primary p-button-sm" (onClick)="procesarItemsAgregados()"></p-button>
+                                <p-button label="Limpiar Todos" icon="pi pi-trash" styleClass="p-button-primary p-button-raised" (onClick)="limpiarItemsAgregados()"></p-button>
+                                <p-button label="Procesar Items" icon="pi pi-check" styleClass="p-button-primary p-button-raised" (onClick)="procesarItemsAgregados()"></p-button>
                             </div>
                         </div>
                     </ng-template>
@@ -552,38 +555,6 @@ import { ColldService } from '@/features/coll/services/colld.service';
             top: -1px;
         }
 
-        /* Tono gris más suave para botón cargar Excel */
-        .excel-gray-soft {
-            background-color: #f3f4f6 !important;
-            border-color: #d1d5db !important;
-            color: #374151 !important;
-        }
-
-        .excel-gray-soft:hover {
-            background-color: #e5e7eb !important;
-            border-color: #9ca3af !important;
-        }
-
-        .excel-gray-soft:focus {
-            box-shadow: 0 0 0 0.2rem rgba(209, 213, 219, 0.5) !important;
-        }
-
-        /* Tono gris más oscuro para botón exportar Excel */
-        .excel-gray-dark {
-            background-color: #6b7280 !important;
-            border-color: #6b7280 !important;
-            color: white !important;
-        }
-
-        .excel-gray-dark:hover {
-            background-color: #4b5563 !important;
-            border-color: #4b5563 !important;
-        }
-
-        .excel-gray-dark:focus {
-            box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.5) !important;
-        }
-
         /* Mejorar apariencia de los iconos de ordenamiento */
         :host ::ng-deep .p-sortable-column .p-sortable-column-icon {
             color: rgba(0, 0, 0, 0.6) !important;
@@ -635,6 +606,14 @@ import { ColldService } from '@/features/coll/services/colld.service';
         }
 
         /* Estilos de reordenamiento movidos a CollectionsComponent */
+
+        /* Todos los botones en el grupo usan la misma clase p-button-primary p-button-raised */
+        /* Por lo tanto tienen la misma altura estándar de PrimeNG */
+
+        /* Estilos para el botón expandir/colapsar opciones avanzadas */
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
     `]
 })
 export class ItemsComponent implements OnInit {

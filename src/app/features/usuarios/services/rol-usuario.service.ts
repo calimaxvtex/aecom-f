@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
+
 import {
   RolUsuario,
   RolUsuarioApiResponse,
@@ -21,37 +23,51 @@ import { ROL_USUARIO_API_CONFIG, ROL_USUARIO_MESSAGES } from '../models/rol-usua
 
 /**
  * Servicio para la gestión de relaciones rol-usuario
- * Endpoint: /api/admrolu/v1
- * Base URL: http://localhost:3000
+ * Endpoint dinámico: ID 6 (Rol Usuario)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class RolUsuarioService {
-  private baseUrl: string = ROL_USUARIO_API_CONFIG.DEFAULT_BASE_URL;
+  private readonly API_ID: number = 6; // ID del endpoint de Rol Usuario
   private readonly endpoints = {
-    ROL_USUARIO: ROL_USUARIO_API_CONFIG.ENDPOINTS.ROL_USUARIO
+    ROL_USUARIO: ROL_USUARIO_API_CONFIG.ENDPOINTS.ROL_USUARIO // Mantener por compatibilidad
   };
 
   private readonly httpOptions = {
     headers: new HttpHeaders(ROL_USUARIO_API_CONFIG.DEFAULT_HEADERS)
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiConfig: ApiConfigService
+  ) {}
 
   /**
-   * Configura la URL base del servicio
+   * Obtiene la URL del endpoint por ID
    */
-  setBaseUrl(url: string): void {
-    this.baseUrl = url;
-    console.log(`🔧 URL base configurada para relación rol-usuario: ${this.baseUrl}`);
+  private getApiUrl(): string {
+    const endpoint = this.apiConfig.getEndpointById(this.API_ID);
+    if (!endpoint) {
+      console.warn(`⚠️ Endpoint con ID ${this.API_ID} no encontrado. Usando URL por defecto.`);
+      return this.apiConfig.getBaseUrl() + this.endpoints.ROL_USUARIO;
+    }
+    return endpoint.url;
   }
 
   /**
-   * Obtiene la URL base actual
+   * Configura la URL base del servicio (para compatibilidad)
+   */
+  setBaseUrl(url: string): void {
+    console.log(`🔧 RolUsuarioService usa ApiConfigService - URL configurada: ${url}`);
+    // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
+  }
+
+  /**
+   * Obtiene la URL base actual desde ApiConfigService
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.apiConfig.getBaseUrl();
   }
 
   /**
@@ -59,8 +75,8 @@ export class RolUsuarioService {
    * Si no se especifica id, regresa todas las relaciones
    */
   getRelacionesRolUsuario(id?: number): Observable<RolUsuario[]> {
-    let url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}`;
-    
+    let url = this.getApiUrl();
+
     if (id) {
       url += `/${id}`;
     }
@@ -89,8 +105,8 @@ export class RolUsuarioService {
    * POST - Crear nueva relación rol-usuario
    */
   createRelacionRolUsuario(relacion: RolUsuarioForm): Observable<RolUsuarioApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}`;
-    
+    const url = this.getApiUrl();
+
     return this.http.post<RolUsuarioApiResponse>(url, relacion, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -105,8 +121,8 @@ export class RolUsuarioService {
    * PATCH - Actualizar atributos específicos de la relación
    */
   updateRelacionRolUsuario(id: number, relacion: Partial<RolUsuarioForm>): Observable<RolUsuarioApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.patch<RolUsuarioApiResponse>(url, relacion, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -121,8 +137,8 @@ export class RolUsuarioService {
    * PUT - Actualización completa de la relación
    */
   updateRelacionRolUsuarioCompleto(id: number, relacion: RolUsuarioForm): Observable<RolUsuarioApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.put<RolUsuarioApiResponse>(url, relacion, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -137,8 +153,8 @@ export class RolUsuarioService {
    * DELETE - Eliminar relación rol-usuario
    */
   deleteRelacionRolUsuario(id: number): Observable<RolUsuarioApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}/${id}`;
-    
+    const url = `${this.getApiUrl()}/${id}`;
+
     return this.http.delete<RolUsuarioApiResponse>(url, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -157,11 +173,11 @@ export class RolUsuarioService {
    * DL -> eliminar el registro señalado por el id
    */
   executeAction(action: RolUsuarioAction, data?: any): Observable<RolUsuarioApiResponse> {
-    const url = `${this.baseUrl}${this.endpoints.ROL_USUARIO}`;
+    const url = this.getApiUrl();
     const body = { action, ...data };
-    
+
     console.log(`🔧 Ejecutando acción de relación rol-usuario: ${action}`, body);
-    
+
     return this.http.post<RolUsuarioApiResponse>(url, body, this.httpOptions).pipe(
       tap(response => {
         if (response.statuscode === 200) {
@@ -472,7 +488,7 @@ export class RolUsuarioService {
    * Probar conectividad con la API
    */
   testConnection(): Observable<boolean> {
-    return this.http.get<RolUsuarioApiResponse>(`${this.baseUrl}${this.endpoints.ROL_USUARIO}`, this.httpOptions).pipe(
+    return this.http.get<RolUsuarioApiResponse>(this.getApiUrl(), this.httpOptions).pipe(
       map(response => {
         console.log('✅ Conexión exitosa con la API de relación rol-usuario');
         return true;

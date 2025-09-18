@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, ViewChild, Output, EventEmitter, inject } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, ViewChild, Output, EventEmitter, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -49,6 +49,8 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
             [globalFilterFields]="['clave', 'nombre']"
             dataKey="id_c"
             [sortMode]="'multiple'"
+            [sortField]="'id_c'"
+            [sortOrder]="-1"
             [filterDelay]="300"
         >
             <!-- Caption con controles -->
@@ -63,12 +65,12 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                     />
                     <div class="flex gap-2 order-0 sm:order-1">
                         <button
-                            (click)="cargarConceptos()"
+                            (click)="cargarConceptos(true)"
                             pButton
                             raised
                             icon="pi pi-refresh"
                             [loading]="loadingConceptos"
-                            pTooltip="Actualizar"
+                            pTooltip="Recargar Cache"
                         ></button>
                         <button
                             (click)="openConceptoForm()"
@@ -122,6 +124,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                                 [(ngModel)]="concepto.clave"
                                 (keyup.enter)="saveInlineEditConcepto(concepto, 'clave')"
                                 (keyup.escape)="cancelInlineEdit()"
+                                (input)="convertConceptoFieldToUppercase($event, concepto, 'clave')"
                                 class="p-inputtext-sm flex-1"
                                 #input
                                 (focus)="input.select()"
@@ -243,6 +246,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
                                 placeholder="Ej: CIUDAD, ESTADO, PAIS"
                                 class="w-full"
                                 maxlength="50"
+                                (input)="convertToUppercase($event, 'clave')"
                             />
                             <label>Clave *</label>
                         </p-floatLabel>
@@ -407,7 +411,7 @@ import { CatConcepto, CreateCatConceptoRequest, UpdateCatConceptoRequest } from 
         }
     `]
 })
-export class CatconceptosTabComponent implements OnInit, OnChanges {
+export class CatconceptosTabComponent implements OnInit, OnChanges, AfterViewInit {
     // Output para comunicar la selección al componente padre
     @Output() conceptoSeleccionadoChange = new EventEmitter<CatConcepto | null>();
     @Output() conceptoClick = new EventEmitter<CatConcepto>();
@@ -460,6 +464,13 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         // Esto ayuda si hay algún estado que se quede "pegado"
     }
 
+    ngAfterViewInit(): void {
+        // Forzar ordenamiento inicial después de que la vista esté lista
+        setTimeout(() => {
+            this.forceTableSort();
+        }, 200);
+    }
+
     // ========== INICIALIZACIÓN ==========
 
     initializeForms(): void {
@@ -472,20 +483,26 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
     // ========== CARGA DE DATOS ==========
 
-    cargarConceptos(): void {
+    cargarConceptos(forceRefresh: boolean = false): void {
         this.loadingConceptos = true;
-        console.log('📊 Cargando conceptos...');
+        const actionMessage = forceRefresh ? '🔄 Recargando cache de conceptos...' : '📊 Cargando conceptos...';
+        console.log(actionMessage);
 
-        this.catConceptosService.getAllConceptos().subscribe({
+        this.catConceptosService.getAllConceptos(undefined, forceRefresh).subscribe({
             next: (response) => {
                 console.log('✅ Conceptos cargados:', response.data);
                 this.conceptos = response.data;
                 this.loadingConceptos = false;
 
+                const summaryMessage = forceRefresh ? 'Cache Recargado' : 'Datos Actualizados';
+                const detailMessage = forceRefresh
+                    ? `Cache actualizado - ${this.conceptos.length} conceptos cargados desde el servidor`
+                    : `${this.conceptos.length} conceptos cargados`;
+
                 this.messageService.add({
                     severity: 'success',
-                    summary: 'Datos Actualizados',
-                    detail: `${this.conceptos.length} conceptos cargados`
+                    summary: summaryMessage,
+                    detail: detailMessage
                 });
             },
             error: (error) => {
@@ -513,7 +530,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         if (concepto) {
             console.log('✏️ Editando concepto:', concepto);
             this.conceptoForm.patchValue({
-                clave: concepto.clave,
+                clave: concepto.clave?.toUpperCase() || '',
                 nombre: concepto.nombre,
                 swestado: concepto.swestado === 1
             });
@@ -538,9 +555,10 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
             this.savingConcepto = true;
             const formData = this.conceptoForm.value;
 
-            // Convertir valores booleanos
+            // Convertir valores booleanos y asegurar clave en mayúsculas
             const processedData: CreateCatConceptoRequest = {
                 ...formData,
+                clave: formData.clave?.toUpperCase() || '',
                 swestado: formData.swestado ? 1 : 0
             };
 
@@ -579,6 +597,11 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         this.closeConceptoForm();
         this.cargarConceptos();
         this.savingConcepto = false;
+
+        // Forzar ordenamiento después de guardar
+        setTimeout(() => {
+            this.forceTableSort();
+        }, 100);
     }
 
     private handleSaveError(error: any, operation: string): void {
@@ -610,7 +633,16 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
     saveInlineEditConcepto(concepto: CatConcepto, field: string): void {
         console.log('💾 Guardando inline:', field, 'Nuevo valor:', (concepto as any)[field]);
 
-        if ((concepto as any)[field] === this.originalValue) {
+        let processedValue = (concepto as any)[field];
+
+        // Convertir clave a mayúsculas si es el campo clave
+        if (field === 'clave') {
+            processedValue = processedValue?.toUpperCase() || '';
+            // Actualizar el valor local del concepto
+            (concepto as any)[field] = processedValue;
+        }
+
+        if (processedValue === this.originalValue) {
             console.log('ℹ️ Valor no cambió, cancelando');
             this.cancelInlineEdit();
             return;
@@ -618,7 +650,7 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
         const updateData: UpdateCatConceptoRequest = {
             id_c: concepto.id_c,
-            [field]: (concepto as any)[field]
+            [field]: processedValue
         };
 
         this.catConceptosService.updateConcepto(updateData).subscribe({
@@ -633,6 +665,11 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
                     summary: 'Campo Actualizado',
                     detail: `${this.getFieldLabel(field)} actualizado correctamente`
                 });
+
+                // Forzar ordenamiento después de edición inline
+                setTimeout(() => {
+                    this.forceTableSort();
+                }, 100);
             },
             error: (error) => {
                 console.error('❌ Error al actualizar campo:', error);
@@ -697,6 +734,11 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
                     summary: 'Estado Actualizado',
                     detail: `Concepto ${nuevoEstado === 1 ? 'activado' : 'desactivado'} correctamente`
                 });
+
+                // Forzar ordenamiento después de cambiar estado
+                setTimeout(() => {
+                    this.forceTableSort();
+                }, 100);
             },
             error: (error) => {
                 console.error('❌ Error al cambiar estado:', error);
@@ -740,6 +782,11 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
 
                     this.cancelDeleteConcepto();
                     this.cargarConceptos();
+
+                    // Forzar ordenamiento después de eliminar
+                    setTimeout(() => {
+                        this.forceTableSort();
+                    }, 100);
                 },
                 error: (error) => {
                     console.error('❌ Error al eliminar concepto:', error);
@@ -803,6 +850,17 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
     }
 
 
+    /**
+     * Fuerza el ordenamiento de la tabla por ID descendente
+     */
+    private forceTableSort(): void {
+        if (this.dtConceptos) {
+            this.dtConceptos.sortField = 'id_c';
+            this.dtConceptos.sortOrder = -1;
+            this.dtConceptos.sortSingle();
+        }
+    }
+
     onGlobalFilter(table: Table, event: Event): void {
         table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
     }
@@ -811,6 +869,22 @@ export class CatconceptosTabComponent implements OnInit, OnChanges {
         const currentValue = this.conceptoForm.get(fieldName)?.value;
         const newValue = !currentValue;
         this.conceptoForm.patchValue({ [fieldName]: newValue });
+    }
+
+    // ========== CONVERSIÓN A MAYÚSCULAS ==========
+
+    convertToUppercase(event: Event, fieldName: string): void {
+        const input = event.target as HTMLInputElement;
+        const upperValue = input.value.toUpperCase();
+        input.value = upperValue;
+        this.conceptoForm.patchValue({ [fieldName]: upperValue });
+    }
+
+    convertConceptoFieldToUppercase(event: Event, concepto: CatConcepto, fieldName: keyof CatConcepto): void {
+        const input = event.target as HTMLInputElement;
+        const upperValue = input.value.toUpperCase();
+        input.value = upperValue;
+        (concepto as any)[fieldName] = upperValue;
     }
 
     getEstadoLabel(estado: number): string {

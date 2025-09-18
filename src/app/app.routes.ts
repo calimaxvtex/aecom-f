@@ -49,8 +49,20 @@ export const appRoutes: Routes = [
             },
         ]
     },
-    { path: '',
-         loadChildren: () => import('@/pages/auth/auth.routes') },
+    // Rutas de login específicas sin prefijo
+    {
+        path: 'login',
+        loadComponent: () => import('@/pages/auth/login').then((c) => c.Login)
+    },
+    {
+        path: 'login2',
+        loadComponent: () => import('@/pages/auth/login2').then((c) => c.Login2)
+    },
+    // Resto de rutas de autenticación con prefijo /auth
+    {
+        path: 'auth',
+        loadChildren: () => import('@/pages/auth/auth.routes')
+    },
     {
         path: 'landing',
         loadComponent: () => import('@/pages/landing/landing').then((c) => c.Landing)

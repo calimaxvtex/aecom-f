@@ -10,6 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
 // Servicios y modelos del módulo proyectos
@@ -29,7 +30,8 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
         DialogModule,
         ToastModule,
         TagModule,
-        ToggleSwitchModule
+        ToggleSwitchModule,
+        TooltipModule
     ],
     providers: [MessageService],
     template: `
@@ -86,13 +88,10 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
 
                 <ng-template #header>
                     <tr>
-                        <th style="width: 80px">ID</th>
-                        <th>Nombre</th>
-                        <th style="width: 100px">Estado</th>
+                        <th pSortableColumn="id_proy" style="width: 80px">ID <p-sortIcon field="id_proy"></p-sortIcon></th>
+                        <th pSortableColumn="descripcion" style="min-width: 200px">Nombre <p-sortIcon field="descripcion"></p-sortIcon></th>
+                        <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
                         <th style="width: 120px">Usuario</th>
-                        <th style="width: 120px">Fecha</th>
-                        <th style="width: 100px">Imagen</th>
-                        <th style="width: 100px">Estado Alta</th>
                         <th style="width: 150px">Acciones</th>
                     </tr>
                 </ng-template>
@@ -138,34 +137,27 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
                         <!-- Usuario - SOLO LECTURA -->
                         <td>{{proyecto.usuario}}</td>
 
-                        <!-- Fecha - SOLO LECTURA -->
-                        <td>{{proyecto.fecha | date:'shortDate'}}</td>
-
-                        <!-- Imagen - SOLO LECTURA -->
-                        <td class="text-center">
-                            <i [class]="proyecto.imagen === 1 ? 'pi pi-check text-green-500' : 'pi pi-times text-red-500'"></i>
-                        </td>
-
-                        <!-- Estado Alta - SOLO LECTURA -->
-                        <td class="text-center">
-                            <i [class]="proyecto.edo_Alta === 1 ? 'pi pi-check text-green-500' : 'pi pi-times text-red-500'"></i>
-                        </td>
-
                         <!-- Acciones -->
                         <td>
                             <div class="flex gap-1">
-                                <p-button
+                                <button
+                                    pButton
                                     icon="pi pi-pencil"
-                                    (onClick)="openProyectoForm(proyecto)"
+                                    (click)="openProyectoForm(proyecto)"
                                     class="p-button-sm p-button-text p-button-warning"
                                     pTooltip="Editar Proyecto"
-                                ></p-button>
-                                <p-button
+                                    tooltipPosition="top"
+                                    tooltipStyleClass="tooltip-theme"
+                                ></button>
+                                <button
+                                    pButton
                                     icon="pi pi-trash"
-                                    (onClick)="eliminarProyecto(proyecto)"
+                                    (click)="eliminarProyecto(proyecto)"
                                     class="p-button-sm p-button-text p-button-danger"
                                     pTooltip="Eliminar Proyecto"
-                                ></p-button>
+                                    tooltipPosition="top"
+                                    tooltipStyleClass="tooltip-theme"
+                                ></button>
                             </div>
                         </td>
                     </tr>
@@ -210,68 +202,37 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
                             ></p-tag>
                         </div>
 
-                        <!-- Usuario -->
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Usuario</label>
-                            <input
-                                pInputText
-                                formControlName="usuario"
-                                placeholder="Usuario del proyecto"
-                                class="w-full"
-                            />
-                        </div>
-
-                        <!-- Fecha -->
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Fecha</label>
-                            <input
-                                pInputText
-                                formControlName="fecha"
-                                placeholder="YYYY-MM-DD"
-                                class="w-full"
-                            />
-                        </div>
-
-                        <!-- Imagen (Toggle) -->
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                Imagen: {{proyectoForm.get('imagen')?.value ? 'Sí' : 'No'}}
-                            </label>
-                            <p-toggleSwitch
-                                formControlName="imagen"
-                                onLabel="Sí"
-                                offLabel="No"
-                            ></p-toggleSwitch>
-                        </div>
-
-                        <!-- Estado Alta (Toggle) -->
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                Estado Alta: {{proyectoForm.get('edo_Alta')?.value ? 'Activo' : 'Inactivo'}}
-                            </label>
-                            <p-toggleSwitch
-                                formControlName="edo_Alta"
-                                onLabel="Activo"
-                                offLabel="Inactivo"
-                            ></p-toggleSwitch>
+                        <!-- Usuario y Fecha en el mismo renglón - SOLO LECTURA -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Usuario</label>
+                                <span class="text-sm text-gray-700">{{proyectoForm.get('usuario')?.value || 'Sin usuario'}}</span>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Fecha</label>
+                                <span class="text-sm text-gray-700">{{proyectoForm.get('fecha')?.value ? (proyectoForm.get('fecha')?.value | date:'shortDate') : 'Sin fecha'}}</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Botones -->
-                    <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
-                        <p-button
+                    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+                        <button
+                            pButton
                             type="button"
                             (click)="closeProyectoForm()"
                             label="Cancelar"
                             class="p-button-text"
-                        ></p-button>
-                        <p-button
+                        ></button>
+                        <button
+                            pButton
                             type="submit"
                             [label]="isEditingProyecto ? 'Actualizar' : 'Crear'"
                             [disabled]="!proyectoForm.valid || savingProyecto"
                             [loading]="savingProyecto"
                             class="p-button-success"
-                        ></p-button>
+                            raised
+                        ></button>
                     </div>
                 </form>
             </p-dialog>
@@ -334,8 +295,36 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
             font-size: 0.875rem !important;
         }
 
+        /* Ajustes adicionales para botones de acción */
+        .p-button.p-button-text.p-button-sm:hover {
+            background-color: rgba(0, 0, 0, 0.04) !important;
+        }
+
+        .p-button.p-button-text.p-button-warning:hover {
+            background-color: rgba(255, 193, 7, 0.12) !important;
+        }
+
+        .p-button.p-button-text.p-button-danger:hover {
+            background-color: rgba(220, 53, 69, 0.12) !important;
+        }
+
         .bg-blue-50 {
             background-color: #eff6ff !important;
+        }
+
+        /* Tema personalizado para tooltips */
+        :host ::ng-deep .tooltip-theme {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+            border-radius: 6px !important;
+            font-size: 0.875rem !important;
+            font-weight: 500 !important;
+            padding: 0.5rem 0.75rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        :host ::ng-deep .tooltip-theme .p-tooltip-arrow {
+            border-top-color: #374151 !important;
         }
     `]
 })
@@ -382,10 +371,8 @@ export class ProyComponent implements OnInit {
         this.proyectoForm = this.fb.group({
             descripcion: ['', [Validators.required]],
             estado: ['A'],
-            usuario: [''],
-            fecha: [this.getCurrentDate()],
-            imagen: [false],
-            edo_Alta: [true]
+            usuario: ['SYSTEM'], // Usuario por defecto
+            fecha: [this.getCurrentDate()]
         });
     }
 
@@ -445,18 +432,16 @@ export class ProyComponent implements OnInit {
                 descripcion: proyecto.descripcion,
                 estado: proyecto.estado,
                 usuario: proyecto.usuario,
-                fecha: proyecto.fecha,
-                imagen: proyecto.imagen === 1,
-                edo_Alta: proyecto.edo_Alta === 1
+                fecha: proyecto.fecha
             });
             this.proyectoSeleccionado = proyecto;
         } else {
             console.log('➕ Creando nuevo proyecto');
             this.proyectoForm.reset({
+                descripcion: '',
                 estado: 'A',
-                fecha: this.getCurrentDate(),
-                imagen: false,
-                edo_Alta: true
+                usuario: 'SYSTEM', // Usuario por defecto para nuevos proyectos
+                fecha: this.getCurrentDate()
             });
             this.proyectoSeleccionado = null;
         }
@@ -476,21 +461,20 @@ export class ProyComponent implements OnInit {
             this.savingProyecto = true;
             const formData = this.proyectoForm.value;
 
-            // Convertir valores booleanos a números
+            // Procesar datos del formulario
             const processedData = {
-                ...formData,
-                imagen: formData.imagen ? 1 : 0,
-                edo_Alta: formData.edo_Alta ? 1 : 0
+                ...formData
             };
 
             if (this.isEditingProyecto && this.proyectoSeleccionado) {
-                // Actualizar
+                // Actualizar - No modificar usuario y fecha (son de solo lectura)
                 const payload: UpdateProyRequest = {
                     action: 'UP',
                     id_proy: this.proyectoSeleccionado.id_proy,
-                    ...processedData,
-                    usr: processedData.usuario || 'SYSTEM',
-                    id_session: 0 // Se obtendrá del SessionService
+                    descripcion: processedData.descripcion,
+                    estado: processedData.estado,
+                    usr: this.proyectoSeleccionado.usuario || 'SYSTEM', // Usar valor original
+                    id_session: 0
                 };
 
                 this.proyService.updateProyecto(payload).subscribe({
@@ -504,9 +488,10 @@ export class ProyComponent implements OnInit {
                 // Crear
                 const payload: CreateProyRequest = {
                     action: 'IN',
-                    ...processedData,
+                    descripcion: processedData.descripcion,
+                    estado: processedData.estado,
                     usr: processedData.usuario || 'SYSTEM',
-                    id_session: 0 // Se obtendrá del SessionService
+                    id_session: 0
                 };
 
                 this.proyService.createProyecto(payload).subscribe({

@@ -1,4 +1,4 @@
-/* Estilos para el componente de sucursales */
+/* Estilos optimizados para sucursales */
 
 .inline-edit-container {
     display: flex;
@@ -11,11 +11,6 @@
     min-width: 2rem;
 }
 
-.editable-cell {
-    display: block;
-    min-height: 1.5rem;
-}
-
 .p-datatable .p-datatable-tbody > tr > td {
     padding: 0.5rem;
     vertical-align: middle;
@@ -25,7 +20,6 @@
     background-color: #f8fafc;
 }
 
-/* Estilos para botones de tabla */
 .p-button.p-button-text.p-button-sm {
     width: 2rem !important;
     height: 2rem !important;
@@ -34,368 +28,75 @@
     border-radius: 0.25rem !important;
 }
 
-.p-button.p-button-text.p-button-sm .p-button-icon {
-    font-size: 0.875rem !important;
-}
-
-/* Fila seleccionada */
 .bg-blue-50 {
     background-color: #eff6ff !important;
 }
 
-/* Scroll personalizado para formularios */
-.grid::-webkit-scrollbar {
-    width: 8px;
-}
-
-.grid::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.grid::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.grid::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* Estilos para modales */
-:host ::ng-deep .sucursal-form-dialog .p-dialog {
+:host ::ng-deep .banner-form-dialog .p-dialog {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
     border-radius: 0.5rem !important;
     overflow: hidden !important;
 }
 
-:host ::ng-deep .sucursal-form-dialog .p-dialog-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
+:host ::ng-deep .banner-form-dialog .p-dialog-header {
+    background: linear-gradient(135deg, #fff 0%, #fff 100%) !important;
+    color: #374151 !important;
     border-bottom: none !important;
     padding: 1rem 1.5rem !important;
 }
 
-:host ::ng-deep .sucursal-form-dialog .p-dialog-content {
+:host ::ng-deep .banner-form-dialog .p-dialog-content {
     padding: 1.5rem !important;
     background: white !important;
 }
 
-:host ::ng-deep .sucursal-form-dialog .p-dialog-footer {
+:host ::ng-deep .banner-form-dialog .p-dialog-footer {
     border-top: 1px solid #e5e7eb !important;
     padding: 1rem 1.5rem !important;
     background: #f9fafb !important;
 }
 
-/* Evitar fondo negro al abrir el modal */
-:host ::ng-deep .p-dialog-mask {
-    background-color: rgba(0, 0, 0, 0.5) !important;
-    transition: opacity 0.2s ease-in-out !important;
+/* Estilos básicos para el modal */
+:host ::ng-deep .banner-form-dialog .p-dialog {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
 }
 
-:host ::ng-deep .p-dialog-mask.p-dialog-mask-leave {
-    opacity: 0 !important;
-}
-
-/* Asegurar que el modal aparezca correctamente */
-:host ::ng-deep .sucursal-form-dialog .p-dialog {
-    opacity: 1 !important;
-    transform: scale(1) !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-/* Estilos para tooltips */
 :host ::ng-deep .p-tooltip {
     background-color: #374151 !important;
     color: white !important;
     border-radius: 0.375rem !important;
-    font-size: 0.875rem !important;
     padding: 0.5rem 0.75rem !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-    z-index: 10000 !important;
-    opacity: 1 !important;
 }
 
-/* Evitar parpadeo en botones con loading */
-:host ::ng-deep .p-button.p-button-loading {
-    opacity: 1 !important;
-    pointer-events: none !important;
+:host ::ng-deep .compact-filter-button.p-button {
+    padding: 0.25rem 0.5rem !important;
+    min-height: 1.75rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 0.25rem !important;
 }
 
-:host ::ng-deep .p-button .p-button-loading-icon {
-    animation: p-button-spin 1s linear infinite !important;
+:host ::ng-deep .compact-filter-button.p-button-success {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
 }
 
-/* Estilos para labels flotantes */
-:host ::ng-deep .p-floatlabel {
-    width: 100%;
-    // position: relative;
+:host ::ng-deep .compact-filter-button.p-button-outlined {
+    background-color: transparent !important;
+    border-color: #d1d5db !important;
+    color: #6b7280 !important;
 }
 
-:host ::ng-deep .p-floatlabel label {
-    // background: white;
-    padding: 0 4px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    transition: all 0.2s ease;
-    pointer-events: none;
-    // position: absolute;
-    top: 80%;
-    left: 0.75rem;
-    transform: translateY(-50%);
-    z-index: 1;
+:host ::ng-deep .p-paginator .p-dropdown {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    flex: none !important;
 }
 
-:host ::ng-deep .p-floatlabel input:focus + label,
-:host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label {
-    top: 0;
-    left: 0.75rem;
-    transform: translateY(-50%) scale(0.85);
-    color: #6366f1; /* Indigo */
-    font-weight: 600;
-}
-
-:host ::ng-deep .p-floatlabel input,
-:host ::ng-deep .p-floatlabel textarea {
-    padding-top: 1rem;
-    padding-bottom: 0.5rem;
-}
-
-/* Estilos para campos booleanos */
 :host ::ng-deep .p-tag {
     font-size: 0.875rem;
     padding: 0.25rem 0.5rem;
     font-weight: 500;
-}
-
-/* Mejorar apariencia de inputs */
-:host ::ng-deep .p-inputtext {
-    border-radius: 0.375rem;
-    border: 1px solid #d1d5db;
-    transition: border-color 0.2s ease;
-}
-
-:host ::ng-deep .p-inputtext:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 1px #6366f1;
-}
-
-/* Estilos para el select de proyectos */
-:host ::ng-deep .p-select {
-    width: 100%;
-}
-
-:host ::ng-deep .p-select .p-select-label {
-    padding-top: 1rem;
-    padding-bottom: 0.5rem;
-}
-
-/* Estilos para tabla responsive */
-@media (max-width: 768px) {
-    .p-datatable .p-datatable-tbody > tr > td {
-        padding: 0.25rem;
-        font-size: 0.875rem;
-    }
-
-    .p-datatable .p-datatable-thead > tr > th {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.875rem;
-    }
-
-    /* Ocultar columnas en móvil si es necesario */
-    .p-datatable .p-datatable-tbody > tr > td:nth-child(4),
-    .p-datatable .p-datatable-thead > tr > th:nth-child(4) {
-        display: none;
-    }
-}
-
-/* Estilos para estados de carga */
-:host ::ng-deep .p-button[loading="true"] {
-    pointer-events: none;
-}
-
-/* Mejorar el espaciado de la card principal */
-.card {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
-
-/* Estilos para el header */
-.mb-4 {
-    margin-bottom: 1rem;
-}
-
-/* Estilos para el título */
-.text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-}
-
-.font-bold {
-    font-weight: 700;
-}
-
-/* Estilos para el layout del filtro */
-.flex {
-    display: flex;
-}
-
-.gap-4 {
-    gap: 1rem;
-}
-
-.items-end {
-    align-items: flex-end;
-}
-
-.flex-1 {
-    flex: 1 1 0%;
-}
-
-/* Estilos para el layout de controles */
-.flex-wrap {
-    flex-wrap: wrap;
-}
-
-.items-center {
-    align-items: center;
-}
-
-.justify-between {
-    justify-content: space-between;
-}
-
-/* Estilos para inputs de búsqueda */
-.w-full {
-    width: 100%;
-}
-
-.sm\:w-80 {
-    width: 20rem;
-}
-
-.sm\:order-0 {
-    order: 0;
-}
-
-.order-1 {
-    order: 1;
-}
-
-/* Estilos para tags */
-.text-xs {
-    font-size: 0.75rem;
-    line-height: 1rem;
-}
-
-/* Estilos para botones */
-.p-button {
-    transition: all 0.2s ease;
-}
-
-.p-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para el modal de confirmación */
-:host ::ng-deep .p-dialog .p-dialog-header {
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-    border-bottom: none;
-}
-
-:host ::ng-deep .p-dialog .p-dialog-content {
-    padding: 1.5rem;
-}
-
-:host ::ng-deep .p-dialog .p-dialog-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #e5e7eb;
-    background: #f9fafb;
-}
-
-/* Animación para elementos hover */
-.cursor-pointer {
-    cursor: pointer;
-}
-
-.hover\:bg-gray-50:hover {
-    background-color: #f9fafb;
-}
-
-.hover\:opacity-80:hover {
-    opacity: 0.8;
-}
-
-.transition-colors {
-    transition: background-color 0.2s ease;
-}
-
-.transition-opacity {
-    transition: opacity 0.2s ease;
-}
-
-/* Estilos para tooltips personalizados */
-:host ::ng-deep .custom-tooltip {
-    background-color: #374151 !important;
-    color: white !important;
-    border-radius: 0.375rem !important;
-    font-size: 0.875rem !important;
-    padding: 0.5rem 0.75rem !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-    z-index: 10001 !important;
-    opacity: 1 !important;
-    transition: opacity 0.2s ease-in-out !important;
-    pointer-events: none !important;
-}
-
-:host ::ng-deep .custom-tooltip .p-tooltip-arrow {
-    color: #374151 !important;
-    border-color: #374151 !important;
-}
-
-/* Prevenir transformación en botones con tooltip */
-:host ::ng-deep .p-button[pTooltip] {
-    transition: none !important;
-}
-
-:host ::ng-deep .p-button[pTooltip]:hover {
-    transform: none !important;
-}
-
-/* Eliminar animaciones en botones refresh */
-:host ::ng-deep .p-button[icon="pi pi-refresh"] {
-    transition: none !important;
-    animation: none !important;
-}
-
-:host ::ng-deep .p-button[icon="pi pi-refresh"]:hover {
-    transform: none !important;
-    animation: none !important;
-}
-
-:host ::ng-deep .p-button[icon="pi pi-refresh"]:active {
-    transform: none !important;
-    animation: none !important;
-}
-
-/* Spinner de loading */
-:host ::ng-deep .p-button[icon="pi pi-refresh"] .p-button-loading-icon {
-    animation: p-button-spin 1s linear infinite !important;
-}
-
-/* Evitar parpadeo de tooltips */
-:host ::ng-deep .p-tooltip.p-tooltip-hide {
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-:host ::ng-deep .p-tooltip.p-tooltip-show {
-    opacity: 1 !important;
-    visibility: visible !important;
 }

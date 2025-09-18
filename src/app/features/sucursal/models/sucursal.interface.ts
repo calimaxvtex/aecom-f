@@ -52,6 +52,7 @@ export interface SucursalResponse {
 
 // Interface para crear sucursal (solo campos requeridos)
 export interface CreateSucursalRequest {
+    sucursal: number;         // ID de la sucursal (requerido)
     tienda: string;
     direccion: string;
     latitud: string;
@@ -59,6 +60,10 @@ export interface CreateSucursalRequest {
     id_proy: number;
     zona_geografica?: number;
     estado?: string;
+    telefono?: string;
+    sap?: number;
+    ip?: string;
+    ip_serv?: string;
 }
 
 // Interface para actualizar sucursal

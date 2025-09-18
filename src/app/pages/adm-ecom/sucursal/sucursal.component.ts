@@ -53,10 +53,11 @@ export class SucursalComponent implements OnInit {
 
     // Filtros
     estadoFiltro: string = 'A'; // Por defecto mostrar Activas
-    opcionesEstado = [
-        { label: 'Activas', value: 'A' },
-        { label: 'Inactivas', value: 'R' },
-        { label: 'Todas', value: '' }
+    estadoFiltroSeleccionado: string = 'A'; // Para los botones compactos
+    estadoOptions: { label: string; value: string }[] = [
+        { label: 'Activos', value: 'A' },
+        { label: 'Inactivos', value: 'R' },
+        { label: 'Todos', value: '' }
     ];
 
     // Estados de carga
@@ -106,12 +107,17 @@ export class SucursalComponent implements OnInit {
 
     initializeForms(): void {
         this.sucursalForm = this.fb.group({
+            sucursal: [{ value: '', disabled: false }, [Validators.required]], // ID editable en creación, readonly en edición
             tienda: ['', [Validators.required]],
             direccion: ['', [Validators.required]],
             latitud: [''],
             longitud: [''],
             zona_geografica: [1],
-            estado: ['A', [Validators.required]]
+            estado: ['A', [Validators.required]],
+            telefono: [''],           // Nuevo: Teléfono
+            sap: [0],                // Nuevo: Switch SAP (0=apagado, 1=prendido)
+            ip: [''],               // Nuevo: IP
+            ip_serv: ['']           // Nuevo: IP del servidor
         });
     }
 
@@ -279,6 +285,52 @@ export class SucursalComponent implements OnInit {
         console.log('🎯 Estados en datos filtrados:', estadosUnicos);
     }
 
+    onEstadoFiltroClick(estadoValue: string): void {
+        console.log('🔄 Click en filtro de estado:', estadoValue);
+
+        // Si se hace click en el mismo botón, resetear el filtro
+        if (this.estadoFiltroSeleccionado === estadoValue) {
+            this.estadoFiltroSeleccionado = 'A'; // Resetear a Activos por defecto
+            this.estadoFiltro = 'A';
+            console.log('🔄 Filtro reseteado a Activos por defecto');
+        } else {
+            // Cambiar al nuevo filtro
+            this.estadoFiltroSeleccionado = estadoValue;
+            this.estadoFiltro = estadoValue;
+            console.log('✅ Filtro cambiado a:', estadoValue);
+        }
+
+        const estadoTexto = this.estadoFiltro === 'A' ? 'Activas' : this.estadoFiltro === 'R' ? 'Inactivas' : 'Todas';
+        console.log('🔄 Estado texto:', estadoTexto);
+
+        // Aplicar filtro
+        if (this.sucursalesTodas.length > 0) {
+            console.log('🔍 Aplicando filtro frontend...');
+
+            // Forzar detección de cambios antes de filtrar
+            this.cdr.detectChanges();
+
+            this.filtrarSucursalesPorEstado();
+
+            // Mostrar mensaje
+            const mensaje = estadoValue === this.estadoFiltroSeleccionado
+                ? `Filtro aplicado: ${estadoTexto}`
+                : `Filtro reseteado a: Activas`;
+
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Filtro Aplicado',
+                detail: mensaje,
+                life: 1500
+            });
+        } else {
+            console.log('⚠️ No hay datos cargados, cargando desde API...');
+            if (this.proyectoSeleccionado) {
+                this.cargarSucursales();
+            }
+        }
+    }
+
     onEstadoChange(event: any): void {
         console.log('🔄 EVENTO onEstadoChange recibido:', event);
         console.log('🔄 Valor del evento:', event?.value);
@@ -379,19 +431,30 @@ export class SucursalComponent implements OnInit {
 
         if (sucursal) {
             console.log('✏️ Editando sucursal:', sucursal);
+            // En edición: deshabilitar el campo ID y setear el valor
+            this.sucursalForm.get('sucursal')?.disable();
             this.sucursalForm.patchValue({
+                sucursal: sucursal.sucursal,
                 tienda: sucursal.tienda,
                 direccion: sucursal.direccion,
                 latitud: sucursal.latitud,
                 longitud: sucursal.longitud,
                 zona_geografica: sucursal.zona_geografica || 1,
-                estado: sucursal.estado
+                estado: sucursal.estado,
+                telefono: sucursal.telefono || '',           // Nuevo: Teléfono
+                sap: sucursal.sap ? 1 : 0,                   // Nuevo: SAP (convertir a 0/1)
+                ip: sucursal.ip || '',                       // Nuevo: IP
+                ip_serv: sucursal.ip_serv || ''              // Nuevo: IP del servidor
             });
         } else {
             console.log('➕ Creando nueva sucursal');
+            // En creación: habilitar el campo ID y limpiarlo
+            this.sucursalForm.get('sucursal')?.enable();
             this.sucursalForm.reset({
+                sucursal: '',    // Limpiar ID para nueva sucursal
                 estado: 'A',
-                zona_geografica: 1
+                zona_geografica: 1,
+                sap: 0          // SAP por defecto desactivado
             });
         }
 
@@ -399,9 +462,18 @@ export class SucursalComponent implements OnInit {
     }
 
     closeSucursalForm(): void {
+        console.log('🔒 Cerrando modal de sucursal');
         this.showSucursalModal = false;
-        this.sucursalForm.reset();
+
+        // Limpiar estado
         this.isEditingSucursal = false;
+        this.savingSucursal = false;
+        this.sucursalForm.get('sucursal')?.enable();
+        this.sucursalForm.reset();
+
+        // Forzar detección de cambios
+        this.cdr.detectChanges();
+        console.log('✅ Modal cerrado correctamente');
     }
 
     saveSucursal(): void {
@@ -409,26 +481,33 @@ export class SucursalComponent implements OnInit {
             this.savingSucursal = true;
             const formData = this.sucursalForm.value;
 
+            // Obtener el valor del campo sucursal (considerando que puede estar deshabilitado)
+            const sucursalId = this.sucursalForm.get('sucursal')?.value;
+
             const sucursalData: CreateSucursalRequest = {
+                sucursal: parseInt(sucursalId),              // ID de la sucursal
                 tienda: formData.tienda,
                 direccion: formData.direccion,
                 latitud: formData.latitud || '',
                 longitud: formData.longitud || '',
                 id_proy: this.proyectoSeleccionado.id_proy,
                 zona_geografica: formData.zona_geografica,
-                estado: formData.estado
+                estado: formData.estado,
+                telefono: formData.telefono || '',           // Nuevo: Teléfono
+                sap: formData.sap || 0,                      // Nuevo: SAP (0/1)
+                ip: formData.ip || '',                       // Nuevo: IP
+                ip_serv: formData.ip_serv || ''              // Nuevo: IP del servidor
             };
 
             if (this.isEditingSucursal) {
-                // Para editar, necesitaríamos el ID de la sucursal
-                // Por ahora, mostrar mensaje que edición no está implementada
-                this.messageService.add({
-                    severity: 'warn',
-                    summary: 'Función no implementada',
-                    detail: 'La edición de sucursales no está implementada aún'
+                // Actualizar sucursal existente
+                console.log('📝 Actualizando sucursal:', sucursalData);
+                this.sucursalService.updateSucursal(sucursalData).subscribe({
+                    next: (response: any) => {
+                        this.handleSaveSuccess('Sucursal actualizada correctamente');
+                    },
+                    error: (error) => this.handleSaveError(error, 'actualizar')
                 });
-                this.savingSucursal = false;
-                return;
             } else {
                 // Crear
                 console.log('➕ Creando sucursal:', sucursalData);
@@ -634,6 +713,20 @@ export class SucursalComponent implements OnInit {
 
     getEstadoSeverity(estado: string): 'success' | 'danger' {
         return estado === 'A' ? 'success' : 'danger';
+    }
+
+    getSapLabel(sap: number): string {
+        return sap === 1 ? 'Activado' : 'Desactivado';
+    }
+
+    getSapSeverity(sap: number): 'success' | 'danger' {
+        return sap === 1 ? 'success' : 'danger';
+    }
+
+    toggleSap(): void {
+        const currentValue = this.sucursalForm.get('sap')?.value;
+        const newValue = currentValue === 1 ? 0 : 1;
+        this.sucursalForm.patchValue({ sap: newValue });
     }
 
     /**

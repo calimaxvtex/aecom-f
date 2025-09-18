@@ -115,7 +115,7 @@
                         class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                         title="Clic para editar"
                     >
-                        {{ sucursal.tienda }}
+                        {{ sucursal.tienda | titlecase }}
                     </span>
                     <div
                         *ngIf="editingCell === sucursal.sucursal + '_tienda'"
@@ -158,7 +158,7 @@
                         class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                         title="Clic para editar"
                     >
-                        {{ sucursal.direccion }}
+                        {{ sucursal.direccion | titlecase }}
                     </span>
                     <div
                         *ngIf="editingCell === sucursal.sucursal + '_direccion'"

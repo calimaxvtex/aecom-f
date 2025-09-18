@@ -23,12 +23,14 @@ export class SucursalService {
      * Obtiene todas las sucursales
      */
     getAllSucursales(filters?: SucursalFilters): Observable<SucursalResponse> {
-        // Obtener endpoint desde configuración
-        const sucursalUrl = this.apiConfigService.getSucursalCrudUrl();
+        // Obtener endpoint dinámicamente por ID=15
+        const endpoint = this.apiConfigService.getEndpointById(15);
+        const sucursalUrl = endpoint ? endpoint.url : this.apiConfigService.getSucursalCrudUrl();
 
         console.log('🔗 === CONFIGURACIÓN DE ENDPOINT SUCURSAL ===');
         console.log('🔗 Método llamado: getAllSucursales');
-        console.log('🔗 Endpoint obtenido:', sucursalUrl);
+        console.log('🔗 Endpoint dinámico ID=15:', endpoint ? endpoint.url : 'NO ENCONTRADO');
+        console.log('🔗 Endpoint usado:', sucursalUrl);
         console.log('🔗 Filtros aplicados:', filters);
         console.log('🔗 === FIN CONFIGURACIÓN SUCURSAL ===');
 
@@ -80,7 +82,9 @@ export class SucursalService {
      * Crea una nueva sucursal
      */
     createSucursal(sucursalData: CreateSucursalRequest): Observable<SucursalResponse> {
-        const sucursalUrl = this.apiConfigService.getSucursalCrudUrl();
+        // Obtener endpoint dinámicamente por ID=15
+        const endpoint = this.apiConfigService.getEndpointById(15);
+        const sucursalUrl = endpoint ? endpoint.url : this.apiConfigService.getSucursalCrudUrl();
 
         const body = {
             action: 'IN', // Insert
@@ -107,7 +111,9 @@ export class SucursalService {
      * Actualiza una sucursal existente
      */
     updateSucursal(sucursalData: UpdateSucursalRequest): Observable<SucursalResponse> {
-        const sucursalUrl = this.apiConfigService.getSucursalCrudUrl();
+        // Obtener endpoint dinámicamente por ID=15
+        const endpoint = this.apiConfigService.getEndpointById(15);
+        const sucursalUrl = endpoint ? endpoint.url : this.apiConfigService.getSucursalCrudUrl();
 
         const body = {
             action: 'UP', // Update
@@ -134,7 +140,9 @@ export class SucursalService {
      * Elimina una sucursal
      */
     deleteSucursal(idSucursal: number): Observable<SucursalResponse> {
-        const sucursalUrl = this.apiConfigService.getSucursalCrudUrl();
+        // Obtener endpoint dinámicamente por ID=15
+        const endpoint = this.apiConfigService.getEndpointById(15);
+        const sucursalUrl = endpoint ? endpoint.url : this.apiConfigService.getSucursalCrudUrl();
 
         // Para DELETE, enviar usr e id_session como query params (REGLA CRÍTICA DEL PROYECTO)
         const sessionData = this.getSessionData();
@@ -166,7 +174,9 @@ export class SucursalService {
      * Actualiza un campo específico de una sucursal (para edición inline)
      */
     updateSucursalField(idSucursal: number, field: string, value: any): Observable<SucursalResponse> {
-        const sucursalUrl = this.apiConfigService.getSucursalCrudUrl();
+        // Obtener endpoint dinámicamente por ID=15
+        const endpoint = this.apiConfigService.getEndpointById(15);
+        const sucursalUrl = endpoint ? endpoint.url : this.apiConfigService.getSucursalCrudUrl();
 
         const body = {
             action: 'UP',

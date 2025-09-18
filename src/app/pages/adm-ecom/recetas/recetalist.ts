@@ -93,6 +93,7 @@ import { SessionService } from '@/core/services/session.service';
                         <th class="white-space-nowrap" style="width:8%">Dificultad</th>
                         <th class="white-space-nowrap" style="width:8%">Tiempo</th>
                         <th class="white-space-nowrap" style="width:6%">Porc.</th>
+                        <th class="white-space-nowrap" style="width:10%">Fecha</th>
                         <th class="white-space-nowrap" style="width:8%">Acciones</th>
                     </tr>
                 </ng-template>
@@ -458,6 +459,11 @@ import { SessionService } from '@/core/services/session.service';
                         <!-- Porciones -->
                         <td class="text-center">
                             <span class="text-sm">{{ Receta.people || Receta.servings || '-' }}</span>
+                        </td>
+
+                        <!-- Fecha -->
+                        <td class="text-center">
+                            <span class="text-sm">{{ formatFecha(Receta.date || Receta.fecha_cre || Receta.createdAt) }}</span>
                         </td>
 
                         <!-- Acciones -->
@@ -1033,6 +1039,27 @@ export class RecetaList implements OnInit {
             'dificil': 'danger'
         };
         return severities[difficulty as keyof typeof severities] || 'info';
+    }
+
+    formatFecha(fecha: string | undefined): string {
+        if (!fecha) return '-';
+
+        try {
+            const date = new Date(fecha);
+
+            // Verificar si la fecha es válida
+            if (isNaN(date.getTime())) return '-';
+
+            // Formatear como DD/MM/YYYY
+            const dia = date.getDate().toString().padStart(2, '0');
+            const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+            const anio = date.getFullYear();
+
+            return `${dia}/${mes}/${anio}`;
+        } catch (error) {
+            console.warn('Error formateando fecha:', fecha, error);
+            return '-';
+        }
     }
 
     // Función simplificada ya que el backend no maneja estados

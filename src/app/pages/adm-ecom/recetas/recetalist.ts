@@ -126,15 +126,16 @@ import { SessionService } from '@/core/services/session.service';
                                            pInputText
                                            type="text"
                                            [(ngModel)]="Receta.title"
+                                           (input)="onInputChange(Receta, 'title')"
+                                           (blur)="cancelInlineEditByBlur()"
                                             (keyup.enter)="saveInlineEditReceta(Receta, 'title')"
                                             (keyup.escape)="cancelInlineEdit()"
                                             class="p-inputtext-xs w-full"
                                             #input
-                                            (focus)="input.select()"
-                                            autofocus
+                                            [attr.aria-label]="'title-' + Receta.id"
                                             placeholder="Título principal"
                                         />
-                                        <div class="flex gap-1 mt-1">
+                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
                                             <button
                                                 pButton
                                                 icon="pi pi-check"
@@ -173,15 +174,16 @@ import { SessionService } from '@/core/services/session.service';
                                            pInputText
                                            type="text"
                                            [(ngModel)]="Receta.title_min"
+                                           (input)="onInputChange(Receta, 'title_min')"
+                                           (blur)="cancelInlineEditByBlur()"
                                             (keyup.enter)="saveInlineEditReceta(Receta, 'title_min')"
                                             (keyup.escape)="cancelInlineEdit()"
                                             class="p-inputtext-xs w-full"
                                             #input
-                                            (focus)="input.select()"
-                                            autofocus
+                                            [attr.aria-label]="'title_min-' + Receta.id"
                                             placeholder="Título corto"
                                         />
-                                        <div class="flex gap-1 mt-1">
+                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
                                             <button
                                                 pButton
                                                 icon="pi pi-check"
@@ -230,15 +232,17 @@ import { SessionService } from '@/core/services/session.service';
                                         pInputText
                                            type="url"
                                            [(ngModel)]="Receta.url_mini"
+                                           (input)="onInputChange(Receta, 'url_mini')"
+                                           (blur)="cancelInlineEditByBlur()"
                                         (keyup.enter)="saveInlineEditReceta(Receta, 'url_mini')"
                                         (keyup.escape)="cancelInlineEdit()"
                                         class="p-inputtext-sm flex-1"
                                         #input
-                                        (focus)="input.select()"
-                                        autofocus
+                                        [attr.aria-label]="'url_mini-' + Receta.id"
                                         placeholder="URL de la imagen"
                                     />
                                     <button
+                                        *ngIf="hasChanges"
                                         pButton
                                         icon="pi pi-check"
                                         (click)="saveInlineEditReceta(Receta, 'url_mini')"
@@ -246,6 +250,7 @@ import { SessionService } from '@/core/services/session.service';
                                         pTooltip="Guardar (Enter)"
                                     ></button>
                                     <button
+                                        *ngIf="hasChanges"
                                         pButton
                                         icon="pi pi-undo"
                                         (click)="cancelInlineEdit()"
@@ -277,15 +282,17 @@ import { SessionService } from '@/core/services/session.service';
                                    pInputText
                                    type="text"
                                    [(ngModel)]="Receta.category"
+                                   (input)="onInputChange(Receta, 'category')"
+                                   (blur)="cancelInlineEditByBlur()"
                                     (keyup.enter)="saveInlineEditReceta(Receta, 'category')"
                                     (keyup.escape)="cancelInlineEdit()"
                                     class="p-inputtext-sm flex-1"
                                     #input
-                                    (focus)="input.select()"
-                                    autofocus
+                                    [attr.aria-label]="'category-' + Receta.id"
                                     placeholder="Categoría de la receta"
                                 />
                                 <button
+                                    *ngIf="hasChanges"
                                     pButton
                                     icon="pi pi-check"
                                     (click)="saveInlineEditReceta(Receta, 'category')"
@@ -293,6 +300,7 @@ import { SessionService } from '@/core/services/session.service';
                                     pTooltip="Guardar (Enter)"
                                 ></button>
                                 <button
+                                    *ngIf="hasChanges"
                                     pButton
                                     icon="pi pi-undo"
                                     (click)="cancelInlineEdit()"
@@ -324,17 +332,18 @@ import { SessionService } from '@/core/services/session.service';
                                     >
                                         <textarea
                                             [(ngModel)]="Receta.description"
+                                            (input)="onInputChange(Receta, 'description')"
+                                            (blur)="cancelInlineEditByBlur()"
                                             (keyup.enter)="saveInlineEditReceta(Receta, 'description')"
                                             (keyup.escape)="cancelInlineEdit()"
                                             class="p-inputtext-xs w-full border rounded px-1 py-0.5"
                                             rows="2"
                                             #input
-                                            (focus)="input.select()"
-                                            autofocus
+                                            [attr.aria-label]="'description-' + Receta.id"
                                             placeholder="Descripción de la receta"
                                             style="resize: none;"
                                         ></textarea>
-                                        <div class="flex gap-1 mt-1">
+                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
                                             <button
                                                 pButton
                                                 icon="pi pi-check"
@@ -371,17 +380,18 @@ import { SessionService } from '@/core/services/session.service';
                                     >
                                         <textarea
                                             [(ngModel)]="Receta.ingredients"
+                                            (input)="onInputChange(Receta, 'ingredients')"
+                                            (blur)="cancelInlineEditByBlur()"
                                             (keyup.enter)="saveInlineEditReceta(Receta, 'ingredients')"
                                             (keyup.escape)="cancelInlineEdit()"
                                             class="p-inputtext-xs w-full border rounded px-1 py-0.5"
                                             rows="3"
                                             #input
-                                            (focus)="input.select()"
-                                            autofocus
+                                            [attr.aria-label]="'ingredients-' + Receta.id"
                                             placeholder="Lista de ingredientes separados por comas"
                                             style="resize: none;"
                                         ></textarea>
-                                        <div class="flex gap-1 mt-1">
+                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
                                             <button
                                                 pButton
                                                 icon="pi pi-check"
@@ -434,13 +444,21 @@ import { SessionService } from '@/core/services/session.service';
                             >
                                 <select
                                     [(ngModel)]="Receta.difficulty"
-                                    (change)="saveInlineEditReceta(Receta, 'difficulty')"
+                                    (change)="onInputChange(Receta, 'difficulty')"
                                     class="p-inputtext-sm flex-1 border rounded px-2 py-1"
                                 >
                                 <option value="facil">Fácil</option>
                                 <option value="medio">Medio</option>
                                 <option value="dificil">Difícil</option>
                             </select>
+                                <button
+                                    *ngIf="hasChanges"
+                                    pButton
+                                    icon="pi pi-check"
+                                    (click)="saveInlineEditReceta(Receta, 'difficulty')"
+                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                    pTooltip="Guardar (Enter)"
+                                ></button>
                                 <button
                                     pButton
                                     icon="pi pi-undo"
@@ -915,6 +933,7 @@ export class RecetaList implements OnInit {
     // Edición inline
     editingCell: string | null = null;
     originalValue: any = null;
+    hasChanges: boolean = false;
 
     // Confirmaciones
     RecetaToDelete: RecetaItem | null = null;
@@ -1294,7 +1313,29 @@ export class RecetaList implements OnInit {
     editInlineReceta(Receta: RecetaItem, field: string): void {
         this.editingCell = Receta.id + '_' + field;
         this.originalValue = (Receta as any)[field];
+        this.hasChanges = false;
         console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
+
+        // Programáticamente enfocamos y posicionamos el cursor al final del texto
+        // para asegurar que el DOM esté listo
+        setTimeout(() => {
+            const inputElement = document.querySelector(`input[aria-label="${field}-${Receta.id}"]`) as HTMLInputElement;
+            const textareaElement = document.querySelector(`textarea[aria-label="${field}-${Receta.id}"]`) as HTMLTextAreaElement;
+
+            const element = inputElement || textareaElement;
+            if (element) {
+                element.focus();
+                // Posicionar el cursor al final del texto en lugar de seleccionar todo
+                const textLength = element.value.length;
+                element.setSelectionRange(textLength, textLength);
+            }
+        }, 50);
+    }
+
+    // Detectar cambios en el input
+    onInputChange(Receta: RecetaItem, field: string): void {
+        const currentValue = (Receta as any)[field];
+        this.hasChanges = currentValue !== this.originalValue;
     }
 
     // Guardar edición
@@ -1325,6 +1366,7 @@ export class RecetaList implements OnInit {
 
                 this.editingCell = null;
                 this.originalValue = null;
+                this.hasChanges = false;
 
                 this.messageService.add({
                     severity: 'success',
@@ -1339,6 +1381,7 @@ export class RecetaList implements OnInit {
                 (Receta as any)[field] = this.originalValue;
                 this.editingCell = null;
                 this.originalValue = null;
+                this.hasChanges = false;
 
                 this.messageService.add({
                     severity: 'error',
@@ -1350,10 +1393,40 @@ export class RecetaList implements OnInit {
         });
     }
 
-    // Cancelar edición
-    cancelInlineEdit(): void {
+    // Cancelar edición por blur (siempre cancela, incluso sin cambios)
+    cancelInlineEditByBlur(): void {
+        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges);
+        // Siempre restaurar el valor original cuando se pierde el foco
+        if (this.editingCell) {
+            const [recetaId, field] = this.editingCell.split('_');
+            const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+            if (receta) {
+                (receta as any)[field] = this.originalValue;
+                console.log('🔄 Valor restaurado por blur:', field, 'Valor original:', this.originalValue);
+            }
+        }
+
         this.editingCell = null;
         this.originalValue = null;
+        this.hasChanges = false;
+    }
+
+    // Cancelar edición
+    cancelInlineEdit(): void {
+        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges);
+        // Si hay cambios, restaurar el valor original
+        if (this.editingCell && this.hasChanges) {
+            const [recetaId, field] = this.editingCell.split('_');
+            const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+            if (receta) {
+                (receta as any)[field] = this.originalValue;
+                console.log('🔄 Valor restaurado:', field, 'Valor original:', this.originalValue);
+            }
+        }
+
+        this.editingCell = null;
+        this.originalValue = null;
+        this.hasChanges = false;
     }
 
     // ========== MÉTODOS DE UTILIDAD ESTÁNDAR ==========

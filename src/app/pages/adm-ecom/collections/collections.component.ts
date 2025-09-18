@@ -482,13 +482,20 @@ import { ItemsComponent } from './items.component';
                             </small>
                         </div>
 
-                        <!-- Estado (Activo) -->
+                        <!-- Estado (Activo) y sw_fijo (Permanente) -->
                         <div class="flex items-center gap-2 pt-1">
                             <p-tag
                                 [value]="collectionForm.get('estado')?.value ? 'Activo' : 'Inactivo'"
                                 [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
                                 (click)="toggleFormField('estado')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar">
+                            </p-tag>
+                            <p-tag
+                                [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
+                                [severity]="collectionForm.get('swsched')?.value ? 'info' : 'success'"
+                                (click)="toggleSwFijo()"
+                                class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
                                 title="Clic para cambiar">
                             </p-tag>
                         </div>
@@ -531,7 +538,7 @@ import { ItemsComponent } from './items.component';
                         <div class="flex-shrink-0">
                             <div class="flex flex-col items-center gap-1">
                                 <p-tag
-                                    [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Fijo'"
+                                    [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
                                     [severity]="collectionForm.get('swsched')?.value ? 'info' : 'success'"
                                     (click)="toggleSwsched()"
                                     class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
@@ -2213,6 +2220,10 @@ export class CollectionsComponent implements OnInit {
     }
 
     toggleSwsched(): void {
+        this.toggleFormField('swsched');
+    }
+
+    toggleSwFijo(): void {
         this.toggleFormField('swsched');
     }
 

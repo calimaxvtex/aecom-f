@@ -44,16 +44,94 @@ export interface TabCloseEvent {
 })
 export class LayoutService {
     private readonly CONFIG_KEY = 'calimax-layout-config';
+
+    // 🎨 OPCIONES DE COLORES DISPONIBLES
+    readonly colorOptions = {
+        primary: ['emerald', 'blue', 'indigo', 'purple', 'pink', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal', 'cyan', 'sky', 'violet', 'fuchsia', 'rose'],
+        surface: ['slate', 'gray', 'zinc', 'neutral', 'stone'],
+        themes: ['light', 'dark', 'emerald', 'blue', 'indigo', 'purple', 'pink', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal', 'cyan', 'sky', 'violet', 'fuchsia', 'rose']
+    };
+
+    // 🚀 MÉTODO PARA CAMBIAR COLORES RÁPIDAMENTE
+    changeTheme(primary: string = 'emerald', surface: string = 'slate', menuTheme: string = 'emerald', topbarTheme: string = 'emerald') {
+        console.log(`🎨 Cambiando tema - Primary: ${primary}, Surface: ${surface}, Menu: ${menuTheme}, Topbar: ${topbarTheme}`);
+
+        this.layoutConfig.update((config) => ({
+            ...config,
+            primary,
+            surface,
+            menuTheme,
+            topbarTheme
+        }));
+
+        // Guardar en localStorage
+        this.saveConfigToStorage(this.layoutConfig());
+    }
+
+    // 🎨 TEMAS PREDEFINIDOS POPULARES
+    applyEmeraldTheme() {
+        this.changeTheme('emerald', 'slate', 'emerald', 'emerald');
+    }
+
+    applyPurpleTheme() {
+        this.changeTheme('purple', 'slate', 'purple', 'purple');
+    }
+
+    applyRoseTheme() {
+        this.changeTheme('rose', 'slate', 'rose', 'rose');
+    }
+
+    applyOrangeTheme() {
+        this.changeTheme('orange', 'slate', 'orange', 'orange');
+    }
+
+    applyTealTheme() {
+        this.changeTheme('teal', 'slate', 'teal', 'teal');
+    }
+
+    // 🌙 CAMBIAR A MODO OSCURO/CLARO
+    toggleDarkMode() {
+        const currentConfig = this.layoutConfig();
+        const newDarkTheme = !currentConfig.darkTheme;
+
+        this.layoutConfig.update((config) => ({
+            ...config,
+            darkTheme: newDarkTheme
+        }));
+
+        // Aplicar clase CSS para el tema oscuro
+        if (newDarkTheme) {
+            document.documentElement.classList.add('app-dark');
+        } else {
+            document.documentElement.classList.remove('app-dark');
+        }
+
+        this.saveConfigToStorage(this.layoutConfig());
+        console.log(`🌙 Modo ${newDarkTheme ? 'oscuro' : 'claro'} activado`);
+    }
+
+    // 🔄 RESTABLECER A CONFIGURACIÓN POR DEFECTO
+    resetToDefault() {
+        this.changeTheme('emerald', 'slate', 'emerald', 'emerald');
+        this.layoutConfig.update((config) => ({
+            ...config,
+            darkTheme: false,
+            menuMode: 'static',
+            menuProfilePosition: 'end'
+        }));
+        this.saveConfigToStorage(this.layoutConfig());
+        console.log('🔄 Tema restablecido a configuración por defecto');
+    }
     
     _config: layoutConfig = this.loadConfigFromStorage() || {
         // ⚙️ CONFIGURACIÓN POR DEFECTO PERSONALIZADA
         // Cambia estos valores según tus preferencias
-        primary: 'blue',           // Color primario (blue, indigo, purple, etc.)
-        surface: 'zinc',           // Superficie (slate, gray, zinc, neutral, etc.)
+        primary: 'emerald',        // Color primario (emerald, blue, indigo, purple, etc.)
+        surface: 'slate',          // Superficie (slate, gray, zinc, neutral, etc.)
         darkTheme: false,          // Modo oscuro (true/false)
         menuMode: 'static',        // Modo del menú (static, overlay, slim, etc.)
-        menuTheme: 'blue',         // Tema del menú lateral (light, dark, blue, indigo, etc.)
-        topbarTheme: 'blue',       // Tema del header/topbar (blue, indigo, purple, etc.)
+        menuTheme: 'emerald',      // Tema del menú lateral (emerald, light, dark, blue, indigo, etc.)
+        topbarTheme: 'emerald',    // Tema del header/topbar (emerald, blue, indigo, purple, etc.)
         menuProfilePosition: 'end' // Posición del perfil (start/end)
     };
 
@@ -118,7 +196,8 @@ export class LayoutService {
             const config = this.layoutConfig();
             if (config) {
                 this.onConfigUpdate();
-                this.saveConfigToStorage(config);
+                // Removido saveConfigToStorage del effect para evitar doble guardado
+                // this.saveConfigToStorage(config);
             }
         });
 
@@ -160,14 +239,24 @@ export class LayoutService {
         if ((document as any).startViewTransition) {
             this.startViewTransition(config);
         } else {
-            this.toggleDarkMode(config);
+            // Aplicar clase CSS directamente sin llamar toggleDarkMode()
+            if (config.darkTheme) {
+                document.documentElement.classList.add('app-dark');
+            } else {
+                document.documentElement.classList.remove('app-dark');
+            }
             this.onTransitionEnd();
         }
     }
 
     private startViewTransition(config: layoutConfig): void {
         const transition = (document as any).startViewTransition(() => {
-            this.toggleDarkMode(config);
+            // Aplicar clase CSS directamente sin llamar toggleDarkMode()
+            if (config.darkTheme) {
+                document.documentElement.classList.add('app-dark');
+            } else {
+                document.documentElement.classList.remove('app-dark');
+            }
         });
 
         transition.ready
@@ -177,14 +266,6 @@ export class LayoutService {
             .catch(() => {});
     }
 
-    toggleDarkMode(config?: layoutConfig): void {
-        const _config = config || this.layoutConfig();
-        if (_config.darkTheme) {
-            document.documentElement.classList.add('app-dark');
-        } else {
-            document.documentElement.classList.remove('app-dark');
-        }
-    }
 
     private onTransitionEnd() {
         this.transitionComplete.set(true);

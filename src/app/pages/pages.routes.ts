@@ -40,6 +40,11 @@ export default [
         loadComponent: () => import('./adm-ecom/tabadm/tabadm.component').then(c => c.TabAdmComponent)
     },
     {
+        path: 'adm-ecom/sucursal',
+        data: { breadcrumb: 'Administración de Sucursales', proy: 1 },
+        loadComponent: () => import('./adm-ecom/sucursal/sucursal.component').then(c => c.SucursalComponent)
+    },
+    {
         path: 'system/usuarios',
         data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
         loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)
@@ -68,6 +73,11 @@ export default [
         path: 'adm-ecom/banners',
         data: { breadcrumb: 'Banners', proy: 1 },
         loadComponent: () => import('./adm-ecom/banners/banners.component').then(c => c.BannersComponent)
+    },
+    {
+        path: 'system/proy',
+        data: { breadcrumb: 'Configuración del Sistema', proy: 1 },
+        loadComponent: () => import('./proy/proy.component').then(c => c.ProyComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

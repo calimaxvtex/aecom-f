@@ -14,13 +14,15 @@ import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputMaskModule } from 'primeng/inputmask';
-// import { Calendar } from 'primeng/calendar'; // No disponible en PrimeNG v20
+import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { CheckboxModule } from 'primeng/checkbox'; // Para checkboxes de selección múltiple
 // import { SplitButtonModule } from 'primeng/splitbutton'; // Ya no se usa, filtros ahora son botones
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 
 // Modelos y servicios
@@ -51,12 +53,14 @@ import { ItemsComponent } from './items.component';
         SelectModule,
         SelectButtonModule,
         InputMaskModule,
-        // Calendar, // No disponible en PrimeNG v20
+        DatePickerModule,
         ToggleSwitchModule,
         FloatLabelModule,
+        CheckboxModule, // Para checkboxes de selección múltiple
         // SplitButtonModule, // Ya no se usa, filtros ahora son botones
         CardModule,  // Para las tarjetas de información
         TooltipModule,  // Para tooltips
+        ConfirmDialogModule,  // Para confirmación de cambios
         // Import del ItemsComponent
         ItemsComponent
     ],
@@ -64,7 +68,7 @@ import { ItemsComponent } from './items.component';
     template: `
         <div class="card">
             <p-toast></p-toast>
-
+            <p-confirmDialog></p-confirmDialog>
 
 
 
@@ -190,6 +194,7 @@ import { ItemsComponent } from './items.component';
                             <ng-template #body let-collection>
                                 <tr
                                     [class.bg-blue-50]="collection === collectionSeleccionada"
+                                    [class.collection-inactive]="collection.estado === 'I'"
                                     class="cursor-pointer hover:bg-gray-50 transition-colors"
                                     (click)="onCollectionSelect({data: collection})"
                                     (dblclick)="onCollectionDoubleClick(collection)"
@@ -284,15 +289,18 @@ import { ItemsComponent } from './items.component';
                                         </div>
                                     </td>
 
-                                    <!-- Estado - TOGGLE BUTTON -->
+                                    <!-- Estado - TOGGLE SWITCH -->
                                     <td>
-  <p-tag
-    [value]="getEstadoLabel(collection.estado)"
-    [severity]="getEstadoSeverity(collection.estado)"
-    (click)="toggleEstado(collection); $event.stopPropagation()"
-    class="cursor-pointer hover:opacity-80 transition-opacity">
-  </p-tag>
-
+                        <p-toggleSwitch
+                            [ngModel]="getCollectionToggleState(collection)"
+                            [ngModelOptions]="{standalone: true}"
+                            onLabel="ACTIVO"
+                            offLabel="INACTIVO"
+                            inputId="{{collection.id_coll}}_habilitado"
+                            (ngModelChange)="onToggleSwitchChange($event, collection)"
+                            class="status-toggle"
+                            pTooltip="Cambiar estado de la colección"
+                        ></p-toggleSwitch>
                                     </td>
 
 
@@ -306,6 +314,17 @@ import { ItemsComponent } from './items.component';
                                                 class="p-button-sm p-button-text p-button-warning"
                                                 pTooltip="Editar Colección"
                                             ></button>
+
+                                            <!-- Botón de desbloqueo (solo visible si está bloqueada) -->
+                                            <button
+                                                *ngIf="collection.sw_fijo === 1"
+                                                pButton
+                                                icon="pi pi-lock-open"
+                                                (click)="desbloquearColeccion(collection); $event.stopPropagation()"
+                                                class="p-button-sm p-button-text p-button-info"
+                                                pTooltip="Desbloquear Colección"
+                                            ></button>
+
                                             <button
   #delBtn
   pButton
@@ -354,6 +373,13 @@ import { ItemsComponent } from './items.component';
                                     />
                                     <div class="flex gap-1">
                                         <p-button
+                                            [icon]="multiSelectMode ? 'pi pi-times' : 'pi pi-check-square'"
+                                            (onClick)="toggleMultiSelectMode()"
+                                            styleClass="p-button-sm p-button-primary p-button-raised"
+                                            [pTooltip]="multiSelectMode ? 'Cancelar selección múltiple' : 'Activar selección múltiple'"
+                                            tooltipPosition="top"
+                                        ></p-button>
+                                        <p-button
                                             icon="pi pi-refresh"
                                             (onClick)="refreshColldData()"
                                             [loading]="loadingColld"
@@ -361,6 +387,15 @@ import { ItemsComponent } from './items.component';
                                             pTooltip="Forzar recarga de datos"
                                             tooltipPosition="top"
                                             tooltipStyleClass="custom-tooltip"
+                                        ></p-button>
+                                        <p-button
+                                            *ngIf="selectedColldItems.length > 0"
+                                            icon="pi pi-trash"
+                                            (onClick)="deleteSelectedColldItems()"
+                                            [loading]="deletingColld"
+                                            styleClass="p-button-sm p-button-danger p-button-raised"
+                                            pTooltip="Eliminar items seleccionados"
+                                            tooltipPosition="top"
                                         ></p-button>
                                         <p-button
                                             icon="pi pi-plus"
@@ -374,7 +409,15 @@ import { ItemsComponent } from './items.component';
 
                             <ng-template pTemplate="header">
                                 <tr>
-                                    <th style="width: 40px"></th> <!-- Columna para el handle de arrastre -->
+                                    <th style="width: 40px">
+                                        <p-checkbox
+                                            *ngIf="multiSelectMode"
+                                            [(ngModel)]="selectAllColld"
+                                            [binary]="true"
+                                            (onChange)="toggleSelectAllColld()"
+                                            label=""
+                                        ></p-checkbox>
+                                    </th> <!-- Columna para checkboxes o handle de arrastre -->
                                     <th pSortableColumn="refid" style="width: 100px">Ref ID <p-sortIcon field="refid"></p-sortIcon></th>
                                     <th pSortableColumn="url_img" style="width: 150px">Imagen</th>
                                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
@@ -386,12 +429,19 @@ import { ItemsComponent } from './items.component';
                             <ng-template pTemplate="body" let-colld let-rowIndex="rowIndex">
                                 <tr [pReorderableRow]="rowIndex" [class.bg-blue-50]="colld === collectionSeleccionada">
 
-                                    <!-- Columna del handle de arrastre -->
+                                    <!-- Columna del checkbox o handle de arrastre -->
                                     <td class="text-center">
-                                        <div class="drag-handle-container">
-                                            <span 
+                                        <div *ngIf="multiSelectMode" class="flex justify-center">
+                                            <p-checkbox
+                                                [(ngModel)]="selectedColldItemsMap[colld.id_colld]"
+                                                [binary]="true"
+                                                (onChange)="onColldItemSelectionChange(colld)"
+                                            ></p-checkbox>
+                                        </div>
+                                        <div *ngIf="!multiSelectMode" class="drag-handle-container">
+                                            <span
                                                 pReorderableRowHandle
-                                                class="pi pi-bars drag-handle" 
+                                                class="pi pi-bars drag-handle"
                                                 pTooltip="Arrastrar para reordenar"
                                                 (mousedown)="onHandleMouseDown()"
                                                 (dragstart)="onDragStart()"
@@ -482,7 +532,7 @@ import { ItemsComponent } from './items.component';
                             </small>
                         </div>
 
-                        <!-- Estado (Activo) -->
+                        <!-- Estado (Activo) y sw_fijo (Permanente) -->
                         <div class="flex items-center gap-2 pt-1">
                             <p-tag
                                 [value]="collectionForm.get('estado')?.value ? 'Activo' : 'Inactivo'"
@@ -490,6 +540,16 @@ import { ItemsComponent } from './items.component';
                                 (click)="toggleFormField('estado')"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar">
+                            </p-tag>
+                            <p-tag
+                                [value]="collectionForm.get('sw_fijo')?.value ? 'Unlock' : 'Lock'"
+                                [severity]="collectionForm.get('sw_fijo')?.value ? 'warning' : 'success'"
+                                (click)="toggleSwFijo()"
+                                class="cursor-pointer hover:opacity-80 transition-opacity min-w-20 flex items-center gap-1"
+                                title="Clic para cambiar">
+                                <i [class]="collectionForm.get('sw_fijo')?.value ? 'pi pi-lock-open' : 'pi pi-lock'"
+                                   class="text-sm"></i>
+                                <span>{{ collectionForm.get('sw_fijo')?.value ? 'Unlock' : 'Lock' }}</span>
                             </p-tag>
                         </div>
                     </div>
@@ -531,7 +591,7 @@ import { ItemsComponent } from './items.component';
                         <div class="flex-shrink-0">
                             <div class="flex flex-col items-center gap-1">
                                 <p-tag
-                                    [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Fijo'"
+                                    [value]="collectionForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
                                     [severity]="collectionForm.get('swsched')?.value ? 'info' : 'success'"
                                     (click)="toggleSwsched()"
                                     class="cursor-pointer hover:opacity-80 transition-opacity min-w-16"
@@ -544,28 +604,30 @@ import { ItemsComponent } from './items.component';
                         <div *ngIf="collectionForm.get('swsched')?.value" class="flex-1 grid grid-cols-2 gap-4">
                             <!-- Fecha Inicio -->
                             <div>
-                                <p-inputMask
+                                <p-datepicker
                                     formControlName="fecha_ini"
-                                    mask="99/99/9999"
-                                    placeholder="DD/MM/YYYY"
-                                    class="w-full"
-                                    [autoClear]="false"
-                                    [unmask]="false"
-                                    [style]="{'height': '2.5rem'}"
-                                ></p-inputMask>
+                                    placeholder="Seleccionar fecha"
+                                    dateFormat="mm/dd/yy"
+                                    [showIcon]="true"
+                                    [appendTo]="'body'"
+                                    [style]="{'width': '100%'}"
+                                    inputStyleClass="h-10"
+                                    panelStyleClass="small-calendar"
+                                ></p-datepicker>
                             </div>
 
                             <!-- Fecha Fin -->
                             <div>
-                                <p-inputMask
+                                <p-datepicker
                                     formControlName="fecha_fin"
-                                    mask="99/99/9999"
-                                    placeholder="DD/MM/YYYY"
-                                    class="w-full"
-                                    [autoClear]="false"
-                                    [unmask]="false"
-                                    [style]="{'height': '2.5rem'}"
-                                ></p-inputMask>
+                                    placeholder="Seleccionar fecha"
+                                    dateFormat="mm/dd/yy"
+                                    [showIcon]="true"
+                                    [appendTo]="'body'"
+                                    [style]="{'width': '100%'}"
+                                    inputStyleClass="h-10"
+                                    panelStyleClass="small-calendar"
+                                ></p-datepicker>
                             </div>
                         </div>
 
@@ -1406,6 +1468,59 @@ import { ItemsComponent } from './items.component';
             height: 2.5rem !important;
         }
 
+        /* Estilos para filas inactivas */
+        :host ::ng-deep tr.collection-inactive {
+            background-color: #f9fafb !important;
+        }
+
+        :host ::ng-deep tr.collection-inactive:hover {
+            background-color: #f3f4f6 !important;
+        }
+
+        :host ::ng-deep tr.collection-inactive td {
+            color: #6b7280 !important;
+        }
+
+        /* Estilos para calendario pequeño y posicionado */
+        :host ::ng-deep .small-calendar {
+            width: 280px !important;
+            max-width: 280px !important;
+            font-size: 0.875rem !important;
+        }
+
+        :host ::ng-deep .small-calendar .p-datepicker-calendar {
+            width: 100% !important;
+        }
+
+        :host ::ng-deep .small-calendar .p-datepicker-header {
+            padding: 0.5rem !important;
+        }
+
+        :host ::ng-deep .small-calendar .p-datepicker-calendar table {
+            font-size: 0.8rem !important;
+        }
+
+        :host ::ng-deep .small-calendar .p-datepicker-calendar .p-datepicker-weekday {
+            padding: 0.25rem !important;
+        }
+
+        :host ::ng-deep .small-calendar .p-datepicker-calendar .p-datepicker-other-month {
+            color: #9ca3af !important;
+        }
+
+        /* Asegurar que el calendario se muestre por encima de otros elementos */
+        :host ::ng-deep .small-calendar {
+            z-index: 9999 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Estilos para ToggleSwitch */
+        :host ::ng-deep .status-toggle.p-toggleswitch {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+     
     `]
 })
 export class CollectionsComponent implements OnInit {
@@ -1432,6 +1547,8 @@ export class CollectionsComponent implements OnInit {
     editingCell: string | null = null;
     originalValue: any = null;
 
+    // Control de estado temporal del ToggleSwitch
+    toggleStates: { [key: string]: boolean } = {};
 
     // Filtros
     selectedTipoFilter: number[] = [];
@@ -1461,6 +1578,12 @@ export class CollectionsComponent implements OnInit {
     deletingColld = false;
     colldDataLoaded = false; // Indica si los datos COLLD ya están cargados
 
+    // Selección múltiple
+    multiSelectMode = false;
+    selectedColldItems: ColldItem[] = [];
+    selectedColldItemsMap: { [key: number]: boolean } = {};
+    selectAllColld = false;
+
     // Estados de modales COLLD
     showColldModal = false;
     showConfirmDialog = false;
@@ -1473,7 +1596,9 @@ export class CollectionsComponent implements OnInit {
     // Confirmaciones COLLD
     confirmMessage = '';
     confirmHeader = '';
+    confirmButtonLabel = 'Confirmar';
     accionConfirmada: (() => void) | null = null;
+    accionCancelada: (() => void) | null = null;
 
 
 
@@ -1508,9 +1633,10 @@ export class CollectionsComponent implements OnInit {
             slug: [{value: '', disabled: true}],
             estado: [true],
             id_tipoc: [null, [Validators.required]],
-            fecha_ini: [currentDate],
+            fecha_ini: [new Date()],
+            sw_fijo: [false],
             swsched: [false],
-            fecha_fin: [currentDate]
+            fecha_fin: [new Date()]
         });
     }
 
@@ -1547,12 +1673,8 @@ export class CollectionsComponent implements OnInit {
         console.log('Filtrando por tipo:', tipoId);
     }
 
-    getCurrentDate(): string {
-        const today = new Date();
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
-        const day = today.getDate().toString().padStart(2, '0');
-        const year = today.getFullYear();
-        return `${month}/${day}/${year}`;
+    getCurrentDate(): Date {
+        return new Date();
     }
 
     initializeColldForms(): void {
@@ -1721,6 +1843,13 @@ export class CollectionsComponent implements OnInit {
         if (this.collectionSeleccionada) {
             this.loadingColld = true; // ✅ Establecer estado de loading consistente
             this.colldDataLoaded = false; // Forzar recarga
+
+            // Resetear selección múltiple
+            this.multiSelectMode = false;
+            this.selectedColldItems = [];
+            this.selectedColldItemsMap = {};
+            this.selectAllColld = false;
+
             this.cargarColldItems();
         } else {
             console.warn('⚠️ No hay colección seleccionada para refrescar');
@@ -2138,10 +2267,17 @@ export class CollectionsComponent implements OnInit {
     }
 
     cancelarConfirmacion(): void {
+        // Ejecutar callback de cancelación si existe
+        if (this.accionCancelada) {
+            this.accionCancelada();
+        }
+
         this.showConfirmDialog = false;
         this.confirmMessage = '';
         this.confirmHeader = '';
+        this.confirmButtonLabel = 'Confirmar';
         this.accionConfirmada = null;
+        this.accionCancelada = null;
     }
 
     getMaxOrder(): number {
@@ -2166,6 +2302,12 @@ export class CollectionsComponent implements OnInit {
             this.colldDataLoaded = false;
             this.colldItems = [];
             this.filteredColldItems = [];
+
+            // Resetear selección múltiple
+            this.multiSelectMode = false;
+            this.selectedColldItems = [];
+            this.selectedColldItemsMap = {};
+            this.selectAllColld = false;
         }
     }
 
@@ -2178,6 +2320,14 @@ export class CollectionsComponent implements OnInit {
         // ✅ Si cambió la colección, resetear el estado de carga COLLD
         if (coleccionCambiada) {
             this.colldDataLoaded = false;
+            this.colldItems = [];
+            this.filteredColldItems = [];
+
+            // Resetear selección múltiple
+            this.multiSelectMode = false;
+            this.selectedColldItems = [];
+            this.selectedColldItemsMap = {};
+            this.selectAllColld = false;
         }
 
         // Cambiar al tab de Items
@@ -2214,6 +2364,10 @@ export class CollectionsComponent implements OnInit {
 
     toggleSwsched(): void {
         this.toggleFormField('swsched');
+    }
+
+    toggleSwFijo(): void {
+        this.toggleFormField('sw_fijo');
     }
 
     toggleSwSlug(): void {
@@ -2324,7 +2478,8 @@ export class CollectionsComponent implements OnInit {
                 estado: collection.estado === 'A',
                 id_tipoc: collection.id_tipoc,
                 fecha_ini: this.formatDateForInput(collection.fecha_ini),
-                swsched: collection.sw_fijo === 1,
+                sw_fijo: collection.sw_fijo === 1,
+                swsched: collection.swsched === 1,
                 fecha_fin: this.formatDateForInput(collection.fecha_fin)
             });
 
@@ -2351,8 +2506,8 @@ export class CollectionsComponent implements OnInit {
                 swslug: false,
                 slug: '',
                 swsched: false,
-                fecha_ini: currentDate,
-                fecha_fin: currentDate
+                fecha_ini: new Date(),
+                fecha_fin: new Date()
             });
 
             // Asegurar que los campos estén deshabilitados para nuevos registros
@@ -2392,6 +2547,7 @@ export class CollectionsComponent implements OnInit {
                 swtag: formData.swtag ? 1 : 0,
                 swslug: formData.swslug ? 1 : 0,
                 estado: formData.estado ? 'A' : 'I',
+                sw_fijo: formData.sw_fijo ? 1 : 0,
                 swsched: formData.swsched ? 1 : 0,
                 fecha_ini: this.convertDateToISO(formData.fecha_ini),
                 fecha_fin: this.convertDateToISO(formData.fecha_fin)
@@ -2562,6 +2718,11 @@ export class CollectionsComponent implements OnInit {
     // ========== TOGGLE ESTADO ==========
 
     toggleEstado(collection: CollItem) {
+        // Validar si la colección está bloqueada (sw_fijo = 1)
+        if (this.validarColeccionBloqueada(collection, 'cambiar estado')) {
+            return;
+        }
+
         const nuevoEstado = collection.estado === 'A' ? 'I' : 'A';
         if (nuevoEstado === 'I') {
             // Confirmar desactivación
@@ -2574,7 +2735,51 @@ export class CollectionsComponent implements OnInit {
             this.procesarCambioEstado(collection, nuevoEstado);
         }
     }
-      
+
+    onToggleSwitchChange(isChecked: boolean, collection: CollItem): void {
+        console.log('🔄 onToggleSwitchChange - Collection:', collection);
+        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
+        console.log('🔄 onToggleSwitchChange - Estado actual:', collection.estado);
+
+        // Validar si la colección está bloqueada (sw_fijo = 1)
+        if (this.validarColeccionBloqueada(collection, 'cambiar estado')) {
+            return;
+        }
+
+        const valorActual = collection.estado;
+        const nuevoEstado = isChecked ? 'A' : 'I';
+
+        // Si el valor no cambió, no hacer nada
+        if ((nuevoEstado === 'A' && valorActual === 'A') || (nuevoEstado === 'I' && valorActual === 'I')) {
+            return;
+        }
+
+        // Para activación, hacer el cambio directamente
+        if (nuevoEstado === 'A') {
+            this.procesarCambioEstado(collection, 'A');
+            return;
+        }
+
+        // Para desactivación, mostrar confirmación
+        // Establecer estado temporal para mostrar el cambio visual
+        this.toggleStates[collection.id_coll] = false;
+
+        // Usar el sistema de confirmación del proyecto
+        this.confirmMessage = `¿Está seguro de que desea desactivar la colección "${collection.nombre}"?`;
+        this.confirmHeader = 'Confirmar Desactivación';
+        this.accionConfirmada = () => {
+            // Limpiar estado temporal y procesar el cambio
+            delete this.toggleStates[collection.id_coll];
+            this.procesarCambioEstado(collection, 'I');
+        };
+        this.accionCancelada = () => {
+            // Revertir el estado temporal al estado original
+            delete this.toggleStates[collection.id_coll];
+            console.log('❌ Usuario canceló la desactivación');
+        };
+        this.showConfirmDialog = true;
+    }
+
 
     private procesarCambioEstado(collection: CollItem, nuevoEstado: string): void {
         const estadoAnterior = collection.estado;
@@ -2631,6 +2836,11 @@ export class CollectionsComponent implements OnInit {
     // ========== ELIMINACIÓN ==========
 
     eliminarCollection(collection: CollItem) {
+        // Validar si la colección está bloqueada (sw_fijo = 1)
+        if (this.validarColeccionBloqueada(collection, 'eliminar')) {
+            return;
+        }
+
         this.confirmMessage = `¿Está seguro de que desea eliminar la colección "${collection.nombre}"?`;
         this.confirmHeader = 'Confirmar Eliminación';
         this.accionConfirmada = () => this.confirmDeleteCollection(collection);
@@ -2691,12 +2901,89 @@ export class CollectionsComponent implements OnInit {
 
     // ========== MÉTODOS DE UTILIDAD ==========
 
+    // Validar si la colección está bloqueada y mostrar mensaje
+    private validarColeccionBloqueada(collection: CollItem, operacion: string): boolean {
+        if (collection.sw_fijo === 1) {
+            const mensajeOperacion = operacion === 'eliminar' ? 'eliminar' : 'cambiar el estado de';
+            const severidad = operacion === 'eliminar' ? 'error' : 'warn';
+
+            this.messageService.add({
+                severity: severidad as 'error' | 'warn',
+                summary: 'Operación no permitida',
+                detail: `No se puede ${mensajeOperacion} una colección bloqueada (Lock). Desbloquee primero la colección.`,
+                life: 6000
+            });
+            return true; // Está bloqueada
+        }
+        return false; // No está bloqueada
+    }
+
+    // Función para desbloquear colección
+    desbloquearColeccion(collection: CollItem): void {
+        this.confirmMessage = `¿Está seguro de que desea desbloquear la colección "${collection.nombre}"?`;
+        this.confirmHeader = 'Confirmar Desbloqueo';
+        this.confirmButtonLabel = 'Desbloquear';
+        this.accionConfirmada = () => this.procesarDesbloqueo(collection);
+        this.showConfirmDialog = true;
+    }
+
+    private procesarDesbloqueo(collection: CollItem): void {
+        const estadoAnterior = collection.sw_fijo;
+        collection.sw_fijo = 0;
+
+        const payload: any = {
+            action: 'UP',
+            id_coll: collection.id_coll,
+            sw_fijo: 0
+        };
+
+        // Obtener datos de sesión
+        const sessionBase = this.sessionService.getApiPayloadBase();
+
+        this.collService.updateCollection({ ...payload, ...sessionBase }).subscribe({
+            next: (response) => {
+                const responseData = Array.isArray(response) ? response[0] : response;
+
+                if (responseData && responseData.statuscode === 200) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Colección desbloqueada',
+                        detail: `La colección "${collection.nombre}" ha sido desbloqueada exitosamente.`,
+                        life: 4000
+                    });
+                } else {
+                    // Revertir el cambio si falló
+                    collection.sw_fijo = estadoAnterior;
+                    throw new Error('Error al desbloquear la colección');
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error al desbloquear colección:', error);
+                // Revertir el cambio
+                collection.sw_fijo = estadoAnterior;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al desbloquear la colección',
+                    life: 5000
+                });
+            }
+        });
+    }
+
     getEstadoLabel(estado: string): string {
         return estado === 'A' ? 'Activo' : 'Inactivo';
     }
 
     getEstadoSeverity(estado: string): 'success' | 'danger' {
         return estado === 'A' ? 'success' : 'danger';
+    }
+
+    getCollectionToggleState(collection: CollItem): boolean {
+        // Usar el estado temporal si existe, sino usar el estado real
+        const tempState = this.toggleStates[collection.id_coll];
+        return tempState !== undefined ? tempState : collection.estado === 'A';
     }
 
     getTipoCollectionLabel(idTipoc: any): string {
@@ -2716,16 +3003,14 @@ export class CollectionsComponent implements OnInit {
         return 'Sin tipo';
     }
 
-    private formatDateForInput(dateString: string): string {
+    private formatDateForInput(dateString: string): Date {
         if (!dateString) return this.getCurrentDate();
-        const date = new Date(dateString);
-        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+        return new Date(dateString);
     }
 
-    private convertDateToISO(dateString: string): string {
-        if (!dateString) return new Date().toISOString();
-        const [month, day, year] = dateString.split('/');
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
+    private convertDateToISO(date: Date): string {
+        if (!date) return new Date().toISOString();
+        return date.toISOString();
     }
 
     // ========== BANNER PREVIEW ==========
@@ -2740,5 +3025,110 @@ export class CollectionsComponent implements OnInit {
         this.bannerPreviewSrc = imageUrl;
         this.bannerPreviewTitle = `Imagen de ${title}`;
         this.showBannerModal = true;
+    }
+
+    // ========== SELECCIÓN MÚLTIPLE ==========
+
+    toggleMultiSelectMode(): void {
+        this.multiSelectMode = !this.multiSelectMode;
+
+        // Limpiar selecciones cuando se desactiva el modo
+        if (!this.multiSelectMode) {
+            this.selectedColldItems = [];
+            this.selectedColldItemsMap = {};
+            this.selectAllColld = false;
+        } else {
+            // Inicializar el mapa de selecciones
+            this.filteredColldItems.forEach(item => {
+                if (!this.selectedColldItemsMap[item.id_colld]) {
+                    this.selectedColldItemsMap[item.id_colld] = false;
+                }
+            });
+        }
+    }
+
+    toggleSelectAllColld(): void {
+        if (this.selectAllColld) {
+            // Seleccionar todos
+            this.selectedColldItems = [...this.filteredColldItems];
+            this.filteredColldItems.forEach(item => {
+                this.selectedColldItemsMap[item.id_colld] = true;
+            });
+        } else {
+            // Deseleccionar todos
+            this.selectedColldItems = [];
+            this.filteredColldItems.forEach(item => {
+                this.selectedColldItemsMap[item.id_colld] = false;
+            });
+        }
+    }
+
+    onColldItemSelectionChange(item: ColldItem): void {
+        const isSelected = this.selectedColldItemsMap[item.id_colld] || false;
+
+        if (isSelected) {
+            if (!this.selectedColldItems.includes(item)) {
+                this.selectedColldItems.push(item);
+            }
+        } else {
+            this.selectedColldItems = this.selectedColldItems.filter(selected => selected.id_colld !== item.id_colld);
+        }
+
+        // Actualizar el estado del "seleccionar todos"
+        this.selectAllColld = this.selectedColldItems.length === this.filteredColldItems.length && this.filteredColldItems.length > 0;
+    }
+
+    deleteSelectedColldItems(): void {
+        if (this.selectedColldItems.length === 0) {
+            return;
+        }
+
+        // Usar el sistema de confirmación del proyecto
+        this.confirmMessage = `¿Está seguro de eliminar ${this.selectedColldItems.length} item(s) de la colección? Esta acción no se puede deshacer.`;
+        this.confirmHeader = 'Confirmar Eliminación Múltiple';
+        this.accionConfirmada = () => this.procesarEliminacionMultiple();
+        this.showConfirmDialog = true;
+    }
+
+    /**
+     * Procesa la eliminación múltiple después de la confirmación
+     */
+    private procesarEliminacionMultiple(): void {
+        // Preparar los IDs para eliminar
+        const idsToDelete = this.selectedColldItems.map(item => item.id_colld);
+
+        // Llamar al servicio de eliminación (sin id_coll)
+        this.colldService.deleteColldItems(idsToDelete).subscribe({
+            next: (response) => {
+                // Actualizar las listas locales
+                this.colldItems = this.colldItems.filter(item => !idsToDelete.includes(item.id_colld));
+                this.filteredColldItems = this.filteredColldItems.filter(item => !idsToDelete.includes(item.id_colld));
+
+                // Limpiar selecciones
+                this.selectedColldItems = [];
+                this.selectedColldItemsMap = {};
+                this.selectAllColld = false;
+                this.multiSelectMode = false;
+
+                this.deletingColld = false;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Items eliminados',
+                    detail: `${idsToDelete.length} item(s) eliminado(s) correctamente`
+                });
+            },
+            error: (error) => {
+                console.error('Error eliminando items:', error);
+                this.deletingColld = false;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al eliminar',
+                    detail: 'No se pudieron eliminar los items seleccionados',
+                    life: 5000
+                });
+            }
+        });
     }
 }

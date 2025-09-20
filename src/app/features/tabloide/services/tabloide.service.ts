@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map, catchError, throwError } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api/api-config.service';
 import { Tabloide, TabloideResponse, TabloideAction, ApiResponse } from '../models/tabloide.interface';
 
@@ -34,7 +34,25 @@ export class TabloideService {
      */
     getTableides(payload: TabloideAction): Observable<any> {
         console.log('📊 TabloideService: Consultando tabloides con payload:', payload);
-        return this.http.post<any>(this.getApiUrl(), payload);
+        return this.http.post<any>(this.getApiUrl(), payload).pipe(
+            map(response => {
+                // Verificar si hay error del backend en el body
+                if (response && response.statuscode && response.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en getTableides:', response);
+                    throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+                }
+                return response;
+            }),
+            catchError(error => {
+                console.error('❌ Error al obtener tabloides:', error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al obtener tabloides')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al obtener tabloides'));
+            })
+        );
     }
 
     /**
@@ -44,7 +62,25 @@ export class TabloideService {
      */
     createTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('➕ TabloideService: Creando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload).pipe(
+            map(response => {
+                // Verificar si hay error del backend en el body
+                if (response && response.statuscode && response.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en createTabloide:', response);
+                    throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+                }
+                return response;
+            }),
+            catchError(error => {
+                console.error('❌ Error al crear tabloide:', error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al crear tabloide')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al crear tabloide'));
+            })
+        );
     }
 
     /**
@@ -54,7 +90,25 @@ export class TabloideService {
      */
     updateTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('✏️ TabloideService: Actualizando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload).pipe(
+            map(response => {
+                // Verificar si hay error del backend en el body
+                if (response && response.statuscode && response.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en updateTabloide:', response);
+                    throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+                }
+                return response;
+            }),
+            catchError(error => {
+                console.error('❌ Error al actualizar tabloide:', error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al actualizar tabloide')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al actualizar tabloide'));
+            })
+        );
     }
 
     /**
@@ -64,7 +118,25 @@ export class TabloideService {
      */
     deleteTabloide(payload: TabloideAction): Observable<ApiResponse> {
         console.log('🗑️ TabloideService: Eliminando tabloide con payload:', payload);
-        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload).pipe(
+            map(response => {
+                // Verificar si hay error del backend en el body
+                if (response && response.statuscode && response.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en deleteTabloide:', response);
+                    throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+                }
+                return response;
+            }),
+            catchError(error => {
+                console.error('❌ Error al eliminar tabloide:', error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al eliminar tabloide')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al eliminar tabloide'));
+            })
+        );
     }
 
     /**
@@ -89,7 +161,25 @@ export class TabloideService {
         };
 
         console.log('🔄 TabloideService: Actualizando campo inline:', field, 'con payload:', payload);
-        return this.http.post<ApiResponse>(this.getApiUrl(), payload);
+        return this.http.post<ApiResponse>(this.getApiUrl(), payload).pipe(
+            map(response => {
+                // Verificar si hay error del backend en el body
+                if (response && response.statuscode && response.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en updateTabloideField:', response);
+                    throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+                }
+                return response;
+            }),
+            catchError(error => {
+                console.error('❌ Error al actualizar campo de tabloide:', error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al actualizar campo de tabloide')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al actualizar campo de tabloide'));
+            })
+        );
     }
 
     /**

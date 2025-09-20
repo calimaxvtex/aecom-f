@@ -616,4 +616,5 @@ export class AppConfigurator {
     toggleConfigSidebar() {
         this.layoutService.layoutState.update((val) => ({ ...val, configSidebarVisible: !val.configSidebarVisible }));
     }
+
 }

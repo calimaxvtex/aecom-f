@@ -126,9 +126,14 @@ export class ApiConfigService {
         return API_URLS.COLLD_CRUD;
     }
 
-    getSucCrudUrl(): string {
-        return API_URLS.SUC_CRUD;
+    getSucursalCrudUrl(): string {
+        return API_URLS.SUCURSAL_CRUD;
     }
+
+    getProyectoCrudUrl(): string {
+        return API_URLS.PROYECTO_CRUD;
+    }
+
 
 
     getRecetaCrudUrl(): string {

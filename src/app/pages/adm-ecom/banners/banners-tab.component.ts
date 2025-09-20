@@ -9,6 +9,7 @@ import { Table } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -17,7 +18,8 @@ import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { CardModule } from 'primeng/card';
 import { ToggleButtonModule } from 'primeng/togglebutton';
-import { MessageService } from 'primeng/api';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Servicios y modelos
 import { BannerService } from '../../../features/banner/services/banner.service';
@@ -42,6 +44,7 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
         ButtonModule,
         InputTextModule,
         DialogModule,
+        ConfirmDialogModule,
         ToastModule,
         TagModule,
         FloatLabelModule,
@@ -49,9 +52,10 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
         SelectModule,
         MultiSelectModule,
         CardModule,
-        ToggleButtonModule
+        ToggleButtonModule,
+        ToggleSwitchModule
     ],
-    providers: [MessageService, ImageUploadService],
+    providers: [MessageService, ConfirmationService, ImageUploadService],
     template: `
         <!-- Tabla CRUD de Banners -->
         <p-table
@@ -117,7 +121,9 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
             <!-- Body -->
             <ng-template #body let-banner>
                 <tr
-                    class="cursor-pointer hover:bg-gray-50 transition-colors"
+                    class="cursor-pointer transition-colors"
+                    [class.banner-inactive]="banner.swEnable === 0"
+                    [class]="banner.swEnable === 0 ? 'banner-disabled hover:bg-red-50/30' : 'hover:bg-gray-50 bg-white'"
                 >
                     <!-- ID -->
                     <td class="text-center font-mono text-sm">{{ banner.id_mb }}</td>
@@ -146,13 +152,17 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
 
                     <!-- Nombre -->
                     <td>
+                        <!-- Vista normal -->
                         <span
+                            *ngIf="editingCell !== banner.id_mb + '_nombre'"
                             (click)="editInlineBanner(banner, 'nombre'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
                         >
                             {{ banner.nombre }}
                         </span>
+
+                        <!-- Vista edición -->
                         <div
                             *ngIf="editingCell === banner.id_mb + '_nombre'"
                             class="inline-edit-container"
@@ -163,7 +173,8 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                                 [(ngModel)]="banner.nombre"
                                 (keyup.enter)="saveInlineEditBanner(banner, 'nombre')"
                                 (keyup.escape)="cancelInlineEdit()"
-                                class="p-inputtext-sm flex-1"
+                                class="p-inputtext-sm"
+                                style="width: 150px; max-width: 150px;"
                                 #input
                                 (focus)="input.select()"
                                 autofocus
@@ -188,13 +199,17 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
 
                     <!-- Orden -->
                     <td class="text-center">
+                        <!-- Vista normal -->
                         <span
+                            *ngIf="editingCell !== banner.id_mb + '_orden'"
                             (click)="editInlineBanner(banner, 'orden'); $event.stopPropagation()"
                             class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                             title="Clic para editar"
                         >
                             {{ banner.orden }}
                         </span>
+
+                        <!-- Vista edición -->
                         <div
                             *ngIf="editingCell === banner.id_mb + '_orden'"
                             class="inline-edit-container"
@@ -205,7 +220,8 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                                 [(ngModel)]="banner.orden"
                                 (keyup.enter)="saveInlineEditBanner(banner, 'orden')"
                                 (keyup.escape)="cancelInlineEdit()"
-                                class="p-inputtext-sm flex-1"
+                                class="p-inputtext-sm"
+                                style="width: 60px; max-width: 60px;"
                                 #input
                                 (focus)="input.select()"
                                 autofocus
@@ -230,13 +246,16 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
 
                     <!-- Habilitado -->
                     <td class="text-center">
-                        <p-tag
-                            [value]="banner.swEnable === 1 ? 'Si' : 'No'"
-                            [severity]="banner.swEnable === 1 ? 'success' : 'danger'"
-                            (click)="toggleSwEnable(banner); $event.stopPropagation()"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Clic para cambiar"
-                        ></p-tag>
+                        <p-toggleSwitch
+                            [ngModel]="getBannerToggleState(banner)"
+                            [ngModelOptions]="{standalone: true}"
+                            onLabel="ACTIVO"
+                            offLabel="DESACTIVADO"
+                            inputId="{{banner.id_mb}}_habilitado"
+                            (ngModelChange)="onToggleSwitchChange($event, banner)"
+                            class="status-toggle"
+                            pTooltip="Cambiar estado del banner"
+                        ></p-toggleSwitch>
                     </td>
 
 
@@ -579,39 +598,38 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                         </p-floatLabel>
                     </div>
 
-                    <!-- Programado -->
+                    <!-- Programado con fechas en el mismo renglón -->
                     <div class="flex items-center gap-4">
-                            <p-tag
-                                [value]="bannerForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
-                                [severity]="bannerForm.get('swsched')?.value ? 'warning' : 'info'"
-                                (click)="toggleFormField('swsched')"
-                                class="cursor-pointer hover:opacity-80 transition-opacity"
-                                pTooltip="Click para activar/desactivar programación. Si está programado, se mostrarán campos de fecha inicio y fin."
-                            ></p-tag>
-                        </div>
-                    </div>
+                        <p-tag
+                            [value]="bannerForm.get('swsched')?.value ? 'Programado' : 'Permanente'"
+                            [severity]="bannerForm.get('swsched')?.value ? 'warning' : 'info'"
+                            (click)="toggleFormField('swsched')"
+                            class="cursor-pointer hover:opacity-80 transition-opacity"
+                            pTooltip="Click para activar/desactivar programación. Si está programado, se mostrarán campos de fecha inicio y fin."
+                        ></p-tag>
 
-                    <!-- Fechas (solo si está programado) -->
-                    <div *ngIf="bannerForm.get('swsched')?.value" class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-sm font-medium text-gray-700 mb-2 block">Fecha Inicio</label>
-                            <input
-                                pInputText
-                                type="date"
-                                formControlName="fecha_ini"
-                                placeholder="Seleccionar fecha inicio"
-                                class="w-full"
-                            />
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium text-gray-700 mb-2 block">Fecha Fin</label>
-                            <input
-                                pInputText
-                                type="date"
-                                formControlName="fecha_fin"
-                                placeholder="Seleccionar fecha fin"
-                                class="w-full"
-                            />
+                        <!-- Fechas en el mismo renglón (solo si está programado) -->
+                        <div *ngIf="bannerForm.get('swsched')?.value" class="flex items-center gap-4 ml-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">Inicio:</label>
+                                <input
+                                    pInputText
+                                    type="date"
+                                    formControlName="fecha_ini"
+                                    placeholder="Seleccionar fecha inicio"
+                                    class="w-40"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">Fin:</label>
+                                <input
+                                    pInputText
+                                    type="date"
+                                    formControlName="fecha_fin"
+                                    placeholder="Seleccionar fecha fin"
+                                    class="w-40"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -637,6 +655,7 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                         </div>
                     </div>
                 </div>
+                </div>
 
                 <!-- Botones -->
                 <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
@@ -654,7 +673,7 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                         [attr.data-debug]="isEditingBanner ? 'modo-editar' : 'modo-crear'"
                         [disabled]="!bannerForm.valid || savingBanner"
                         [loading]="savingBanner"
-                        class="p-button-success"
+                        class="p-button-primary"
                     ></button>
                 </div>
             </form>
@@ -700,6 +719,9 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                 ></button>
             </div>
         </p-dialog>
+
+        <!-- Modal de confirmación usando ConfirmationService -->
+        <p-confirmDialog></p-confirmDialog>
 
         <!-- Modal de preview URL -->
         <p-dialog
@@ -791,6 +813,25 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
             padding: 0.25rem 0.5rem;
             font-weight: 500;
         }
+
+        /* Estilos para el botón de estado con tamaño fijo */
+        :host ::ng-deep .p-tag.status-tag {
+            min-width: 100px;
+            display: inline-block;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Estilos para banners deshabilitados - gama gris */
+        .banner-disabled {
+            opacity: 0.75;
+            background-color: rgba(156, 163, 175, 0.08);
+            border-left: 3px solid #6b7280;
+        }
+
+        .banner-disabled:hover {
+            background-color: rgba(156, 163, 175, 0.12);
+        }
     
         /* Estilos para ToggleButton personalizado */
         :host ::ng-deep .p-togglebutton {
@@ -853,16 +894,46 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
         :host ::ng-deep .p-togglebutton .p-button .p-button-icon {
             margin-right: 0.5rem;
         }
-    
-        /* Estado disabled */
-        :host ::ng-deep .p-togglebutton.p-disabled .p-button {
+
+        /* Estilos para filas inactivas */
+        :host ::ng-deep tr.banner-inactive {
+            background-color: #f9fafb !important;
+        }
+
+        :host ::ng-deep tr.banner-inactive:hover {
+            background-color: #f3f4f6 !important;
+        }
+
+        :host ::ng-deep tr.banner-inactive td {
+            color: #6b7280 !important;
+        }
+
+        /* Estilos para ToggleSwitch */
+/*        :host ::ng-deep .status-toggle.p-toggleswitch {
+            display: inline-block;
+            vertical-align: middle;
+        }
+ 
+        :host ::ng-deep .status-toggle.p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider {
             background-color: #e5e7eb !important;
             border-color: #d1d5db !important;
-            color: #9ca3af !important;
-            box-shadow: none !important;
-            opacity: 0.6;
-            cursor: not-allowed;
         }
+
+        :host ::ng-deep .status-toggle.p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-handle {
+            background-color: #9ca3af !important;
+        }
+ 
+        :host ::ng-deep .status-toggle.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+            background-color: var(--p-primary-color) !important;
+            border-color: var(--p-primary-600) !important;
+        }
+
+        :host ::ng-deep .status-toggle.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-handle {
+            background-color: var(--p-primary-contrast-color) !important;
+            left: 1.15rem !important;
+        }
+*/
+
     `]
     
 })
@@ -877,6 +948,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     loadingBanners = false;
     savingBanner = false;
     deletingBanner = false;
+    togglingStatus = false;
 
     // Estados para carga de imágenes
     uploadingImage = false;
@@ -900,8 +972,12 @@ export class BannersTabComponent implements OnInit, OnChanges {
     editingCell: string | null = null;
     originalValue: any = null;
 
+    // Control de estado temporal del ToggleSwitch
+    toggleStates: { [key: string]: boolean } = {};
+
     // Confirmación
     bannerToDelete: Banner | null = null;
+
 
     // Opciones para dropdowns
     tipoCallOptions: { label: string; value: string; valor1?: number }[] = [];
@@ -929,6 +1005,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     private imageUploadService = inject(ImageUploadService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
     public sanitizer = inject(DomSanitizer);
 
     // Método público para acceder al servicio desde el template
@@ -1094,13 +1171,21 @@ export class BannersTabComponent implements OnInit, OnChanges {
         this.isEditingBanner = !!banner;
         console.log('🎯 openBannerForm - isEditingBanner:', this.isEditingBanner);
         console.log('🎯 openBannerForm - banner recibido:', banner);
+        console.log('🎯 openBannerForm - banner?.id_mb:', banner?.id_mb);
+        console.log('🎯 openBannerForm - Boolean(banner):', Boolean(banner));
 
         if (banner) {
             // Modo edición
+            console.log('✏️ === MODO EDICIÓN DETECTADO ===');
             console.log('✏️ Editando banner:', banner);
             console.log('✏️ Banner ID:', banner.id_mb);
+            console.log('✏️ Tipo de ID:', typeof banner.id_mb);
+            console.log('✏️ ID como número:', Number(banner.id_mb));
+            console.log('✏️ Banner completo:', JSON.stringify(banner, null, 2));
             this.bannerSeleccionado = banner;
             console.log('✏️ bannerSeleccionado configurado:', this.bannerSeleccionado);
+            console.log('✏️ isEditingBanner establecido en:', this.isEditingBanner);
+            console.log('✏️ === FIN MODO EDICIÓN ===');
 
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
@@ -1178,6 +1263,10 @@ export class BannersTabComponent implements OnInit, OnChanges {
         console.log('💾 saveBanner - isEditingBanner:', this.isEditingBanner);
         console.log('💾 saveBanner - bannerSeleccionado:', this.bannerSeleccionado);
         console.log('💾 saveBanner - bannerSeleccionado.id_mb:', this.bannerSeleccionado?.id_mb);
+        console.log('💾 saveBanner - bannerSeleccionado?.id_mb tipo:', typeof this.bannerSeleccionado?.id_mb);
+        console.log('💾 saveBanner - bannerSeleccionado?.id_mb valor:', this.bannerSeleccionado?.id_mb);
+        console.log('💾 saveBanner - condición para UPDATE:', this.isEditingBanner && this.bannerSeleccionado && this.bannerSeleccionado.id_mb);
+        console.log('💾 saveBanner - componenteSeleccionado:', this.componenteSeleccionado);
 
         if (this.bannerForm.valid && this.componenteSeleccionado) {
             console.log('✅ Formulario válido, procediendo con guardado');
@@ -1214,20 +1303,49 @@ export class BannersTabComponent implements OnInit, OnChanges {
             }
 
             if (this.isEditingBanner && this.bannerSeleccionado) {
-                console.log('🔄 Ejecutando UPDATE - banner existente');
+                console.log('🔄 === EJECUTANDO UPDATE - banner existente ===');
                 console.log('🔄 Banner ID:', this.bannerSeleccionado.id_mb);
+                console.log('🔄 Banner seleccionado:', this.bannerSeleccionado);
+                console.log('🔄 Tipo de ID:', typeof this.bannerSeleccionado.id_mb);
+                console.log('🔄 ID como número:', Number(this.bannerSeleccionado.id_mb));
+
+                // Validar que el ID sea válido
+                if (!this.bannerSeleccionado.id_mb || isNaN(Number(this.bannerSeleccionado.id_mb))) {
+                    console.error('❌ ERROR: ID del banner no es válido:', this.bannerSeleccionado.id_mb);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error de Validación',
+                        detail: 'El ID del banner no es válido para actualizar',
+                        life: 5000
+                    });
+                    this.savingBanner = false;
+                    return;
+                }
+
                 // Actualizar
                 const updateData: UpdateBannerRequest = {
                     id_mb: this.bannerSeleccionado.id_mb,
                     ...processedData
                 };
                 console.log('🔄 Datos para UPDATE:', updateData);
+                console.log('🔄 Componente seleccionado:', this.componenteSeleccionado);
+                console.log('🔄 === FIN PREPARACIÓN UPDATE ===');
 
                 this.bannerService.updateBanner(updateData).subscribe({
                     next: (response) => {
+                        console.log('✅ === RESPUESTA EXITOSA DEL UPDATE ===');
+                        console.log('✅ Respuesta del backend:', response);
+                        console.log('✅ === FIN RESPUESTA EXITOSA ===');
                         this.handleSaveSuccess('Banner actualizado correctamente');
                     },
-                    error: (error) => this.handleSaveError(error, 'actualizar')
+                    error: (error) => {
+                        console.log('❌ === ERROR EN UPDATE ===');
+                        console.log('❌ Error recibido:', error);
+                        console.log('❌ Tipo de error:', typeof error);
+                        console.log('❌ Error completo:', JSON.stringify(error, null, 2));
+                        console.log('❌ === FIN ERROR ===');
+                        this.handleSaveError(error, 'actualizar');
+                    }
                 });
             } else {
                 console.log('🆕 Ejecutando CREATE - banner nuevo');
@@ -1378,32 +1496,109 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     // ========== TOGGLE DE CAMPOS ==========
 
-    toggleSwEnable(banner: Banner): void {
-        const nuevoValor = banner.swEnable === 1 ? 0 : 1;
+    onBannerStatusClick(banner: Banner, event: Event): void {
+        console.log('🖱️ onBannerStatusClick - Evento clic detectado');
+        console.log('🖱️ onBannerStatusClick - Banner:', banner);
+        console.log('🖱️ onBannerStatusClick - swEnable:', banner.swEnable);
+        console.log('🖱️ onBannerStatusClick - swEnable tipo:', typeof banner.swEnable);
+
+        event.stopPropagation();
+        // Simular el cambio del ToggleSwitch para mostrar confirmación
+        const nuevoValor = banner.swEnable === 1 ? false : true;
+        this.onToggleSwitchChange(nuevoValor, banner);
+    }
+
+    getBannerToggleState(banner: Banner): boolean {
+        // Usar el estado temporal si existe, sino usar el estado real
+        const tempState = this.toggleStates[banner.id_mb];
+        return tempState !== undefined ? tempState : banner.swEnable === 1;
+    }
+
+    onToggleSwitchChange(isChecked: boolean, banner: Banner): void {
+        console.log('🔄 onToggleSwitchChange - Banner:', banner);
+        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
+        console.log('🔄 onToggleSwitchChange - Estado actual:', banner.swEnable);
+
+        const valorActual = banner.swEnable;
+        const nuevoValor = isChecked ? 1 : 0;
+
+        // Si el valor no cambió, no hacer nada
+        if (nuevoValor === valorActual) {
+            return;
+        }
+
+        // Para activación, hacer el cambio directamente
+        if (nuevoValor === 1) {
+            this.procesarCambioEstadoDirecto(banner, 1);
+            return;
+        }
+
+        // Para desactivación, mostrar confirmación
+        // Establecer estado temporal para mostrar el cambio visual
+        this.toggleStates[banner.id_mb] = false;
+
+        this.confirmationService.confirm({
+            message: `¿Está seguro de que desea deshabilitar el banner "${banner.nombre}"?`,
+            header: 'Confirmar Desactivación',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Deshabilitar',
+            rejectLabel: 'Cancelar',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-text',
+            accept: () => {
+                // Limpiar estado temporal y procesar el cambio
+                delete this.toggleStates[banner.id_mb];
+                this.procesarCambioEstadoDirecto(banner, 0);
+            },
+            reject: () => {
+                // Revertir el estado temporal al estado original
+                delete this.toggleStates[banner.id_mb];
+                console.log('❌ Usuario canceló la desactivación');
+            }
+        });
+    }
+
+    private procesarCambioEstadoDirecto(banner: Banner, nuevoValor: number): void {
         const valorAnterior = banner.swEnable;
 
+        // Aplicar el cambio optimista
         banner.swEnable = nuevoValor;
+
+        // Mostrar loading state
+        this.togglingStatus = true;
 
         this.bannerService.toggleBannerStatus(banner.id_mb, nuevoValor === 1).subscribe({
             next: (response) => {
+                this.togglingStatus = false;
+                console.log('✅ Estado actualizado exitosamente:', response);
+
+                const estadoTexto = nuevoValor === 1 ? 'ACTIVO' : 'DESACTIVADO';
+                const icono = nuevoValor === 1 ? '✅' : '🚫';
+
                 this.messageService.add({
-                    severity: 'success',
-                    summary: 'Campo Actualizado',
-                    detail: `Campo "Habilitado" actualizado correctamente`
+                    severity: nuevoValor === 1 ? 'success' : 'warn',
+                    summary: `Banner ${estadoTexto}`,
+                    detail: `${icono} El banner "${banner.nombre}" ha sido ${estadoTexto.toLowerCase()} correctamente`,
+                    life: 4000
                 });
             },
             error: (error) => {
-                // Revertir cambio
+                this.togglingStatus = false;
+                console.error('❌ Error al cambiar estado:', error);
+
+                // Revertir cambio local en caso de error
                 banner.swEnable = valorAnterior;
+
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al actualizar campo "Habilitado"',
-                    life: 5000
+                    summary: 'Error al cambiar estado',
+                    detail: `No se pudo cambiar el estado del banner "${banner.nombre}". Se revirtió el cambio.`,
+                    life: 6000
                 });
             }
         });
     }
+
 
     // ========== ELIMINACIÓN ==========
 

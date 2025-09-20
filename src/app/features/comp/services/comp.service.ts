@@ -112,6 +112,23 @@ export class CompService {
                         console.log('🔍 === RESPUESTA CRUDA DEL BACKEND (SIN TIPOS) ===');
                         console.log('🔍 URL que respondió:', url);
                         console.log('🔍 Respuesta completa:', response);
+
+                        // ⚠️ IMPORTANTE: Verificar si es una respuesta HTTP exitosa pero con error en el body
+                        if (response && typeof response === 'object' && !Array.isArray(response)) {
+                            // Si la respuesta tiene statuscode en el body y es diferente de 200, convertirlo en error
+                            if (response.statuscode && response.statuscode !== 200) {
+                                console.log('❌ === ERROR HTTP 200 DETECTADO (GET ALL) ===');
+                                console.log('❌ StatusCode del backend (getAll):', response.statuscode);
+                                console.log('❌ Mensaje del backend (getAll):', response.mensaje);
+                                console.log('❌ Respuesta completa del backend (getAll):', JSON.stringify(response, null, 2));
+                                console.log('❌ === FIN ERROR HTTP 200 (GET ALL) ===');
+                                const error = new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
+                                (error as any).statuscode = response.statuscode;
+                                (error as any).mensaje = response.mensaje;
+                                (error as any).respuestaCompleta = response;
+                                throw error;
+                            }
+                        }
                         console.log('🔍 Tipo de respuesta:', Array.isArray(response) ? 'Array' : typeof response);
                         console.log('🔍 Es array?', Array.isArray(response));
                         console.log('🔍 Longitud si es array:', Array.isArray(response) ? response.length : 'N/A');
@@ -152,6 +169,11 @@ export class CompService {
                     }),
                     catchError(error => {
                         console.error('❌ Error en getAllComponentes:', error);
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al obtener componentes') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
                         return throwError(() => new Error('Error al obtener componentes'));
                     })
                 );
@@ -177,17 +199,56 @@ export class CompService {
 
                 return this.http.post<ComponenteRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de crear componente:', response);
+                        console.log('✅ === RESPUESTA RECIBIDA DEL BACKEND (CREAR) ===');
+                        console.log('✅ Respuesta completa SIN PROCESAR:', JSON.stringify(response, null, 2));
+                        console.log('✅ Tipo de respuesta:', typeof response);
+                        console.log('✅ Es array?', Array.isArray(response));
+                        console.log('✅ === FIN RESPUESTA SIN PROCESAR ===');
+
+                        // ⚠️ CRÍTICO: Verificar inmediatamente si hay error
+                        if (response && typeof response === 'object' && !Array.isArray(response)) {
+                            console.log('🔍 Verificando respuesta directa...');
+                            if (response.statuscode && response.statuscode !== 200) {
+                                console.log('❌ === ERROR DIRECTO INMEDIATO DETECTADO ===');
+                                console.log('❌ StatusCode:', response.statuscode);
+                                console.log('❌ Mensaje:', response.mensaje);
+                                console.log('❌ Respuesta completa:', JSON.stringify(response, null, 2));
+                                const error = new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
+                                (error as any).statuscode = response.statuscode;
+                                (error as any).mensaje = response.mensaje;
+                                (error as any).respuestaCompleta = response;
+                                throw error;
+                            }
+                        }
 
                         // Procesar respuesta (similar al patrón de otros servicios)
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+                            console.log('🔍 Procesando respuesta de creación (array):', firstItem);
+
+                            // Verificar si hay error en el array
+                            if (firstItem.statuscode && firstItem.statuscode !== 200) {
+                                console.log('❌ === ERROR EN ARRAY DETECTADO (CREAR) ===');
+                                console.log('❌ StatusCode del backend (crear array):', firstItem.statuscode);
+                                console.log('❌ Mensaje del backend (crear array):', firstItem.mensaje);
+                                console.log('❌ Elemento completo del array (crear):', JSON.stringify(firstItem, null, 2));
+                                console.log('❌ === FIN ERROR EN ARRAY (CREAR) ===');
+                                const error = new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
+                                (error as any).statuscode = firstItem.statuscode;
+                                (error as any).mensaje = firstItem.mensaje;
+                                (error as any).respuestaCompleta = firstItem;
+                                throw error;
+                            }
+
                             return {
                                 statuscode: firstItem.statuscode || 200,
                                 mensaje: firstItem.mensaje || 'Componente creado correctamente',
                                 data: firstItem.data || componente as Componente
                             } as ComponenteSingleResponse;
                         }
+
+                        // Para respuestas directas, ya verificamos el error arriba
+                        console.log('🔍 Procesando respuesta exitosa de creación (directa):', response);
 
                         return {
                             statuscode: response.statuscode || 200,
@@ -197,6 +258,11 @@ export class CompService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al crear componente:', error);
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al crear el componente') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
                         return throwError(() => new Error('Error al crear el componente'));
                     })
                 );
@@ -220,19 +286,46 @@ export class CompService {
 
                 console.log('📤 Payload para actualizar componente:', payload);
 
-                return this.http.post<ComponenteRawArrayResponse>(url, payload).pipe(
+                        return this.http.post<ComponenteRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
-                        console.log('✅ Respuesta de actualizar componente:', response);
+                        console.log('✅ === RESPUESTA RECIBIDA DEL BACKEND (ACTUALIZAR) ===');
+                        console.log('✅ Respuesta completa SIN PROCESAR:', JSON.stringify(response, null, 2));
+                        console.log('✅ Tipo de respuesta:', typeof response);
+                        console.log('✅ Es array?', Array.isArray(response));
+                        console.log('✅ === FIN RESPUESTA SIN PROCESAR ===');
+
+                        // ⚠️ CRÍTICO: Verificar inmediatamente si hay error
+                        if (response && typeof response === 'object' && !Array.isArray(response)) {
+                            console.log('🔍 Verificando respuesta directa de actualización...');
+                            if (response.statuscode && response.statuscode !== 200) {
+                                console.log('❌ === ERROR DIRECTO INMEDIATO DETECTADO (ACTUALIZAR) ===');
+                                console.log('❌ StatusCode:', response.statuscode);
+                                console.log('❌ Mensaje:', response.mensaje);
+                                console.log('❌ Respuesta completa:', JSON.stringify(response, null, 2));
+                                const error = new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
+                                (error as any).statuscode = response.statuscode;
+                                (error as any).mensaje = response.mensaje;
+                                (error as any).respuestaCompleta = response;
+                                throw error;
+                            }
+                        }
 
                         if (Array.isArray(response) && response.length > 0) {
                             const firstItem = response[0];
+                            console.log('🔍 Procesando respuesta del backend (array):', firstItem);
 
-                            // ⚠️ CRÍTICO: Verificar si el backend devolvió un error
+                            // Verificar si hay error en el array
                             if (firstItem.statuscode && firstItem.statuscode !== 200) {
-                                console.log('❌ Backend devolvió error en array:', firstItem);
-                                console.log('📊 StatusCode recibido:', firstItem.statuscode);
-                                console.log('📝 Mensaje de error:', firstItem.mensaje);
-                                throw new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
+                                console.log('❌ === ERROR EN ARRAY DETECTADO (ACTUALIZAR) ===');
+                                console.log('❌ StatusCode del backend (array):', firstItem.statuscode);
+                                console.log('❌ Mensaje del backend (array):', firstItem.mensaje);
+                                console.log('❌ Elemento completo del array:', JSON.stringify(firstItem, null, 2));
+                                console.log('❌ === FIN ERROR EN ARRAY (ACTUALIZAR) ===');
+                                const error = new Error(firstItem.mensaje || `Error del servidor (${firstItem.statuscode})`);
+                                (error as any).statuscode = firstItem.statuscode;
+                                (error as any).mensaje = firstItem.mensaje;
+                                (error as any).respuestaCompleta = firstItem;
+                                throw error;
                             }
 
                             return {
@@ -242,13 +335,8 @@ export class CompService {
                             } as ComponenteSingleResponse;
                         }
 
-                        // Verificar error en respuesta directa
-                        if (response.statuscode && response.statuscode !== 200) {
-                            console.log('❌ Backend devolvió error directo:', response);
-                            console.log('📊 StatusCode recibido:', response.statuscode);
-                            console.log('📝 Mensaje de error:', response.mensaje);
-                            throw new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
-                        }
+                        // Para respuestas directas, ya verificamos el error arriba
+                        console.log('🔍 Procesando respuesta exitosa de actualización (directa):', response);
 
                         return {
                             statuscode: response.statuscode || 200,
@@ -258,6 +346,11 @@ export class CompService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al actualizar componente:', error);
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al actualizar el componente') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
                         return throwError(() => new Error('Error al actualizar el componente'));
                     })
                 );
@@ -302,6 +395,11 @@ export class CompService {
                     }),
                     catchError(error => {
                         console.error('❌ Error al eliminar componente:', error);
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al eliminar el componente') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
                         return throwError(() => new Error('Error al eliminar el componente'));
                     })
                 );

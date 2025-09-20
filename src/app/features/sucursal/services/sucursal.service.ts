@@ -56,6 +56,12 @@ export class SucursalService {
                 // Procesar respuesta según el patrón del proyecto
                 const responseData = Array.isArray(response) ? response[0] : response;
 
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en getAllSucursales:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 if (responseData && responseData.statuscode === 200 && responseData.data) {
                     console.log('✅ Datos procesados correctamente:', responseData.data.length, 'sucursales');
                     return responseData;
@@ -66,7 +72,12 @@ export class SucursalService {
             }),
             catchError(error => {
                 console.error('❌ Error en getAllSucursales:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error en getAllSucursales')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al obtener sucursales'));
             })
         );
     }
@@ -97,12 +108,24 @@ export class SucursalService {
         return this.http.post<SucursalResponse>(sucursalUrl, body).pipe(
             map(response => {
                 const responseData = Array.isArray(response) ? response[0] : response;
+
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en createSucursal:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 console.log('✅ Sucursal creada:', responseData);
                 return responseData;
             }),
             catchError(error => {
                 console.error('❌ Error al crear sucursal:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al crear sucursal')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al crear sucursal'));
             })
         );
     }
@@ -126,12 +149,24 @@ export class SucursalService {
         return this.http.post<SucursalResponse>(sucursalUrl, body).pipe(
             map(response => {
                 const responseData = Array.isArray(response) ? response[0] : response;
+
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en updateSucursal:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 console.log('✅ Sucursal actualizada:', responseData);
                 return responseData;
             }),
             catchError(error => {
                 console.error('❌ Error al actualizar sucursal:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al actualizar sucursal')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al actualizar sucursal'));
             })
         );
     }
@@ -160,12 +195,24 @@ export class SucursalService {
         return this.http.delete<SucursalResponse>(sucursalUrl, { params, body }).pipe(
             map(response => {
                 const responseData = Array.isArray(response) ? response[0] : response;
+
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en deleteSucursal:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 console.log('✅ Sucursal eliminada:', responseData);
                 return responseData;
             }),
             catchError(error => {
                 console.error('❌ Error al eliminar sucursal:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al eliminar sucursal')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al eliminar sucursal'));
             })
         );
     }
@@ -190,12 +237,24 @@ export class SucursalService {
         return this.http.post<SucursalResponse>(sucursalUrl, body).pipe(
             map(response => {
                 const responseData = Array.isArray(response) ? response[0] : response;
+
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en updateSucursalField:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 console.log('✅ Campo actualizado:', responseData);
                 return responseData;
             }),
             catchError(error => {
                 console.error('❌ Error al actualizar campo:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error al actualizar campo')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al actualizar campo de sucursal'));
             })
         );
     }

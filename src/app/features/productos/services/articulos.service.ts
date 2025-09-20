@@ -137,6 +137,12 @@ export class ArticulosService {
         }
       }),
       map((response: any) => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en getArticulos:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200) {
           let articulos: Articulo[] = [];
 
@@ -546,6 +552,9 @@ export class ArticulosService {
     } else if (error.error?.mensaje) {
       // Error desde la API
       errorMessage = error.error.mensaje;
+    } else if (error.mensaje) {
+      // Error directo del backend con mensaje personalizado
+      errorMessage = error.mensaje;
     }
 
     console.error('❌ Error en ArticulosService:', error);

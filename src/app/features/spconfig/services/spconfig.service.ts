@@ -146,6 +146,12 @@ export class SPConfigService {
 
     return this.http.get<any>(url, this.httpOptions).pipe(
       map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en getRoles:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200 && response.data) {
           return Array.isArray(response.data) ? response.data : [response.data];
         }
@@ -163,10 +169,17 @@ export class SPConfigService {
     console.log(`➕ Creando rol en: ${url}`);
 
     return this.http.post<any>(url, rolData, this.httpOptions).pipe(
-      tap(response => {
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en createRol:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200) {
           console.log(`✅ Rol creado exitosamente`);
         }
+        return response;
       }),
       catchError(this.handleError)
     );
@@ -181,10 +194,17 @@ export class SPConfigService {
     console.log(`🔄 Actualizando rol en: ${url}`);
 
     return this.http.put<any>(url, rolData, this.httpOptions).pipe(
-      tap(response => {
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en updateRol:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200) {
           console.log(`✅ Rol actualizado exitosamente: ID ${id}`);
         }
+        return response;
       }),
       catchError(this.handleError)
     );
@@ -199,10 +219,17 @@ export class SPConfigService {
     console.log(`🗑️ Eliminando rol en: ${url}`);
 
     return this.http.delete<any>(url, this.httpOptions).pipe(
-      tap(response => {
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en deleteRol:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200) {
           console.log(`✅ Rol eliminado exitosamente: ID ${id}`);
         }
+        return response;
       }),
       catchError(this.handleError)
     );
@@ -221,6 +248,12 @@ export class SPConfigService {
 
     return this.http.get<any>(url, this.httpOptions).pipe(
       map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en getUsuarios:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200 && response.data) {
           return Array.isArray(response.data) ? response.data : [response.data];
         }
@@ -239,6 +272,12 @@ export class SPConfigService {
 
     return this.http.get<any>(url, this.httpOptions).pipe(
       map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en getPermisosRoles:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200 && response.data) {
           return Array.isArray(response.data) ? response.data : [response.data];
         }
@@ -778,20 +817,30 @@ export class SPConfigService {
    */
   private handleError(error: any): Observable<never> {
     let errorMessage = 'Ocurrió un error en el servicio de SPConfig';
-    
+
     if (error.error instanceof ErrorEvent) {
       // Error del cliente
       errorMessage = `Error del cliente: ${error.error.message}`;
     } else if (error.status) {
-      // Error del servidor
-      errorMessage = `Error del servidor: ${error.status} - ${error.message}`;
+      // Error del servidor - verificar si es HTTP error o error del backend
+      if (error.error && error.error.statuscode && error.error.statuscode !== 200) {
+        // Error del backend en el body (statuscode !== 200)
+        errorMessage = error.error.mensaje || `Error del servidor: ${error.error.statuscode}`;
+        console.log('❌ Error del backend detectado en SPConfigService:', error.error);
+      } else {
+        // Error HTTP estándar
+        errorMessage = `Error del servidor: ${error.status} - ${error.message || 'Sin mensaje'}`;
+      }
     } else if (error.message) {
-      // Error personalizado
-      errorMessage = error.message;
+      // Error personalizado - verificar si ya tiene mensaje del backend
+      if (error.message && !error.message.includes('Ocurrió un error en el servicio de SPConfig')) {
+        // Es un mensaje personalizado del backend
+        errorMessage = error.message;
+      }
     }
-    
+
     console.error('❌ Error en SPConfigService:', error);
-    
+
     return throwError(() => ({
       message: errorMessage,
       originalError: error

@@ -197,9 +197,9 @@ import { ColldService } from '@/features/coll/services/colld.service';
       inputId="filtroLimit"
       [(ngModel)]="filtroLimit"
       [min]="1"
-      [max]="1000"
+      [max]="5000"
       [step]="10"
-      placeholder="20"
+      placeholder="5000"
       [style]="{'width':'100%'}">
     </p-inputNumber>
     <label>Límite de resultados</label>
@@ -332,7 +332,7 @@ import { ColldService } from '@/features/coll/services/colld.service';
                         #dt
                         [value]="filteredItems.length > 0 || globalFilterValue ? filteredItems : items"
                         [(selection)]="selectedItems"
-                        [paginator]="true" [rows]="10"
+                        [paginator]="true" [rows]="50"
                         [rowsPerPageOptions]="[5, 10, 25, 50]"
                         [showCurrentPageReport]="true"
                         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} items"
@@ -640,7 +640,7 @@ export class ItemsComponent implements OnInit {
 
     // Filtros
     filtroNombre = '';
-    filtroLimit = 10;
+    filtroLimit = 5000;
     categoriaSeleccionada: Categoria | null = null;
     subcategoriaSeleccionada: Subcategoria | null = null;
 
@@ -674,12 +674,10 @@ export class ItemsComponent implements OnInit {
 
     private cargarMarcas() {
         // ✅ El servicio ahora maneja automáticamente el cache local (7 días)
-        console.log('🚀 Cargando marcas con cache local automático');
         this.marcasService.loadAllMarcas().subscribe({
             next: (marcas) => {
                 this.marcas = marcas;
                 this.marcasFiltradas = marcas;
-                console.log(`📦 Marcas cargadas: ${marcas.length}`);
             },
             error: (error) => {
                 console.error('❌ Error cargando marcas:', error);
@@ -700,11 +698,8 @@ export class ItemsComponent implements OnInit {
     }
 
     private cargarSubcategoriasCacheInicial() {
-        console.log('🚀 Cargando subcategorías con cache local automático (7 días)');
         this.subcategoriasService.loadAllSubcategorias().subscribe({
             next: (subcategorias) => {
-                console.log(`📦 Subcategorías cargadas: ${subcategorias.length} registros`);
-
                 // Mostrar información del cache usado
                 const cacheInfo = this.getSubcategoriasCacheInfo();
                 const fuente = cacheInfo ? 'localStorage' : 'servidor';
@@ -811,7 +806,7 @@ export class ItemsComponent implements OnInit {
 
     limpiarFiltros() {
         this.filtroNombre = '';
-        this.filtroLimit = 10;
+        this.filtroLimit = 5000;
         this.categoriaSeleccionada = null;
         this.subcategoriaSeleccionada = null;
         this.marcaSeleccionada = null;
@@ -869,28 +864,20 @@ export class ItemsComponent implements OnInit {
         }
 
         if (this.selectedItems.length === 0) {
-            console.log('❌ No hay items seleccionados');
             return;
         }
 
         this.loading = true;
 
-        // ✅ PREPARAR PAYLOAD CON FORMATO CORRECTO
+        // ✅ PREPARAR PAYLOAD CON FORMATO SIMPLIFICADO
         const payload = {
             id_coll: this.selectedCollectionId,
-            items: this.selectedItems.map(item => ({
-                articulo: item.articulo  // Solo envía los IDs de los items seleccionados
-            }))
+            items: this.selectedItems.map(item => item.articulo)  // Solo envía array de números
         };
 
-        console.log('📦 Payload preparado:', payload);
-
         // ✅ LLAMADA AL SERVICIO createColld con payload completo
-        console.log('🚀 Iniciando llamada al servicio createColld...');
-
         this.colldService.createColld(payload).subscribe({
             next: (response) => {
-                console.log('✅ Items agregados exitosamente:', response);
 
                 // ✅ MENSAJE DE ÉXITO
                 this.messageService.add({
@@ -908,18 +895,6 @@ export class ItemsComponent implements OnInit {
                 this.loading = false;
             },
             error: (error: any) => {
-                console.error('❌ ===== ERROR DETECTADO =====');
-                console.error('❌ Error completo:', error);
-                console.error('❌ Tipo de error:', typeof error);
-                console.error('❌ Error status:', error?.status);
-                console.error('❌ Error message:', error?.message);
-                console.error('❌ Error body:', error?.error);
-
-                // Verificar si el error tiene la estructura esperada
-                if (error && typeof error === 'object') {
-                    console.error('❌ Propiedades del error:', Object.keys(error));
-                }
-
                 // ✅ MANEJO DE ERRORES MÁS DETALLADO
                 let errorMessage = 'Ocurrió un error al agregar los items a la colección';
                 let errorSummary = 'Error al agregar items';
@@ -928,7 +903,6 @@ export class ItemsComponent implements OnInit {
                     // ✅ PRIORIDAD 1: Mensaje directo del error (errores del backend convertidos)
                     if (error?.message && error?.status) {
                         errorMessage = error.message;
-                        console.log('✅ Mensaje directo del error del backend:', errorMessage);
 
                         // Determinar el tipo de error basado en el status del backend
                         if (error.status === 400) {
@@ -944,17 +918,14 @@ export class ItemsComponent implements OnInit {
                     // ✅ PRIORIDAD 2: Mensajes anidados en error.error
                     else if (error?.error?.mensaje) {
                         errorMessage = error.error.mensaje;
-                        console.log('✅ Mensaje encontrado en error.error.mensaje:', errorMessage);
                         errorSummary = error.error.statuscode === 400 ? 'Datos requeridos faltantes' : 'Error del backend';
                     } else if (error?.error?.message) {
                         errorMessage = error.error.message;
-                        console.log('✅ Mensaje encontrado en error.error.message:', errorMessage);
                         errorSummary = 'Error del backend';
                     }
                     // ✅ PRIORIDAD 3: Mensaje directo del error
                     else if (error?.message) {
                         errorMessage = error.message;
-                        console.log('✅ Mensaje encontrado en error.message:', errorMessage);
                         errorSummary = 'Error';
                     }
                     // ✅ PRIORIDAD 4: Códigos HTTP estándar
@@ -975,8 +946,6 @@ export class ItemsComponent implements OnInit {
                         errorSummary = `Error ${error.status}`;
                     }
 
-                    console.log('✅ Error final preparado:', { summary: errorSummary, message: errorMessage, status: error?.status });
-
                 } catch (parseError) {
                     console.error('❌ Error al procesar el mensaje de error:', parseError);
                     errorMessage = 'Error desconocido al procesar la respuesta del servidor';
@@ -992,12 +961,10 @@ export class ItemsComponent implements OnInit {
                         sticky: true // Mantener visible hasta que el usuario lo cierre
                     };
 
-                    console.log('📤 Enviando toast al MessageService:', toastConfig);
                     this.messageService.add(toastConfig);
 
                     // Verificar si el MessageService está disponible
                     if (this.messageService) {
-                        console.log('✅ MessageService disponible');
                     } else {
                         console.error('❌ MessageService NO disponible');
                         alert(`Error: ${errorSummary} - ${errorMessage}`); // Fallback
@@ -1017,11 +984,8 @@ export class ItemsComponent implements OnInit {
 
     exportarExcel() {
         if (this.items.length === 0) {
-            console.log('❌ No hay items para exportar');
             return;
         }
-
-        console.log('📊 Iniciando exportación a Excel...');
 
         try {
             // Preparar datos para Excel - solo los datos de la tabla
@@ -1065,9 +1029,6 @@ export class ItemsComponent implements OnInit {
             // Descargar archivo
             XLSX.writeFile(wb, fileName);
 
-            console.log(`✅ Exportación completada: ${fileName}`);
-            console.log(`📊 Total de registros exportados: ${this.items.length}`);
-
             // Mostrar mensaje de éxito
             this.messageService.add({
                 severity: 'success',
@@ -1098,7 +1059,6 @@ export class ItemsComponent implements OnInit {
 
     procesarItemsAgregados() {
         if (this.itemsAgregados.length === 0) return;
-        console.log('⚙️ Procesando items agregados:', this.itemsAgregados);
     }
 
     filtrarCategorias(event: any) {
@@ -1167,16 +1127,13 @@ export class ItemsComponent implements OnInit {
         if (event && event.value && event.value.marca) {
             this.marcaSeleccionada = event.value;
         } else {
-            console.warn('⚠️ Evento onSelect inválido:', event);
         }
     }
 
     // ========== FUNCIONALIDAD DE ORDENAMIENTO ==========
 
     onSort(event: any) {
-        console.log('📊 Ordenamiento aplicado:', event);
         // El ordenamiento se maneja automáticamente por PrimeNG
-        // Este método es para logging/debugging si es necesario
     }
 
 
@@ -1208,7 +1165,6 @@ export class ItemsComponent implements OnInit {
     cancelarCargaExcel() {
         this.mostrarAreaCargaExcel = false;
         this.isDragOver = false;
-        console.log('Carga de Excel cancelada por el usuario');
     }
 
     onDragOver(event: DragEvent) {
@@ -1254,7 +1210,14 @@ export class ItemsComponent implements OnInit {
             return;
         }
 
-        console.log('📊 Procesando archivo Excel:', file.name);
+        // Verificar tamaño del archivo (advertir si es muy grande)
+        const fileSizeMB = file.size / (1024 * 1024);
+        if (fileSizeMB > 10) {
+            console.warn(`⚠️ Archivo grande detectado: ${fileSizeMB.toFixed(2)} MB. Podría causar problemas de memoria.`);
+        }
+
+        // Activar spinner durante el procesamiento
+        this.loading = true;
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -1273,11 +1236,21 @@ export class ItemsComponent implements OnInit {
                     throw new Error('El archivo Excel está vacío');
                 }
 
+                // Verificar límite de filas
+                if (jsonData.length > 10000) {
+                    console.warn(`⚠️ Archivo muy grande: ${jsonData.length} filas. Esto podría causar problemas de rendimiento.`);
+                }
+
+
                 // Procesar los datos
                 this.procesarDatosExcel(jsonData);
 
             } catch (error) {
                 console.error('❌ Error procesando Excel:', error);
+
+                // Desactivar spinner en caso de error
+                this.loading = false;
+
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error procesando Excel',
@@ -1296,8 +1269,6 @@ export class ItemsComponent implements OnInit {
             const headers = jsonData[0] as string[];
             const dataRows = jsonData.slice(1);
 
-            console.log('📋 Headers encontrados:', headers);
-            console.log('📊 Filas de datos:', dataRows.length);
 
             // Buscar la columna "articulo" (case insensitive)
             const articuloIndex = headers.findIndex(header =>
@@ -1308,28 +1279,43 @@ export class ItemsComponent implements OnInit {
                 throw new Error('No se encontró la columna "articulo" en el archivo Excel');
             }
 
-            console.log(`✅ Columna "articulo" encontrada en índice: ${articuloIndex}`);
 
             // Extraer los artículos de cada fila
             const articulos: number[] = [];
+            let filasProcesadas = 0;
+            let filasConArticulosValidos = 0;
+            let filasConArticulosInvalidos = 0;
+
             dataRows.forEach((row, index) => {
+                filasProcesadas++;
                 const articulo = row[articuloIndex];
                 if (articulo !== null && articulo !== undefined && articulo !== '') {
                     // Convertir a número si es necesario
                     const articuloNum = typeof articulo === 'number' ? articulo : parseInt(articulo.toString());
                     if (!isNaN(articuloNum)) {
                         articulos.push(articuloNum);
+                        filasConArticulosValidos++;
                     } else {
-                        console.warn(`⚠️ Fila ${index + 2}: Artículo inválido "${articulo}"`);
+                        filasConArticulosInvalidos++;
                     }
                 }
             });
+
+
+            // Verificar si hay demasiados artículos (posible límite)
+            if (articulos.length >= 5000) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Archivo grande procesado',
+                    detail: `Se encontraron ${articulos.length} artículos. Si no se muestran todos, podría haber un límite en el sistema.`,
+                    life: 8000
+                });
+            }
 
             if (articulos.length === 0) {
                 throw new Error('No se encontraron artículos válidos en el archivo');
             }
 
-            console.log(`📦 Artículos extraídos del Excel: ${articulos.length}`, articulos);
 
             // Crear la estructura de datos igual que selectedItems
             const itemsDesdeExcel = articulos.map(articulo => ({
@@ -1351,6 +1337,10 @@ export class ItemsComponent implements OnInit {
 
         } catch (error: any) {
             console.error('❌ Error procesando datos del Excel:', error);
+
+            // Desactivar spinner en caso de error
+            this.loading = false;
+
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error en datos del Excel',
@@ -1361,11 +1351,10 @@ export class ItemsComponent implements OnInit {
     }
 
     buscarDesdeExcel(itemsDesdeExcel: { articulo: number }[]) {
-        console.log('🔍 Buscando artículos desde Excel:', itemsDesdeExcel.length);
-
         // Preparar consulta al API con los items del Excel
         const apiParams: any = {
-            items: itemsDesdeExcel
+            items: itemsDesdeExcel,
+            limit: this.filtroLimit
         };
 
         // Incluir el ID de colección seleccionada si existe
@@ -1386,7 +1375,8 @@ export class ItemsComponent implements OnInit {
                     this.selectedItemsMap[item.articulo] = false;
                 });
 
-                console.log(`✅ Búsqueda desde Excel completada - ${response.data?.length || 0} registros encontrados`);
+                // Desactivar spinner
+                this.loading = false;
 
                 this.messageService.add({
                     severity: 'success',
@@ -1403,6 +1393,9 @@ export class ItemsComponent implements OnInit {
                 this.selectedItems = [];
                 this.selectedItemsMap = {};
                 this.selectAll = false;
+
+                // Desactivar spinner en caso de error
+                this.loading = false;
 
                 this.messageService.add({
                     severity: 'error',
@@ -1469,7 +1462,6 @@ export class ItemsComponent implements OnInit {
             // Si no hay filtro, mostrar todos los items
             this.filteredItems = [...this.items];
         }
-        console.log('Filtrando tabla con valor:', this.globalFilterValue);
     }
 
     limpiarFiltroGlobal() {
@@ -1500,7 +1492,6 @@ export class ItemsComponent implements OnInit {
      */
     clearMarcasCache() {
         this.marcasService.clearCache();
-        console.log('🗑️ Cache de marcas limpiado desde componente');
         // Recargar marcas
         this.cargarMarcas();
     }
@@ -1510,7 +1501,6 @@ export class ItemsComponent implements OnInit {
      */
     clearSubcategoriasCache() {
         this.subcategoriasService.clearCache();
-        console.log('🗑️ Cache de subcategorías limpiado desde componente');
         // Recargar subcategorías
         this.cargarSubcategoriasCacheInicial();
     }
@@ -1519,7 +1509,6 @@ export class ItemsComponent implements OnInit {
      * Limpiar todo el cache del componente
      */
     clearAllCache() {
-        console.log('🗑️ Limpiando todo el cache del componente...');
         this.clearMarcasCache();
         this.clearSubcategoriasCache();
         this.messageService.add({
@@ -1534,13 +1523,6 @@ export class ItemsComponent implements OnInit {
      * Mostrar información del cache en consola
      */
     logCacheInfo() {
-        const marcasInfo = this.getMarcasCacheInfo();
-        const subcategoriasInfo = this.getSubcategoriasCacheInfo();
-
-        console.log('📊 INFORMACIÓN DEL CACHE:', {
-            marcas: marcasInfo,
-            subcategorias: subcategoriasInfo,
-            timestamp: new Date().toISOString()
-        });
+        // Método para debugging de cache si es necesario en el futuro
     }
 }

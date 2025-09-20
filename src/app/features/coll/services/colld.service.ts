@@ -370,6 +370,44 @@ export class ColldService {
     }
 
     /**
+     * Elimina múltiples detalles de colección
+     */
+    deleteColldItems(ids: number[]): Observable<ColldArrayResponse> {
+        return from(this.apiConfigService.waitForEndpoints()).pipe(
+            switchMap(() => {
+                const endpoint = this.apiConfigService.getEndpointById(this.SERVICE_ID);
+                if (!endpoint) {
+                    throw new Error(`Endpoint para servicio COLLD (ID: ${this.SERVICE_ID}) no encontrado`);
+                }
+
+                const payload = {
+                    action: 'DL', // Delete multiple
+                    batch: true, // Identificador para operación batch
+                    items: ids,
+                    ...this.getSessionData() // REGLA CRÍTICA: Inyección de sesión
+                };
+
+                return this.http.request<ColldArrayResponse>('DELETE', endpoint.url, {
+                    body: payload
+                }).pipe(
+                    map((response: any) => {
+                        // Asegurar que siempre devuelva un array
+                        if (Array.isArray(response)) {
+                            return response;
+                        } else {
+                            return [response];
+                        }
+                    }),
+                    catchError((error) => {
+                        console.error('❌ Error en deleteColldItems:', error);
+                        return throwError(() => error);
+                    })
+                );
+            })
+        );
+    }
+
+    /**
      * Busca detalles de colección con filtros
      */
     searchColld(params: ColldPaginationParams): Observable<ColldResponse> {

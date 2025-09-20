@@ -133,9 +133,9 @@ export class Login {
                         life: 3000
                     });
 
-                    // Redirigir al dashboard con recarga completa
+                    // Redirigir al dashboard usando Angular Router
                     setTimeout(() => {
-                        window.location.href = '/';
+                        this.router.navigate(['/dashboards']);
                     }, 1500);
                 },
                 error: (error: any) => {

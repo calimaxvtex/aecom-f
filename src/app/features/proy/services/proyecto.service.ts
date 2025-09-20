@@ -59,6 +59,12 @@ export class ProyectoService {
                 // Procesar respuesta según el patrón del proyecto
                 const responseData = Array.isArray(response) ? response[0] : response;
 
+                // Verificar si hay error del backend en el body
+                if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
+                    console.log('❌ Error del backend detectado en getAllProyectos:', responseData);
+                    throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
+                }
+
                 if (responseData && responseData.statuscode === 200 && responseData.data) {
                     console.log('✅ Proyectos procesados correctamente:', responseData.data.length, 'proyectos');
                     return responseData;
@@ -69,7 +75,12 @@ export class ProyectoService {
             }),
             catchError(error => {
                 console.error('❌ Error en getAllProyectos:', error);
-                return throwError(() => error);
+                // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                if (error && error.message && !error.message.includes('Error en getAllProyectos')) {
+                    return throwError(() => error);
+                }
+                // Si no, usa el mensaje genérico
+                return throwError(() => new Error('Error al obtener proyectos'));
             })
         );
     }

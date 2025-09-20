@@ -162,11 +162,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error en getAllBanners:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener banners';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al obtener banners') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al obtener banners'));
                     })
                 );
             })
@@ -229,11 +230,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error al crear banner:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al crear el banner';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al crear el banner') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al crear el banner'));
                     })
                 );
             })
@@ -295,11 +297,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error al actualizar banner:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el banner';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al actualizar el banner') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al actualizar el banner'));
                     })
                 );
             })
@@ -357,11 +360,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error al eliminar banner:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el banner';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al eliminar el banner') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al eliminar el banner'));
                     })
                 );
             })
@@ -422,11 +426,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error al obtener banner:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener el banner';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al obtener el banner') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al obtener el banner'));
                     })
                 );
             })
@@ -535,11 +540,12 @@ export class BannerService {
                     catchError(error => {
                         console.error('❌ Error al obtener estadísticas:', error);
 
-                        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
-                        const errorMessage = error instanceof Error ? error.message : 'Error al obtener estadísticas';
-                        console.log('📤 Enviando error al componente:', errorMessage);
-
-                        return throwError(() => new Error(errorMessage));
+                        // Si el error ya tiene un mensaje personalizado del backend, úsalo
+                        if (error && error.message && error.message !== 'Error al obtener estadísticas') {
+                            return throwError(() => error);
+                        }
+                        // Si no, usa el mensaje genérico
+                        return throwError(() => new Error('Error al obtener estadísticas'));
                     })
                 );
             })

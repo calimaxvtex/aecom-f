@@ -2,11 +2,14 @@ import { Routes } from '@angular/router';
 import { AppLayout } from '@/layout/components/app.layout';
 
 export const appRoutes: Routes = [
+    // Ruta por defecto - redirige al login
+    { path: '', redirectTo: '/login', pathMatch: 'full' },
+
+    // Layout principal para rutas autenticadas
     {
         path: '',
         component: AppLayout,
         children: [
-            { path: '', redirectTo: '/dashboards', pathMatch: 'full' },
             {
                 path: 'dashboards',
                 data: { breadcrumb: 'Analytics Dashboard' },

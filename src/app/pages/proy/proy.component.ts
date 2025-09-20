@@ -111,17 +111,37 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
                             >
                                 {{proyecto.descripcion}}
                             </span>
-                            <input
+                            <div
                                 *ngIf="editingCell === proyecto.id_proy + '_descripcion'"
-                                pInputText
-                                type="text"
-                                [(ngModel)]="proyecto.descripcion"
-                                (keyup.enter)="saveInlineEditProyecto(proyecto, 'descripcion')"
-                                (keyup.escape)="cancelInlineEdit()"
-                                class="p-inputtext-sm flex-1"
-                                autofocus
-                                placeholder="Nombre del proyecto"
-                            />
+                                class="inline-edit-container"
+                            >
+                                <input
+                                    pInputText
+                                    type="text"
+                                    [(ngModel)]="proyecto.descripcion"
+                                    (keyup.enter)="saveInlineEditProyecto(proyecto, 'descripcion')"
+                                    (keyup.escape)="cancelInlineEdit()"
+                                    class="p-inputtext-sm flex-1"
+                                    #input
+                                    (focus)="input.select()"
+                                    autofocus
+                                    placeholder="Nombre del proyecto"
+                                />
+                                <button
+                                    pButton
+                                    icon="pi pi-check"
+                                    (click)="saveInlineEditProyecto(proyecto, 'descripcion')"
+                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                    pTooltip="Guardar (Enter)"
+                                ></button>
+                                <button
+                                    pButton
+                                    icon="pi pi-undo"
+                                    (click)="cancelInlineEdit()"
+                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                    pTooltip="Deshacer (Escape)"
+                                ></button>
+                            </div>
                         </td>
 
                         <!-- Estado - TOGGLE BUTTON -->
@@ -237,9 +257,9 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
                 </form>
             </p-dialog>
 
-            <!-- Modal de Confirmación -->
+            <!-- Modal de Confirmación Genérico -->
             <p-dialog
-                header="Confirmar Eliminación"
+                [header]="confirmHeader"
                 [(visible)]="showConfirmDialog"
                 [modal]="true"
                 [style]="{width: '450px'}"
@@ -248,7 +268,7 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
             >
                 <div class="flex align-items-center gap-3 mb-3">
                     <i class="pi pi-exclamation-triangle text-orange-500 text-2xl"></i>
-                    <span class="text-lg">¿Está seguro de que desea eliminar el proyecto "{{proyectoToDelete?.descripcion}}"?</span>
+                    <span class="text-lg">{{confirmMessage}}</span>
                 </div>
 
                 <div class="flex justify-content-end gap-2 mt-4">
@@ -259,10 +279,10 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
                         (onClick)="cancelarConfirmacion()"
                     ></p-button>
                     <p-button
-                        label="Sí, Eliminar"
+                        [label]="confirmButtonLabel"
                         icon="pi pi-check"
                         severity="danger"
-                        (onClick)="confirmarEliminacion()"
+                        (onClick)="ejecutarAccionConfirmada()"
                     ></p-button>
                 </div>
             </p-dialog>
@@ -325,6 +345,19 @@ import { ProyItem, CreateProyRequest, UpdateProyRequest } from '@/features/proy/
 
         :host ::ng-deep .tooltip-theme .p-tooltip-arrow {
             border-top-color: #374151 !important;
+        }
+
+        /* Estilos para edición inline */
+        .inline-edit-container {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .inline-action-btn {
+            padding: 0.25rem;
+            min-width: 2rem;
+            height: 2rem;
         }
     `]
 })
@@ -606,6 +639,7 @@ export class ProyComponent implements OnInit {
         if (nuevoEstado === 'I') {
             this.confirmMessage = `¿Está seguro de que desea desactivar el proyecto "${proyecto.descripcion}"?`;
             this.confirmHeader = 'Confirmar Desactivación';
+            this.confirmButtonLabel = 'Desactivar';
             this.accionConfirmada = () => this.procesarCambioEstado(proyecto, nuevoEstado);
             this.showConfirmDialog = true;
         } else {
@@ -690,6 +724,17 @@ export class ProyComponent implements OnInit {
     cancelarConfirmacion(): void {
         this.showConfirmDialog = false;
         this.proyectoToDelete = null;
+        this.accionConfirmada = null;
+        this.confirmMessage = '';
+        this.confirmHeader = '';
+        this.confirmButtonLabel = 'Confirmar';
+    }
+
+    ejecutarAccionConfirmada(): void {
+        if (this.accionConfirmada) {
+            this.accionConfirmada();
+            this.cancelarConfirmacion();
+        }
     }
 
     // ========== UTILIDADES ==========
@@ -705,5 +750,6 @@ export class ProyComponent implements OnInit {
     // Variables para confirmación
     confirmMessage = '';
     confirmHeader = '';
+    confirmButtonLabel = 'Confirmar';
     accionConfirmada: (() => void) | null = null;
 }

@@ -8,13 +8,15 @@ import { Table } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Servicios y modelos
 import { CompService } from '../../../features/comp/services/comp.service';
@@ -33,14 +35,16 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
         ButtonModule,
         InputTextModule,
         DialogModule,
+        ConfirmDialogModule,
         ToastModule,
         TagModule,
         FloatLabelModule,
         TooltipModule,
         SelectModule,
-        CardModule
+        CardModule,
+        ToggleSwitchModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     template: `
         <!-- Tabla CRUD -->
         <p-table
@@ -52,7 +56,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             responsiveLayout="scroll"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes"
             [rowsPerPageOptions]="[10, 25, 50]"
-            [globalFilterFields]="['clave', 'nombre']"
+            [globalFilterFields]="['id_comp', 'clave', 'nombre', 'descripcion', 'canal', 'tipo_comp']"
             dataKey="id_comp"
             [sortMode]="'multiple'"
             [filterDelay]="300"
@@ -106,6 +110,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             <ng-template #header>
                 <tr>
                     <th style="width: 80px">ID</th>
+                    <th style="min-width: 120px">Clave</th>
                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
                     <th pSortableColumn="descripcion" style="min-width: 200px">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
                     <th style="min-width: 150px">Tipo Contenedor</th>
@@ -120,11 +125,19 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                 <tr
                     (click)="onRowClick(concepto)"
                     [class.bg-blue-50]="conceptoSeleccionado?.id_comp === concepto.id_comp"
-                    class="cursor-pointer hover:bg-gray-50 transition-colors"
+                    [class.component-inactive]="concepto.swEnable === 0"
+                    [class]="concepto.swEnable === 0 ? 'component-disabled hover:bg-gray-100' : 'cursor-pointer hover:bg-gray-50'"
+                    class="transition-colors"
                 >
                     <!-- ID -->
                     <td>{{ concepto.id_comp }}</td>
 
+                    <!-- Clave -->
+                    <td>
+                        <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded text-gray-800">
+                            {{ concepto.clave || '—' }}
+                        </span>
+                    </td>
 
                     <!-- Nombre -->
                     <td>
@@ -256,13 +269,16 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
 
                     <!-- Habilitado -->
                     <td class="text-center">
-                        <p-tag
-                            [value]="concepto.swEnable === 1 ? 'Si' : 'No'"
-                            [severity]="concepto.swEnable === 1 ? 'success' : 'danger'"
-                            (click)="toggleSwEnable(concepto); $event.stopPropagation()"
-                            class="cursor-pointer hover:opacity-80 transition-opacity"
-                            pTooltip="Clic para cambiar"
-                        ></p-tag>
+                        <p-toggleSwitch
+                            [ngModel]="getComponentToggleState(concepto)"
+                            [ngModelOptions]="{standalone: true}"
+                            onLabel="ACTIVO"
+                            offLabel="DESACTIVADO"
+                            inputId="{{concepto.id_comp}}_habilitado"
+                            (ngModelChange)="onToggleSwitchChange($event, concepto)"
+                            class="status-toggle"
+                            pTooltip="Cambiar estado del componente"
+                        ></p-toggleSwitch>
                     </td>
 
 
@@ -395,7 +411,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         <p-tag
                             [value]="conceptoForm.get('swEnable')?.value === 1 ? 'Habilitado' : 'Deshabilitado'"
                             [severity]="conceptoForm.get('swEnable')?.value === 1 ? 'success' : 'danger'"
-                            (click)="toggleFormField('swEnable')"
+                            (click)="toggleSwEnableWithConfirm()"
                             class="cursor-pointer hover:opacity-80 transition-opacity"
                             pTooltip="Estado del componente"
                         ></p-tag>
@@ -472,7 +488,7 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                         [label]="isEditingConcepto ? 'Actualizar' : 'Crear'"
                         [disabled]="!conceptoForm.valid || savingConcepto"
                         [loading]="savingConcepto"
-                        class="p-button-success"
+                        class="p-button-primary"
                     ></button>
                 </div>
             </form>
@@ -519,6 +535,9 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
                 ></button>
             </div>
         </p-dialog>
+
+        <!-- Modal de confirmación usando ConfirmationService -->
+        <p-confirmDialog></p-confirmDialog>
 
         <p-toast></p-toast>
     `,
@@ -613,6 +632,63 @@ import { CatConceptoDet } from '../../../features/catconceptos/models/catconcept
             padding: 0.25rem 0.5rem;
             font-weight: 500;
         }
+
+        /* Estilos para el botón de estado con tamaño fijo */
+        :host ::ng-deep .p-tag.status-tag {
+            min-width: 110px;
+            display: inline-block;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Estilos para componentes deshabilitados - gama de gris */
+        .component-disabled {
+            opacity: 0.75;
+            background-color: rgba(156, 163, 175, 0.08);
+            border-left: 3px solid #6b7280;
+        }
+
+        .component-disabled:hover {
+            background-color: rgba(156, 163, 175, 0.12);
+        }
+
+        /* Estilos para filas inactivas */
+        :host ::ng-deep tr.component-inactive {
+            background-color: #f9fafb !important;
+        }
+
+        :host ::ng-deep tr.component-inactive:hover {
+            background-color: #f3f4f6 !important;
+        }
+
+        :host ::ng-deep tr.component-inactive td {
+            color: #6b7280 !important;
+        }
+
+        /* Estilos para ToggleSwitch */
+   /*    :host ::ng-deep .status-toggle.p-toggleswitch {
+            display: inline-block;
+            vertical-align: middle;
+        }
+ 
+        :host ::ng-deep .status-toggle.p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-slider {
+            background-color: #e5e7eb !important;
+            border-color: #d1d5db !important;
+        }
+
+        :host ::ng-deep .status-toggle.p-toggleswitch:not(.p-toggleswitch-checked) .p-toggleswitch-handle {
+            background-color: #9ca3af !important;
+        }
+ 
+        :host ::ng-deep .status-toggle.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+            background-color: var(--p-primary-color) !important;
+            border-color: var(--p-primary-600) !important;
+        }
+
+        :host ::ng-deep .status-toggle.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-handle {
+            background-color: var(--p-primary-contrast-color) !important;
+            left: 1.15rem !important;
+        }*/
     `]
 })
 export class BannersComponentsTabComponent implements OnInit, OnChanges {
@@ -632,6 +708,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     loadingConceptos = false;
     savingConcepto = false;
     deletingConcepto = false;
+    togglingStatus = false;
 
     // Modales
     showConceptoModal = false;
@@ -645,8 +722,12 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     editingCell: string | null = null;
     originalValue: any = null;
 
+    // Control de estado temporal del ToggleSwitch
+    toggleStates: { [key: string]: boolean } = {};
+
     // Confirmación
     conceptoToDelete: Componente | null = null;
+
 
     // Filtro por canal
     canalFiltroSeleccionado: string = '';
@@ -666,6 +747,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     private catConceptosDetService = inject(CatConceptosDetService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
 
     // ViewChild para tabla
     @ViewChild('dtConceptos') dtConceptos!: Table;
@@ -695,8 +777,8 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             canal: ['', [Validators.required]],
             tipo_comp: ['', [Validators.required]],
             swEnable: [1],
-            tiempo: [4],
-            visibles: [8]
+            tiempo: [4, [Validators.required, Validators.min(0), Validators.max(9)]],
+            visibles: [8, [Validators.required, Validators.min(0), Validators.max(9)]]
         });
     }
 
@@ -704,7 +786,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     cargarConceptos(): void {
         this.loadingConceptos = true;
-        console.log('📊 Cargando componentes con filtro de canal:', this.canalFiltroSeleccionado);
+        console.log('🔄 RECARGANDO LISTA - Cargando componentes con filtro de canal:', this.canalFiltroSeleccionado);
 
         // Aplicar filtro de canal si está seleccionado
         const filtros: any = {};
@@ -745,9 +827,10 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     openConceptoForm(concepto?: Componente): void {
         this.isEditingConcepto = !!concepto;
+        this.conceptoSeleccionado = concepto || null;
 
         if (concepto) {
-            console.log('✏️ Editando componente:', concepto);
+            // Modo edición
             this.conceptoForm.patchValue({
                 clave: concepto.clave,
                 nombre: concepto.nombre,
@@ -755,11 +838,11 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                 canal: concepto.canal,
                 tipo_comp: concepto.tipo_comp,
                 swEnable: concepto.swEnable,
-                tiempo: concepto.tiempo || 0,
-                visibles: concepto.visibles || 0
+                tiempo: Number(concepto.tiempo) || 4,
+                visibles: Number(concepto.visibles) || 8
             });
         } else {
-            console.log('➕ Creando nuevo componente');
+            // Modo creación
             this.conceptoForm.reset({
                 swEnable: 1,
                 tiempo: 4,
@@ -774,6 +857,7 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         this.showConceptoModal = false;
         this.conceptoForm.reset();
         this.isEditingConcepto = false;
+        this.conceptoSeleccionado = null;
     }
 
     saveConcepto(): void {
@@ -781,13 +865,15 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             this.savingConcepto = true;
             const formData = this.conceptoForm.value;
 
-            // Los valores ya están en el formato correcto
+            // Asegurar que tiempo y visibles sean números
             const processedData: CreateComponenteRequest = {
-                ...formData
+                ...formData,
+                tiempo: Number(formData.tiempo) || 4,
+                visibles: Number(formData.visibles) || 8
             };
 
             if (this.isEditingConcepto && this.conceptoSeleccionado) {
-                // Actualizar
+                // Actualizar componente existente
                 const updateData: UpdateComponenteRequest = {
                     id_comp: this.conceptoSeleccionado.id_comp,
                     ...processedData
@@ -795,23 +881,31 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
                 this.componentsService.updateComponente(updateData).subscribe({
                     next: (response) => {
+                        console.log('✅ UPDATE COMPLETADO - Respuesta del servidor:', response);
                         this.handleSaveSuccess('Concepto actualizado correctamente');
                     },
-                    error: (error) => this.handleSaveError(error, 'actualizar')
+                    error: (error) => {
+                        console.log('❌ ERROR EN UPDATE:', error);
+                        this.handleSaveError(error, 'actualizar');
+                    }
                 });
             } else {
-                // Crear
+                // Crear nuevo componente
                 this.componentsService.createComponente(processedData).subscribe({
                     next: (response) => {
                         this.handleSaveSuccess('Concepto creado correctamente');
                     },
-                    error: (error) => this.handleSaveError(error, 'crear')
+                    error: (error) => {
+                        console.log('❌ ERROR EN CREATE:', error);
+                        this.handleSaveError(error, 'crear');
+                    }
                 });
             }
         }
     }
 
     private handleSaveSuccess(message: string): void {
+        console.log('✅ OPERACIÓN EXITOSA - Cerrando formulario y recargando lista');
         this.messageService.add({
             severity: 'success',
             summary: 'Éxito',
@@ -819,17 +913,63 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         });
 
         this.closeConceptoForm();
+        console.log('🔄 RECARGANDO LISTA después del guardado exitoso...');
         this.cargarConceptos();
         this.savingConcepto = false;
     }
 
     private handleSaveError(error: any, operation: string): void {
         console.error(`❌ Error al ${operation} concepto:`, error);
+        console.log('🔍 Detalles del error:', {
+            error,
+            message: error?.message,
+            status: error?.status,
+            statusText: error?.statusText,
+            errorObject: error?.error,
+            respuestaCompleta: (error as any)?.respuestaCompleta
+        });
+
+        // Si hay respuesta completa del backend, mostrarla
+        if ((error as any)?.respuestaCompleta) {
+            console.log('📋 === RESPUESTA COMPLETA DEL BACKEND ===');
+            console.log('📋 Respuesta del backend:', JSON.stringify((error as any).respuestaCompleta, null, 2));
+            console.log('📋 === FIN RESPUESTA COMPLETA ===');
+        }
 
         let errorMessage = `Error al ${operation} el concepto`;
-        if (error && error.mensaje) {
+
+        // Manejar diferentes tipos de errores
+        if ((error as any)?.mensaje) {
+            // Error personalizado del servicio con propiedad mensaje
+            errorMessage = (error as any).mensaje;
+            console.log('🎯 Error detectado por propiedad .mensaje:', errorMessage);
+        } else if ((error as any)?.statuscode) {
+            // Error personalizado del servicio con statuscode
+            errorMessage = (error as any).mensaje || `Error del servidor (${(error as any).statuscode})`;
+            console.log('🎯 Error detectado por propiedad .statuscode:', errorMessage);
+        } else if (error?.message) {
+            // Error de JavaScript estándar
+            errorMessage = error.message;
+            console.log('🎯 Error detectado por .message estándar:', errorMessage);
+        } else if (error?.error?.mensaje) {
+            // Error del backend en error.error.mensaje (HTTP error)
+            errorMessage = error.error.mensaje;
+            console.log('🎯 Error detectado por error.error.mensaje:', errorMessage);
+        } else if (error?.mensaje) {
+            // Error directo del backend
             errorMessage = error.mensaje;
+            console.log('🎯 Error detectado por .mensaje directo:', errorMessage);
+        } else if (error?.status && error?.status !== 200) {
+            // Error HTTP con status code
+            errorMessage = `Error del servidor (${error.status}): ${error.statusText || 'Sin detalles'}`;
+            console.log('🎯 Error detectado por status HTTP:', errorMessage);
+        } else {
+            // Error desconocido
+            errorMessage = 'Error desconocido al procesar la solicitud';
+            console.log('🎯 Error desconocido:', error);
         }
+
+        console.log('📢 Mensaje de error que se mostrará:', errorMessage);
 
         this.messageService.add({
             severity: 'error',
@@ -862,6 +1002,12 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         let formattedValue = (concepto as any)[field];
         if (field === 'nombre' || field === 'descripcion') {
             formattedValue = this.toPascalCase(formattedValue);
+            (concepto as any)[field] = formattedValue;
+        }
+
+        // Convertir a número para campos numéricos
+        if (field === 'tiempo' || field === 'visibles') {
+            formattedValue = Number(formattedValue) || (field === 'tiempo' ? 4 : 8);
             (concepto as any)[field] = formattedValue;
         }
 
@@ -916,34 +1062,130 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     // ========== TOGGLE DE CAMPOS ==========
 
 
-    toggleSwEnable(componente: Componente): void {
-        const nuevoValor = componente.swEnable === 1 ? 0 : 1;
+    onComponentStatusClick(componente: Componente, event: Event): void {
+        console.log('🖱️ onComponentStatusClick - Evento clic detectado');
+        console.log('🖱️ onComponentStatusClick - Componente:', componente);
+        console.log('🖱️ onComponentStatusClick - swEnable:', componente.swEnable);
+
+        event.stopPropagation();
+        // Simular el cambio del ToggleSwitch para mostrar confirmación
+        const nuevoValor = componente.swEnable === 1 ? false : true;
+        this.onToggleSwitchChange(nuevoValor, componente);
+    }
+
+    getComponentToggleState(componente: Componente): boolean {
+        // Usar el estado temporal si existe, sino usar el estado real
+        const tempState = this.toggleStates[componente.id_comp];
+        return tempState !== undefined ? tempState : componente.swEnable === 1;
+    }
+
+    onToggleSwitchChange(isChecked: boolean, componente: Componente): void {
+        console.log('🔄 onToggleSwitchChange - Componente:', componente);
+        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
+        console.log('🔄 onToggleSwitchChange - Estado actual:', componente.swEnable);
+
+        const valorActual = componente.swEnable;
+        const nuevoValor = isChecked ? 1 : 0;
+
+        // Si el valor no cambió, no hacer nada
+        if (nuevoValor === valorActual) {
+            return;
+        }
+
+        // Para activación (pasar de 0 a 1), hacer el cambio directamente
+        if (nuevoValor === 1) {
+            this.procesarCambioEstadoDirecto(componente, 1);
+            return;
+        }
+
+        // Para desactivación (pasar de 1 a 0), mostrar confirmación
+        // Establecer estado temporal para mostrar el cambio visual
+        this.toggleStates[componente.id_comp] = false;
+
+        this.confirmationService.confirm({
+            message: `¿Está seguro de que desea deshabilitar el componente "${componente.nombre}"?`,
+            header: 'Confirmar Desactivación',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Deshabilitar',
+            rejectLabel: 'Cancelar',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-text',
+            accept: () => {
+                // Limpiar estado temporal y procesar el cambio
+                delete this.toggleStates[componente.id_comp];
+                this.procesarCambioEstadoDirecto(componente, 0);
+            },
+            reject: () => {
+                // Revertir el estado temporal al estado original
+                delete this.toggleStates[componente.id_comp];
+                console.log('❌ Usuario canceló la desactivación');
+            }
+        });
+    }
+
+    private procesarCambioEstadoDirecto(componente: Componente, nuevoValor: number): void {
         const valorAnterior = componente.swEnable;
 
+        // Aplicar el cambio optimista
         componente.swEnable = nuevoValor;
+
+        // Mostrar loading state
+        this.togglingStatus = true;
 
         this.componentsService.updateComponente({
             id_comp: componente.id_comp,
             swEnable: nuevoValor
         }).subscribe({
             next: (response) => {
+                this.togglingStatus = false;
+                console.log('✅ Estado actualizado exitosamente:', response);
+
+                const estadoTexto = nuevoValor === 1 ? 'ACTIVO' : 'DESACTIVADO';
+                const icono = nuevoValor === 1 ? '✅' : '🚫';
+
                 this.messageService.add({
-                    severity: 'success',
-                    summary: 'Campo Actualizado',
-                    detail: `Campo "Habilitado" actualizado correctamente`
+                    severity: nuevoValor === 1 ? 'success' : 'warn',
+                    summary: `Componente ${estadoTexto}`,
+                    detail: `${icono} El componente "${componente.nombre}" ha sido ${estadoTexto.toLowerCase()} correctamente`,
+                    life: 4000
                 });
             },
             error: (error) => {
-                // Revertir cambio
+                this.togglingStatus = false;
+                console.error('❌ Error al cambiar estado:', error);
+
+                // Revertir cambio local en caso de error
                 componente.swEnable = valorAnterior;
+
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al actualizar campo "Habilitado"',
-                    life: 5000
+                    summary: 'Error al cambiar estado',
+                    detail: `No se pudo cambiar el estado del componente "${componente.nombre}". Se revirtió el cambio.`,
+                    life: 6000
                 });
             }
         });
+    }
+
+
+
+    /**
+     * Verificación robusta del estado del componente
+     */
+    private isComponentActive(swEnable: any): boolean {
+        // Manejar diferentes tipos de valores
+        if (typeof swEnable === 'boolean') {
+            return swEnable;
+        }
+        if (typeof swEnable === 'string') {
+            return swEnable === '1' || swEnable.toLowerCase() === 'true';
+        }
+        if (typeof swEnable === 'number') {
+            return swEnable === 1;
+        }
+        // Valor por defecto: considerar inactivo
+        console.warn('⚠️ isComponentActive - Valor swEnable desconocido:', swEnable, typeof swEnable);
+        return false;
     }
 
     // ========== TOGGLE DE ESTADO ==========
@@ -1095,6 +1337,35 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
         this.conceptoForm.patchValue({ [fieldName]: newValue });
     }
 
+    toggleSwEnableWithConfirm(): void {
+        const currentValue = this.conceptoForm.get('swEnable')?.value;
+        const newValue = currentValue === 1 ? 0 : 1;
+
+        // Si se está activando (de 0 a 1), hacer el cambio directamente
+        if (newValue === 1) {
+            this.toggleFormField('swEnable');
+            return;
+        }
+
+        // Si se está desactivando (de 1 a 0), mostrar confirmación
+        this.confirmationService.confirm({
+            message: `¿Está seguro de que desea deshabilitar este componente?`,
+            header: 'Confirmar Desactivación',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Deshabilitar',
+            rejectLabel: 'Cancelar',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-text',
+            accept: () => {
+                // Solo aquí se ejecuta el cambio después de la confirmación
+                this.toggleFormField('swEnable');
+            },
+            reject: () => {
+                console.log('❌ Usuario canceló la desactivación del componente');
+            }
+        });
+    }
+
     // ========== MÉTODOS DE CATÁLOGO ==========
 
     cargarOpcionesCatalogo(): void {
@@ -1220,5 +1491,24 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
             'nombre': 'Nombre'
         };
         return labels[field] || field;
+    }
+
+    // ========== MÉTODOS DE DIAGNÓSTICO ==========
+
+    /**
+     * Método de diagnóstico para verificar el estado del componente
+     * Se puede llamar desde la consola del navegador
+     */
+    public diagnosticComponentesUpdate(): void {
+        console.log('🔍 === DIAGNÓSTICO DE COMPONENTES UPDATE ===');
+        console.log('📊 isEditingConcepto:', this.isEditingConcepto);
+        console.log('📊 conceptoSeleccionado:', this.conceptoSeleccionado);
+        console.log('📊 conceptoSeleccionado?.id_comp:', this.conceptoSeleccionado?.id_comp);
+        console.log('📊 conceptoSeleccionado?.id_comp tipo:', typeof this.conceptoSeleccionado?.id_comp);
+        console.log('📊 Formulario válido:', this.conceptoForm?.valid);
+        console.log('📊 Formulario valor:', this.conceptoForm?.value);
+        console.log('📊 showConceptoModal:', this.showConceptoModal);
+        console.log('📊 savingConcepto:', this.savingConcepto);
+        console.log('🔍 === FIN DIAGNÓSTICO ===');
     }
 }

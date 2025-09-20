@@ -91,6 +91,12 @@ export class UsuarioService {
 
     return this.http.get<ApiResponse<Usuario>>(url, this.httpOptions).pipe(
       map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en getUsuarios:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+
         if (response.statuscode === 200 && response.data) {
           return response.data;
         }
@@ -117,6 +123,14 @@ export class UsuarioService {
     const url = this.getApiUrl();
 
     return this.http.post<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en createUsuario:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+        return response;
+      }),
       tap(response => {
         if (response.statuscode === 200) {
           console.log(`✅ Usuario creado exitosamente: ${usuario.nombre}`);
@@ -133,6 +147,14 @@ export class UsuarioService {
     const url = `${this.getApiUrl()}/${id}`;
 
     return this.http.patch<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en updateUsuario:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+        return response;
+      }),
       tap(response => {
         if (response.statuscode === 200) {
           console.log(`✅ Usuario actualizado exitosamente: ID ${id}`);
@@ -149,6 +171,14 @@ export class UsuarioService {
     const url = `${this.getApiUrl()}/${id}`;
 
     return this.http.put<ApiResponse<Usuario>>(url, usuario, this.httpOptions).pipe(
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en updateUsuarioCompleto:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+        return response;
+      }),
       tap(response => {
         if (response.statuscode === 200) {
           console.log(`✅ Usuario actualizado completamente: ID ${id}`);
@@ -165,6 +195,14 @@ export class UsuarioService {
     const url = `${this.getApiUrl()}/${id}`;
 
     return this.http.delete<ApiResponse<Usuario>>(url, this.httpOptions).pipe(
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Error del backend detectado en deleteUsuario:', response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+        return response;
+      }),
       tap(response => {
         if (response.statuscode === 200) {
           console.log(`🗑️ Usuario eliminado exitosamente: ID ${id}`);
@@ -188,6 +226,14 @@ export class UsuarioService {
     console.log(`🔧 Ejecutando acción: ${action}`, body);
 
     return this.http.post<ApiResponse<Usuario>>(url, body, this.httpOptions).pipe(
+      map(response => {
+        // Verificar si hay error del backend en el body
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log(`❌ Error del backend detectado en executeAction (${action}):`, response);
+          throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
+        }
+        return response;
+      }),
       tap(response => {
         if (response.statuscode === 200) {
           console.log(`✅ Acción ${action} ejecutada exitosamente`);
@@ -406,20 +452,30 @@ export class UsuarioService {
    */
   private handleError(error: any): Observable<never> {
     let errorMessage = 'Ocurrió un error en el servicio de usuarios';
-    
+
     if (error.error instanceof ErrorEvent) {
       // Error del cliente
       errorMessage = `Error del cliente: ${error.error.message}`;
     } else if (error.status) {
-      // Error del servidor
-      errorMessage = `Error del servidor: ${error.status} - ${error.message}`;
+      // Error del servidor - verificar si es HTTP error o error del backend
+      if (error.error && error.error.statuscode && error.error.statuscode !== 200) {
+        // Error del backend en el body (statuscode !== 200)
+        errorMessage = error.error.mensaje || `Error del servidor: ${error.error.statuscode}`;
+        console.log('❌ Error del backend detectado:', error.error);
+      } else {
+        // Error HTTP estándar
+        errorMessage = `Error del servidor: ${error.status} - ${error.message || 'Sin mensaje'}`;
+      }
     } else if (error.message) {
-      // Error personalizado
-      errorMessage = error.message;
+      // Error personalizado - verificar si ya tiene mensaje del backend
+      if (error.message && !error.message.includes('Ocurrió un error en el servicio de usuarios')) {
+        // Es un mensaje personalizado del backend
+        errorMessage = error.message;
+      }
     }
-    
+
     console.error('❌ Error en UsuarioService:', error);
-    
+
     return throwError(() => ({
       message: errorMessage,
       originalError: error

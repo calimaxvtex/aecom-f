@@ -100,11 +100,11 @@ export const environment = {
 ```json
 {
   "configurations": {
-    "production": {
+    "qa": {
       "fileReplacements": [
         {
           "replace": "src/environments/environment.ts",
-          "with": "src/environments/environment.prod.ts"
+          "with": "src/environments/environment.qa.ts"
         }
       ]
     },
@@ -115,9 +115,28 @@ export const environment = {
           "with": "src/environments/environment.staging.ts"
         }
       ]
+    },
+    "production": {
+      "fileReplacements": [
+        {
+          "replace": "src/environments/environment.ts",
+          "with": "src/environments/environment.prod.ts"
+        }
+      ]
     }
   }
 }
+```
+
+### **Uso con Angular CLI**
+```bash
+# Usar configuración con --configuration
+ng serve --configuration=qa
+ng build --configuration=production
+
+# Atajo recomendado: usar npm scripts
+npm run serve:qa
+npm run build:prod
 ```
 
 ## 🚀 Comandos de Ejecución
@@ -129,6 +148,11 @@ npm start
 ng serve
 ```
 
+### **QA**
+```bash
+ng serve --configuration=qa
+```
+
 ### **Staging**
 ```bash
 ng serve --configuration=staging
@@ -137,7 +161,22 @@ ng serve --configuration=staging
 ### **Producción**
 ```bash
 ng build --configuration=production
-ng serve --configuration=production
+ng serve --config=production
+```
+
+### **Atajos Rápidos Recomendados**
+```bash
+# Desarrollo (más rápido, con bypass)
+npm start
+
+# QA (testing con auth real)
+ng serve --configuration=qa
+
+# Staging (ambiente de pruebas)
+ng serve --configuration=staging
+
+# Producción (build optimizado)
+ng build --configuration=production
 ```
 
 ## 🔄 Interceptores Condicionales

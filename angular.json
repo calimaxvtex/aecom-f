@@ -58,6 +58,17 @@
                             ],
                             "outputHashing": "all"
                         },
+                        "qa": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/environments/environment.ts",
+                                    "with": "src/environments/environment.qa.ts"
+                                }
+                            ],
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true
+                        },
                         "staging": {
                             "fileReplacements": [
                                 {
@@ -83,6 +94,9 @@
                     "configurations": {
                         "production": {
                             "buildTarget": "ultima-ng:build:production"
+                        },
+                        "qa": {
+                            "buildTarget": "ultima-ng:build:qa"
                         },
                         "staging": {
                             "buildTarget": "ultima-ng:build:staging"

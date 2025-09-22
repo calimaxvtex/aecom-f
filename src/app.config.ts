@@ -11,7 +11,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ApiMonitorInterceptor } from './app/api-monitor.interceptor';
 import { SimpleTestInterceptor } from './app/simple-test.interceptor';
 import { ApiConfigService } from './app/core/services/api/api-config.service';
-import { environment } from '../src/environments/environment';
+import { environment } from './environments/environment';
 // import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
 
 // console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);

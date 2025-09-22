@@ -10,7 +10,6 @@ import {
   RolDetalleApiResponse,
   RolDetalleForm,
   RolDetalleAction,
-  RolDetalleActionParams,
   RolDetalleFilters,
   RolDetallePagination,
   RolDetalleQuery,
@@ -30,7 +29,7 @@ import { ROL_DETALLE_API_CONFIG, ROL_DETALLE_MESSAGES } from '../models/rol-deta
   providedIn: 'root'
 })
 export class RolDetalleService {
-  private readonly API_ID: number = 3; // ID del endpoint de Rol Detalle
+  private readonly API_ID: number = 5; // ID del endpoint de Rol Detalle
   private readonly endpoints = {
     ROL_DETALLE: ROL_DETALLE_API_CONFIG.ENDPOINTS.ROL_DETALLE // Mantener por compatibilidad
   };
@@ -77,6 +76,8 @@ export class RolDetalleService {
    */
   consultarDetalleRol(query: RolDetalleQuery): Observable<RolDetalle[]> {
     const url = `${this.getApiUrl()}/1`; // ID fijo en URL
+
+    console.log(`🔍 Consultando detalles de rol:`, query);
 
     return this.http.post<RolDetalleApiResponse>(url, query, this.httpOptions).pipe(
       map(response => {
@@ -203,12 +204,42 @@ export class RolDetalleService {
     console.log(`🔧 Ejecutando acción de detalle de rol: ${action}`, body);
 
     return this.http.post<RolDetalleApiResponse>(url, body, this.httpOptions).pipe(
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`✅ Acción de detalle de rol ${action} ejecutada exitosamente`);
+      map((response: any) => {
+        // ⚠️ CRÍTICO: Verificar errores del backend
+        if (Array.isArray(response) && response.length > 0) {
+          const firstItem = response[0];
+          if (firstItem.statuscode && firstItem.statuscode !== 200) {
+            console.log('❌ Backend devolvió error en array:', firstItem);
+            throw new Error(firstItem.mensaje || 'Error del servidor');
+          }
+          return {
+            statuscode: firstItem.statuscode || 200,
+            mensaje: firstItem.mensaje || 'OK',
+            data: firstItem.data || []
+          };
         }
+
+        // Verificar error en respuesta directa
+        if (response.statuscode && response.statuscode !== 200) {
+          console.log('❌ Backend devolvió error directo:', response);
+          throw new Error(response.mensaje || 'Error del servidor');
+        }
+
+        return {
+          statuscode: response.statuscode || 200,
+          mensaje: response.mensaje || 'Operación exitosa',
+          data: response.data
+        };
       }),
-      catchError(this.handleError)
+      catchError(error => {
+        console.error('❌ Error en executeAction:', error);
+
+        // ⚠️ CRÍTICO: Preservar mensaje original del backend si ya existe
+        const errorMessage = error instanceof Error ? error.message : 'Error en operación de detalle de rol';
+        console.log('📤 Enviando error al componente:', errorMessage);
+
+        return throwError(() => new Error(errorMessage));
+      })
     );
   }
 
@@ -229,21 +260,21 @@ export class RolDetalleService {
    * IN - Insertar detalle usando executeAction
    */
   insertDetalleRol(detalle: RolDetalleForm): Observable<RolDetalleApiResponse> {
-    return this.executeAction('IN', { data: detalle });
+    return this.executeAction('IN', detalle);
   }
 
   /**
    * UP - Actualizar detalle usando executeAction
    */
   updateDetalleRolAction(id: number, detalle: Partial<RolDetalleForm>): Observable<RolDetalleApiResponse> {
-    return this.executeAction('UP', { id, data: detalle });
+    return this.executeAction('UP', { id_rol: id, ...detalle });
   }
 
   /**
    * DL - Eliminar detalle usando executeAction
    */
   deleteDetalleRolAction(id: number): Observable<RolDetalleApiResponse> {
-    return this.executeAction('DL', { id });
+    return this.executeAction('DL', { id_rold: id });
   }
 
   /**

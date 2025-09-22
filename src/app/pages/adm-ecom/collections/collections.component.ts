@@ -315,15 +315,6 @@ import { ItemsComponent } from './items.component';
                                                 pTooltip="Editar Colección"
                                             ></button>
 
-                                            <!-- Botón de desbloqueo (solo visible si está bloqueada) -->
-                                            <button
-                                                *ngIf="collection.sw_fijo === 1"
-                                                pButton
-                                                icon="pi pi-lock-open"
-                                                (click)="desbloquearColeccion(collection); $event.stopPropagation()"
-                                                class="p-button-sm p-button-text p-button-info"
-                                                pTooltip="Desbloquear Colección"
-                                            ></button>
 
                                             <button
   #delBtn
@@ -542,14 +533,13 @@ import { ItemsComponent } from './items.component';
                                 title="Clic para cambiar">
                             </p-tag>
                             <p-tag
-                                [value]="collectionForm.get('sw_fijo')?.value ? 'Unlock' : 'Lock'"
-                                [severity]="collectionForm.get('sw_fijo')?.value ? 'warning' : 'success'"
+                                [value]="collectionForm.get('sw_fijo')?.value ? 'Lock' : 'Unlock'"
+                                [severity]="collectionForm.get('sw_fijo')?.value ? 'warning' : ''"
                                 (click)="toggleSwFijo()"
                                 class="cursor-pointer hover:opacity-80 transition-opacity min-w-20 flex items-center gap-1"
                                 title="Clic para cambiar">
-                                <i [class]="collectionForm.get('sw_fijo')?.value ? 'pi pi-lock-open' : 'pi pi-lock'"
+                                <i [class]="collectionForm.get('sw_fijo')?.value ? 'pi pi-lock' : 'pi pi-lock-open'"
                                    class="text-sm"></i>
-                                <span>{{ collectionForm.get('sw_fijo')?.value ? 'Unlock' : 'Lock' }}</span>
                             </p-tag>
                         </div>
                     </div>
@@ -1615,7 +1605,6 @@ export class CollectionsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        console.log('🚀 CollectionsComponent inicializado');
         // Cargar tipos primero, luego colecciones para asegurar que los labels estén disponibles
         this.cargarTipoCollOptions();
     }
@@ -1658,19 +1647,16 @@ export class CollectionsComponent implements OnInit {
             this.tipoFiltroSeleccionado = tipoValue;
             this.cargarCollections({ id_tipoc: parseInt(tipoValue) }); // Cargar con filtro aplicado
         }
-        console.log(`Filtro aplicado: ${this.tipoFiltroSeleccionado}`);
     }
 
     showAllTypes(): void {
         this.selectedTipoFilter = this.tipoCollOptions.map(option => option.value);
         this.onTipoFilterChange({ value: this.selectedTipoFilter });
-        console.log('Mostrando todos los tipos');
     }
 
     filterByType(tipoId: number): void {
         this.selectedTipoFilter = [tipoId];
         this.onTipoFilterChange({ value: this.selectedTipoFilter });
-        console.log('Filtrando por tipo:', tipoId);
     }
 
     getCurrentDate(): Date {
@@ -1700,12 +1686,9 @@ export class CollectionsComponent implements OnInit {
 
                 if (responseData && responseData.statuscode === 200 && responseData.data && Array.isArray(responseData.data) && responseData.data.length > 0) {
                     // El servicio ya procesó los datos, responseData.data ya es el array directo
-                    console.log('✅ Asignando datos al componente:', responseData.data.length, 'colecciones');
                     this.collections = responseData.data;
                     this.filteredCollections = [...this.collections]; // Ahora filteredCollections contiene los datos filtrados desde el API
-                    console.log('📊 Colecciones asignadas:', this.collections);
                 } else {
-                    console.warn('⚠️ No hay datos válidos para asignar');
                     this.collections = [];
                     this.filteredCollections = [];
                 }
@@ -1725,25 +1708,19 @@ export class CollectionsComponent implements OnInit {
     }
 
     cargarTipoCollOptions(): void {
-        console.log('📋 Cargando tipos de colección desde catconceptosdet con clave TIPOCOLL');
-
         this.catConceptosDetService.queryDetalles({
             clave: 'TIPOCOLL'
         }).subscribe({
             next: (response) => {
-                console.log('✅ Respuesta de tipos de colección:', response);
-
                 if (response && response.statuscode === 200 && response.data) {
                     this.tipoCollOptions = response.data.map((tipo: any) => ({
                         label: tipo.descripcion || tipo.nombre || `Tipo ${tipo.concepto}`,
                         value: tipo.valor1 // Usar valor1 como el valor a setear
                     }));
-                    console.log('📋 Opciones de tipo colección cargadas:', this.tipoCollOptions);
 
                     // Después de cargar los tipos, cargar las colecciones para que los labels estén disponibles
                     this.cargarCollections();
                 } else {
-                    console.warn('⚠️ No se encontraron tipos de colección');
                     this.tipoCollOptions = [];
                 }
             },
@@ -1819,13 +1796,10 @@ export class CollectionsComponent implements OnInit {
             },
             error: (error) => {
                 console.error('❌ Error al cargar detalles:', error.message || error);
-                console.error('❌ Error completo:', error);
                 this.loadingColld = false;
-                console.log('⏹️ loadingColld establecido en false por error');
 
                 // ✅ Marcar como cargado para evitar reintentos infinitos
                 this.colldDataLoaded = true;
-                console.log('✅ colldDataLoaded establecido en true (con error)');
 
                 this.messageService.add({
                     severity: 'error',
@@ -1839,7 +1813,6 @@ export class CollectionsComponent implements OnInit {
 
     // ✅ MÉTODO PÚBLICO PARA FORZAR RECARGA MANUAL
     refreshColldData(): void {
-        console.log('🔄 Forzando recarga manual de datos COLLD');
         if (this.collectionSeleccionada) {
             this.loadingColld = true; // ✅ Establecer estado de loading consistente
             this.colldDataLoaded = false; // Forzar recarga
@@ -2098,36 +2071,25 @@ export class CollectionsComponent implements OnInit {
     // ========== REORDENAMIENTO CON DRAG & DROP ==========
 
     onHandleMouseDown(): void {
-        console.log('🖱️ Handle mousedown detectado - el usuario está intentando arrastrar');
+        // Handle mousedown event
     }
 
     onDragStart(): void {
-        console.log('🎯 Drag start detectado - el arrastre ha comenzado');
+        // Drag start event
     }
 
     onRowReorder(event: any): void {
-        console.log('🔄 Reordenando: item', event.dragIndex, '→', event.dropIndex);
-        
         // ✅ En PrimeNG V20, el evento tiene dragIndex y dropIndex, no 'value'
         const dragIndex = event.dragIndex;
         const dropIndex = event.dropIndex;
-        
+
         if (dragIndex !== undefined && dropIndex !== undefined) {
-            // ✅ 1. Debug del estado antes del reordenamiento
-            console.log('📋 ANTES - Item en dragIndex', dragIndex, ':', this.filteredColldItems[dragIndex]?.id_colld);
-            console.log('📋 ANTES - Item en dropIndex', dropIndex, ':', this.filteredColldItems[dropIndex]?.id_colld);
-            
-            // ✅ 2. Reordenar manualmente el array local
+            // ✅ 1. Reordenar manualmente el array local
             const reorderedItems = [...this.filteredColldItems];
             const draggedItem = reorderedItems.splice(dragIndex, 1)[0];
             reorderedItems.splice(dropIndex, 0, draggedItem);
-            
-            // ✅ 3. Debug del estado después del reordenamiento
-            console.log('📋 DESPUÉS - Item en posición 0:', reorderedItems[0]?.id_colld);
-            console.log('📋 DESPUÉS - Item en posición 1:', reorderedItems[1]?.id_colld);
-            console.log('📋 DESPUÉS - Item movido:', draggedItem?.id_colld);
-            
-            // ✅ 4. Crear payload limpio DIRECTAMENTE del array reordenado
+
+            // ✅ 2. Crear payload limpio DIRECTAMENTE del array reordenado
             const payloadItems = reorderedItems.map((item, index) => {
                 const newOrder = index + 1;
                 
@@ -2140,49 +2102,35 @@ export class CollectionsComponent implements OnInit {
                     orden: newOrder
                 };
             });
-            
-            // ✅ 5. Debug del payload antes de enviar
-            console.log('📦 PAYLOAD - Primer item:', payloadItems[0]);
-            console.log('📦 PAYLOAD - Segundo item:', payloadItems[1]);
-            
-            // ✅ 6. Actualizar arrays locales DESPUÉS de crear el payload
+
+            // ✅ 3. Actualizar arrays locales DESPUÉS de crear el payload
             this.filteredColldItems = reorderedItems;
-            
-            // ✅ 7. Sincronizar colldItems: encontrar y actualizar los items correspondientes
+
+            // ✅ 4. Sincronizar colldItems: encontrar y actualizar los items correspondientes
             reorderedItems.forEach((item, index) => {
                 const colldIndex = this.colldItems.findIndex(colldItem => colldItem.id_colld === item.id_colld);
                 if (colldIndex !== -1) {
                     this.colldItems[colldIndex].orden = index + 1;
                 }
             });
-            
-            console.log('🔄 Arrays sincronizados: filteredColldItems y colldItems');
-            
-            // ✅ 4. Enviar al servidor
+
+            // ✅ 5. Enviar al servidor
             this.updateItemsOrderInServer(payloadItems);
-            
-            console.log('✅ Reordenamiento aplicado y enviado al servidor');
         } else {
-            console.error('❌ Error: dragIndex o dropIndex no definidos:', event);
+            console.error('❌ Error en reordenamiento: índices no definidos');
         }
     }
 
     private updateItemsOrderInServer(itemsPayload: {id_colld: number, orden: number}[]): void {
         if (!this.collectionSeleccionada || itemsPayload.length === 0) {
-            console.warn('⚠️ No hay colección seleccionada o items para actualizar');
             return;
         }
-        
-        console.log('📤 Actualizando orden en servidor...');
-        console.log('📂 Colección padre ID:', this.collectionSeleccionada.id_coll);
-        console.log('📋 Payload limpio:', itemsPayload);
-        
+
         this.colldService.updateItemsOrder(
             this.collectionSeleccionada.id_coll,
             itemsPayload  // Solo id_colld y orden
         ).subscribe({
             next: (response) => {
-                console.log('✅ Orden actualizado en servidor:', response);
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Orden actualizado',
@@ -2287,7 +2235,6 @@ export class CollectionsComponent implements OnInit {
     onTipoFilterChange(event: any): void {
         // Esta función ya no se usa para filtrado local,
         // ahora los filtros se aplican en la llamada al API
-        console.log('onTipoFilterChange: Filtros manejados por API', event);
     }
 
     onCollectionSelect(event: any): void {
@@ -2737,10 +2684,6 @@ export class CollectionsComponent implements OnInit {
     }
 
     onToggleSwitchChange(isChecked: boolean, collection: CollItem): void {
-        console.log('🔄 onToggleSwitchChange - Collection:', collection);
-        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
-        console.log('🔄 onToggleSwitchChange - Estado actual:', collection.estado);
-
         // Validar si la colección está bloqueada (sw_fijo = 1)
         if (this.validarColeccionBloqueada(collection, 'cambiar estado')) {
             return;
@@ -2775,7 +2718,6 @@ export class CollectionsComponent implements OnInit {
         this.accionCancelada = () => {
             // Revertir el estado temporal al estado original
             delete this.toggleStates[collection.id_coll];
-            console.log('❌ Usuario canceló la desactivación');
         };
         this.showConfirmDialog = true;
     }
@@ -2998,8 +2940,7 @@ export class CollectionsComponent implements OnInit {
             return tipo.label;
         }
 
-        // Si no encuentra por valor, intentar por índice o devolver un valor por defecto
-        console.warn('Tipo de colección no encontrado:', idTipoc, 'en opciones:', this.tipoCollOptions);
+        // Si no encuentra por valor, devolver un valor por defecto
         return 'Sin tipo';
     }
 

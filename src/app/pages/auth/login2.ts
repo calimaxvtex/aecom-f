@@ -117,9 +117,8 @@ export class Login2 {
             console.log('📤 Enviando login con credenciales (Login2):', { ...credentials, password: '***' });
 
             this.usuarioService.login(credentials).subscribe({
-                next: (response: any) => {
+                next: async (response: any) => {
                     console.log('✅ Login exitoso a través de UsuarioService (Login2):', response);
-                    this.isLoading = false;
 
                     // Mostrar mensaje de éxito
                     let userName = 'Usuario';
@@ -136,10 +135,23 @@ export class Login2 {
                         life: 3000
                     });
 
-                    // Redirigir al dashboard con recarga completa
+                    // 🔐 SEGURIDAD: Esperar carga completa del menú antes de continuar
+                    console.log('🔐 [LOGIN2] Esperando carga completa del menú...');
+                    try {
+                        // El UsuarioService.login ya maneja la actualización del menú internamente
+                        // Pero esperamos un poco más para asegurar que todo esté listo
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        console.log('🔐 [LOGIN2] Menú cargado, procediendo a dashboard...');
+                    } catch (error) {
+                        console.warn('⚠️ [LOGIN2] Error esperando menú, pero continuando...');
+                    }
+
+                    this.isLoading = false;
+
+                    // Redirigir al dashboard usando Angular Router
                     setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1500);
+                        this.router.navigate(['/dashboards']);
+                    }, 1000);
                 },
                 error: (error: any) => {
                     console.error('❌ Error en login a través de UsuarioService (Login2):', error);

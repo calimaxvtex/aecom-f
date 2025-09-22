@@ -5,16 +5,14 @@ import { MenuService } from './menu.service';
 import { MenuApiItem, MenuApiResponse, MenuHttpResponse } from '../../models/menu.interface';
 import { DialogService } from 'primeng/dynamicdialog';
 
-export interface CachedMenuData {
-  menu: MenuItem[];
-  timestamp: number;
-}
+// ❌ CACHE DESHABILITADO: Interface CachedMenuData eliminada
 
 @Injectable({
   providedIn: 'root'
 })
 export class MenuLoaderService {
-  private readonly STORAGE_KEY = 'dynamic-menu-cache';
+  // ❌ CACHE DESHABILITADO: Sin persistencia de localStorage
+  // private readonly STORAGE_KEY = 'dynamic-menu-cache';
 
   // Estado del menú
   private menuSubject = new BehaviorSubject<MenuItem[] | null>(null);
@@ -41,48 +39,37 @@ export class MenuLoaderService {
    */
   public async initialize(): Promise<void> {
     if (this.menuSubject.value !== null) {
-      console.log('📋 Menú ya inicializado, omitiendo');
-      return;
+      return; // Menú ya inicializado, omitir
     }
     await this.loadMenu();
   }
 
   /**
-   * Carga el menú con estrategia híbrida:
-   * 1. Mostrar cache inmediatamente si existe
-   * 2. Cargar desde API en background
+   * ❌ CACHE DESHABILITADO: Carga el menú directamente desde API
+   * Sin persistencia localStorage - siempre fresco desde servidor
    */
   private async loadMenu(): Promise<void> {
     this.loadingSubject.next(true);
     this.errorSubject.next(false);
 
-    // 1. Intentar cargar desde cache primero
-    const cachedMenu = this.getCachedMenu();
-    if (cachedMenu && cachedMenu.length > 0) {
-      this.menuSubject.next(cachedMenu);
-      this.loadingSubject.next(false);
-    }
-
-    // 2. Cargar desde API
+    // ❌ SIN CACHE: Cargar directamente desde API
     try {
       await this.loadMenuFromAPI();
       this.errorSubject.next(false);
     } catch (error) {
-      console.error('Error cargando menú:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Error cargando menú desde API:', error instanceof Error ? error.message : String(error));
       this.errorSubject.next(true);
 
-      // Si no hay cache y API falló, mostrar error
-      if (!cachedMenu || cachedMenu.length === 0) {
-        this.showNoMenuError();
-        this.menuSubject.next([]);
-      }
+      // Sin cache disponible, mostrar error
+      this.showNoMenuError();
+      this.menuSubject.next([]);
     } finally {
       this.loadingSubject.next(false);
     }
   }
 
   /**
-   * Carga el menú desde la API y actualiza el cache
+   * ❌ CACHE DESHABILITADO: Carga el menú desde la API sin guardar cache
    */
   private async loadMenuFromAPI(): Promise<void> {
     try {
@@ -91,10 +78,9 @@ export class MenuLoaderService {
       if (response && response.data) {
         const menuItems = this.mapApiToMenuItems(response.data);
 
-        // Actualizar cache
-        this.cacheMenu(menuItems);
+        // ❌ SIN CACHE: No guardar en localStorage
 
-        // Actualizar estado
+        // Actualizar estado directamente
         this.menuSubject.next(menuItems);
       } else {
         throw new Error('Respuesta de API inválida');
@@ -126,38 +112,12 @@ export class MenuLoaderService {
   }
 
   /**
-   * Guarda el menú en localStorage (cache permanente)
+   * ❌ CACHE DESHABILITADO: Métodos de cache eliminados
+   * Ya no se guarda ni recupera del localStorage
    */
-  private cacheMenu(menu: MenuItem[]): void {
-    try {
-      const cacheData: CachedMenuData = {
-        menu,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-      console.error('Error guardando menú en cache:', error);
-    }
-  }
 
   /**
-   * Obtiene el menú desde localStorage
-   */
-  private getCachedMenu(): MenuItem[] | null {
-    try {
-      const cached = localStorage.getItem(this.STORAGE_KEY);
-      if (!cached) return null;
-
-      const cacheData: CachedMenuData = JSON.parse(cached);
-      return cacheData.menu;
-    } catch (error) {
-      localStorage.removeItem(this.STORAGE_KEY);
-      return null;
-    }
-  }
-
-  /**
-   * Fuerza recarga del menú desde API (para botón manual)
+   * ❌ CACHE DESHABILITADO: Recarga el menú desde API
    */
   async reloadMenu(): Promise<void> {
     this.loadingSubject.next(true);
@@ -166,6 +126,7 @@ export class MenuLoaderService {
     try {
       await this.loadMenuFromAPI();
     } catch (error) {
+      console.error('❌ Error recargando menú:', error);
       this.errorSubject.next(true);
       throw error;
     } finally {
@@ -174,24 +135,61 @@ export class MenuLoaderService {
   }
 
   /**
-   * Actualiza el menú después de login exitoso
+   * ❌ CACHE DESHABILITADO: Actualiza el menú después de login exitoso
+   * Sin cache, siempre carga fresco desde API
    */
   async updateMenuOnLogin(): Promise<void> {
     try {
+      // 🚨 PASO 1: RESETAR ESTADO COMPLETO
+      this.menuSubject.next(null);
+      this.loadingSubject.next(true);
+      this.errorSubject.next(false);
+
+      // 🚨 PASO 2: ESPERAR CARGA COMPLETA DESDE API (SIN CACHE)
       await this.loadMenuFromAPI();
-      
-      // Forzar detección de cambios para asegurar renderizado
-      setTimeout(() => {
-        this.appRef.tick();
-      }, 100);
+
+      // 🚨 PASO 3: ASEGURAR RENDERIZADO COMPLETO CON ESTADO FINAL
+      await this.ensureMenuRendered();
+
+      // 🚨 PASO 4: CONFIRMAR ESTADO FINAL - IMPORTANTE PARA SINCRONIZACIÓN
+      this.loadingSubject.next(false); // Asegurar que loading esté en false
+      this.appRef.tick(); // Forzar detección de cambios final
+
     } catch (error) {
-      // Mantener cache existente si falla
-      console.warn('Error actualizando menú después del login:', error);
+      console.error('❌ Error cargando menú después del login:', error);
+
+      // En caso de error, asegurar estado consistente
+      this.loadingSubject.next(false);
+      this.errorSubject.next(true);
+
+      // En caso de error, mostrar error
+      this.showNoMenuError();
+
+      throw error; // Re-lanzar para que login sepa que falló
     }
   }
 
+  /**
+   * Asegura que el menú se renderice completamente antes de continuar
+   */
+  private async ensureMenuRendered(): Promise<void> {
+    return new Promise((resolve) => {
+      // Forzar detección de cambios inmediata
+      this.appRef.tick();
+
+      // Esperar un ciclo completo de renderizado
+      setTimeout(() => {
+        this.appRef.tick();
+        resolve();
+      }, 200);
+    });
+  }
+
+  /**
+   * ❌ CACHE DESHABILITADO: No hay cache que limpiar
+   */
   clearCache(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
+    // No hay cache que limpiar - funcionalidad deshabilitada
   }
 
   /**

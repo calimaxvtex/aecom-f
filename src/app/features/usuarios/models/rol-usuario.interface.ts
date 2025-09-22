@@ -51,10 +51,25 @@ export type RolUsuarioAction = 'SL' | 'UP' | 'IN' | 'DL';
  */
 export interface RolUsuarioActionParams {
   action: RolUsuarioAction;
-  data?: Partial<RolUsuarioForm>;
   id?: number;
+  id_usu: number;
+  id_rol: number;
 }
-
+export interface RolUsuarioDeleteParams {
+  action: RolUsuarioAction;
+  id: number;
+  
+}
+export interface RolUsuarioupdateParams {
+  action: RolUsuarioAction;
+  id: number;
+  
+}
+export interface RolUsuarioInsertParams {
+  action: RolUsuarioAction;
+  id_usu: number;
+  id_rol: number;
+}
 /**
  * Filtros para búsqueda de relaciones rol-usuario
  */

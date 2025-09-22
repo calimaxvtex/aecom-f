@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
-import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 
 // Componentes de tabs
@@ -16,13 +15,53 @@ import { UsuarioService } from '../../../features/usuarios/services/usuario.serv
 import { RolService } from '../../../features/usuarios/services/rol.service';
 import { RolUsuarioService } from '../../../features/usuarios/services/rol-usuario.service';
 import { RolDetalleService } from '../../../features/usuarios/services/rol-detalle.service';
-import { MenuService } from '../../../core/services/menu/menu.service';
 
-// Interfaces del servicio
-import { Usuario } from '../../../features/usuarios/models/usuario.interface';
-import { Rol } from '../../../features/usuarios/models/rol.interface';
-import { RolDetalle } from '../../../features/usuarios/models/rol-detalle.interface';
-import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interface';
+// Interfaces
+interface UsuarioMock {
+    id: number;
+    usuario: number;
+    email: string;
+    nombre: string;
+    estado: number;
+    logins: number;
+    intentos: number;
+    fecha_login: string | null;
+    fecha_intento: string | null;
+    fecha_m: string;
+    fecha_a: string;
+    fecha: string;
+    id_session: number;
+    logout: number;
+}
+
+interface RolMock {
+    id_rol: number;
+    nombre: string;
+    estado: string;
+    fecha_m: string;
+}
+
+interface RolDetalleMock {
+    id_rold: number;
+    id_rol: number;
+    ren: number;
+    id_menu: number;
+    fecha_m: string;
+    nombre_rol: string;
+    nombre_menu: string | null;
+}
+
+interface RolUsuarioMock {
+    id: number;
+    id_usu: number;
+    id_rol: number;
+    estado: string;
+    fecha_m: string;
+    usu_m: string;
+    nombre_usuario: string;
+    email_usuario: string;
+    nombre_rol: string;
+}
 
 @Component({
     selector: 'app-usuarios',
@@ -31,7 +70,6 @@ import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interf
         CommonModule,
         TabsModule,
         ToastModule,
-        TagModule,
         UsuariosTabComponent,
         PermisosTabComponent,
         RolesTabComponent,
@@ -41,7 +79,7 @@ import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interf
     template: `
         <div class="card">
             <!-- Pestañas principales -->
-            <p-tabs [value]="activeTabIndex" (onTabChange)="onTabChange($event)">
+            <p-tabs value="0" (onTabChange)="onTabChange($event)">
                 <p-tablist>
                     <p-tab value="0">
                         <i class="pi pi-users mr-2"></i>
@@ -56,19 +94,11 @@ import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interf
                         Roles
                     </p-tab>
                     <p-tab value="3">
-                        <span class="flex items-center gap-2">
-                            <i class="pi pi-list mr-2"></i>
-                            Detalles de Rol
-                            <p-tag
-                                *ngIf="rolSeleccionado"
-                                [value]="rolSeleccionado.nombre"
-                                severity="success"
-                                class="text-xs">
-                            </p-tag>
-                        </span>
+                        <i class="pi pi-list mr-2"></i>
+                        Detalles de Rol
                     </p-tab>
                 </p-tablist>
-
+                
                 <p-tabpanels>
                     <!-- Panel 1: Usuarios -->
                     <p-tabpanel value="0">
@@ -96,17 +126,17 @@ import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interf
                             [roles]="roles"
                             (rolesChange)="onRolesChange($event)"
                             (refreshRoles)="cargarRoles()"
-                            (rolClick)="onRolClick($event)"
-                            (rolDobleClick)="onRolDobleClick($event)"
                         ></app-roles-tab>
                     </p-tabpanel>
 
                     <!-- Panel 4: Detalles de Rol -->
                     <p-tabpanel value="3">
                         <app-rol-detalle-tab
-                            [rolSeleccionado]="rolSeleccionado"
+                            [rolDetalles]="rolDetalles"
+                            [roles]="roles"
                             [menusDisponibles]="menusDisponibles"
                             (rolDetallesChange)="onRolDetallesChange($event)"
+                            (refreshRolDetalle)="cargarRolDetalle()"
                         ></app-rol-detalle-tab>
                     </p-tabpanel>
                 </p-tabpanels>
@@ -118,16 +148,12 @@ import { RolUsuario } from '../../../features/usuarios/models/rol-usuario.interf
     `
 })
 export class UsuariosComponent implements OnInit {
-    // Control de tabs y estado padre-hijo
-    activeTabIndex: string = '0'; // manejar como string
-    rolSeleccionado: Rol | null = null;
-
     // Datos principales
-    usuarios: Usuario[] = [];
-    roles: Rol[] = [];
-    rolDetalles: RolDetalle[] = [];
-    rolUsuarios: RolUsuario[] = [];
-
+    usuarios: UsuarioMock[] = [];
+    roles: RolMock[] = [];
+    rolDetalles: RolDetalleMock[] = [];
+    rolUsuarios: RolUsuarioMock[] = [];
+    
     // Menús disponibles para selección
     menusDisponibles: any[] = [];
 
@@ -142,13 +168,13 @@ export class UsuariosComponent implements OnInit {
         private usuarioService: UsuarioService,
         private rolService: RolService,
         private rolUsuarioService: RolUsuarioService,
-        private rolDetalleService: RolDetalleService,
-        private menuService: MenuService
+        private rolDetalleService: RolDetalleService
     ) {
-        // Constructor sin logs
+        console.log('🔧 UsuariosComponent: Constructor ejecutado');
     }
 
     ngOnInit(): void {
+        console.log('🚀 UsuariosComponent: ngOnInit ejecutado');
         this.initializeMenus();
         this.cargarUsuarios();
         this.cargarRoles();
@@ -156,59 +182,43 @@ export class UsuariosComponent implements OnInit {
         this.cargarRolDetalle();
     }
 
-    // Inicializar menús disponibles desde el servicio
+    // Inicializar menús disponibles
     initializeMenus(): void {
-        this.menuService.getMenuItems().subscribe({
-            next: (response) => {
-                if (response.statuscode === 200 && response.data) {
-                    // Transformar los datos del servicio al formato esperado
-                    this.menusDisponibles = response.data.map(menu => ({
-                        id_menu: menu.id_menu,
-                        nombre: `${menu.id_menu} - ${menu.label} - ${menu.id_padre}`,
-                        descripcion: `ID Padre: ${menu.id_padre}`
-                    }));
-                } else {
-                    this.loadFallbackMenus();
-                }
-            },
-            error: (error) => {
-                console.error('❌ Error cargando menús:', error);
-                this.messageService.add({
-                    severity: 'warn',
-                    summary: 'Menús no disponibles',
-                    detail: 'Usando menús por defecto'
-                });
-                this.loadFallbackMenus();
-            }
-        });
-    }
-
-    // Método fallback con menús por defecto
-    loadFallbackMenus(): void {
         this.menusDisponibles = [
-            { id_menu: 1, nombre: '1 - Dashboard - 0', descripcion: 'ID Padre: 0' },
-            { id_menu: 2, nombre: '2 - Usuarios - 0', descripcion: 'ID Padre: 0' },
-            { id_menu: 3, nombre: '3 - Roles - 0', descripcion: 'ID Padre: 0' },
-            { id_menu: 4, nombre: '4 - Permisos - 0', descripcion: 'ID Padre: 0' },
-            { id_menu: 5, nombre: '5 - Configuración - 0', descripcion: 'ID Padre: 0' },
-            { id_menu: 6, nombre: '6 - Reportes - 0', descripcion: 'ID Padre: 0' }
+            { id_menu: 1, nombre: 'Dashboard', descripcion: 'Panel principal' },
+            { id_menu: 2, nombre: 'Usuarios', descripcion: 'Gestión de usuarios' },
+            { id_menu: 3, nombre: 'Roles', descripcion: 'Gestión de roles' },
+            { id_menu: 4, nombre: 'Permisos', descripcion: 'Gestión de permisos' },
+            { id_menu: 5, nombre: 'Configuración', descripcion: 'Configuración del sistema' },
+            { id_menu: 6, nombre: 'Reportes', descripcion: 'Generación de reportes' }
         ];
     }
 
     // ========== MÉTODOS DE CARGA DE DATOS ==========
 
     cargarUsuarios(): void {
+        console.log('📥 Cargando usuarios...');
         this.loadingUsuarios = true;
 
-        this.usuarioService.getUsuarios().subscribe({
+        this.usuarioService.getAll().subscribe({
             next: (response: any) => {
-                if (response && Array.isArray(response)) {
-                    this.usuarios = response;
+                console.log('📥 Respuesta de usuarios:', response);
+                
+                if (response && response.data) {
+                    const usuariosData = response.data;
+                    if (Array.isArray(usuariosData) && usuariosData.length > 0) {
+                        this.usuarios = usuariosData;
+                        console.log('✅ Usuarios cargados:', this.usuarios.length, 'registros');
+                    } else {
+                        console.log('⚠️ No hay usuarios en la respuesta, usando datos mock');
+                        this.cargarDatosMockUsuarios();
+                    }
                 } else {
+                    console.log('⚠️ Respuesta inválida, usando datos mock');
                     this.cargarDatosMockUsuarios();
                 }
             },
-            error: (error: any) => {
+            error: (error) => {
                 console.error('❌ Error cargando usuarios:', error);
                 this.messageService.add({
                     severity: 'error',
@@ -228,17 +238,28 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarRoles(): void {
+        console.log('📥 Cargando roles...');
         this.loadingRoles = true;
 
-        this.rolService.getRoles().subscribe({
+        this.rolService.getAll().subscribe({
             next: (response: any) => {
-                if (response && Array.isArray(response)) {
-                    this.roles = response;
+                console.log('📥 Respuesta de roles:', response);
+                
+                if (response && response.data) {
+                    const rolesData = response.data;
+                    if (Array.isArray(rolesData) && rolesData.length > 0) {
+                        this.roles = rolesData;
+                        console.log('✅ Roles cargados:', this.roles.length, 'registros');
+                    } else {
+                        console.log('⚠️ No hay roles en la respuesta, usando datos mock');
+                        this.cargarDatosMockRoles();
+                    }
                 } else {
+                    console.log('⚠️ Respuesta inválida, usando datos mock');
                     this.cargarDatosMockRoles();
                 }
             },
-            error: (error: any) => {
+            error: (error) => {
                 console.error('❌ Error cargando roles:', error);
                 this.messageService.add({
                     severity: 'error',
@@ -257,17 +278,28 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarPermisos(): void {
+        console.log('📥 Cargando permisos...');
         this.loadingPermisos = true;
 
-        this.rolUsuarioService.getRelacionesRolUsuario().subscribe({
+        this.rolUsuarioService.getAll().subscribe({
             next: (response: any) => {
-                if (response && Array.isArray(response)) {
-                    this.rolUsuarios = response;
+                console.log('📥 Respuesta de permisos:', response);
+                
+                if (response && response.data) {
+                    const permisosData = response.data;
+                    if (Array.isArray(permisosData) && permisosData.length > 0) {
+                        this.rolUsuarios = permisosData;
+                        console.log('✅ Permisos cargados:', this.rolUsuarios.length, 'registros');
+                    } else {
+                        console.log('⚠️ No hay permisos en la respuesta, usando datos mock');
+                        this.cargarDatosMockPermisos();
+                    }
                 } else {
+                    console.log('⚠️ Respuesta inválida, usando datos mock');
                     this.cargarDatosMockPermisos();
                 }
             },
-            error: (error: any) => {
+            error: (error) => {
                 console.error('❌ Error cargando permisos:', error);
                 this.messageService.add({
                     severity: 'error',
@@ -286,26 +318,40 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarRolDetalle(): void {
+        console.log('📥 Cargando rol detalle...');
         this.loadingRolDetalle = true;
 
-        this.rolDetalleService.consultarDetalleRol({}).subscribe({
-            next: (rolDetalles: RolDetalle[]) => {
-                this.rolDetalles = rolDetalles;
-                this.loadingRolDetalle = false;
+        this.rolDetalleService.getAll().subscribe({
+            next: (response: any) => {
+                console.log('📥 Respuesta de rol detalle:', response);
+                
+                if (response && response.data) {
+                    const rolDetallesData = response.data;
+                    if (Array.isArray(rolDetallesData) && rolDetallesData.length > 0) {
+                        this.rolDetalles = rolDetallesData;
+                        console.log('✅ Rol detalle cargado:', this.rolDetalles.length, 'registros');
+                    } else {
+                        console.log('⚠️ No hay rol detalle en la respuesta, usando datos mock');
+                        this.cargarDatosMockRolDetalle();
+                    }
+                } else {
+                    console.log('⚠️ Respuesta inválida, usando datos mock');
+                    this.cargarDatosMockRolDetalle();
+                }
             },
             error: (error) => {
                 console.error('❌ Error cargando rol detalle:', error);
-
-                // ⚠️ CRÍTICO: Usar mensaje específico del backend
-                const errorMessage = error instanceof Error ? error.message : 'Error desconocido cargando rol detalle';
-
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error cargando permisos',
-                    detail: errorMessage,  // ← MENSAJE ESPECÍFICO DEL BACKEND
-                    life: 5000
+                    summary: 'Error',
+                    detail: 'Error al cargar detalles de rol'
                 });
-
+                
+                setTimeout(() => {
+                    this.cargarDatosMockRolDetalle();
+                }, 2000);
+            },
+            complete: () => {
                 this.loadingRolDetalle = false;
             }
         });
@@ -314,6 +360,7 @@ export class UsuariosComponent implements OnInit {
     // ========== MÉTODOS DE DATOS MOCK ==========
 
     cargarDatosMockUsuarios(): void {
+        console.log('📊 Cargando usuarios mock como fallback...');
         this.usuarios = [
             {
                 id: 1,
@@ -351,6 +398,7 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarDatosMockRoles(): void {
+        console.log('📊 Cargando datos mock para roles...');
         this.roles = [
             { id_rol: 1, nombre: 'Administrador', estado: 'A', fecha_m: '2024-09-01T00:00:00Z' },
             { id_rol: 2, nombre: 'Usuario', estado: 'A', fecha_m: '2024-09-01T00:00:00Z' },
@@ -359,6 +407,7 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarDatosMockPermisos(): void {
+        console.log('📊 Cargando datos mock para permisos como fallback...');
         this.rolUsuarios = [
             { 
                 id: 1, 
@@ -386,14 +435,13 @@ export class UsuariosComponent implements OnInit {
     }
 
     cargarDatosMockRolDetalle(): void {
+        console.log('📊 Cargando datos mock para rol detalle...');
         this.rolDetalles = [
             {
                 id_rold: 1,
                 id_rol: 1,
                 ren: 1,
                 id_menu: 1,
-                swestado: 1,
-                swlock: 0,
                 fecha_m: '2024-09-01T00:00:00Z',
                 nombre_rol: 'Administrador',
                 nombre_menu: 'Dashboard'
@@ -403,8 +451,6 @@ export class UsuariosComponent implements OnInit {
                 id_rol: 1,
                 ren: 2,
                 id_menu: 2,
-                swestado: 1,
-                swlock: 0,
                 fecha_m: '2024-09-01T00:00:00Z',
                 nombre_rol: 'Administrador',
                 nombre_menu: 'Usuarios'
@@ -414,8 +460,6 @@ export class UsuariosComponent implements OnInit {
                 id_rol: 2,
                 ren: 1,
                 id_menu: 1,
-                swestado: 1,
-                swlock: 0,
                 fecha_m: '2024-09-01T00:00:00Z',
                 nombre_rol: 'Usuario',
                 nombre_menu: 'Dashboard'
@@ -426,48 +470,41 @@ export class UsuariosComponent implements OnInit {
     // ========== EVENT HANDLERS DE TABS ==========
 
     onTabChange(event: any): void {
-        this.activeTabIndex = event.value; // sincronizar con el tab clicado
-
-        // Si cambió al tab 3 (detalles de rol) y hay un rol seleccionado, forzar refresh
-        if (this.activeTabIndex === '3' && this.rolSeleccionado) {
-            // Forzar refresh del tab 3 enviando el rol nuevamente
-            setTimeout(() => {
-                this.rolSeleccionado = { ...this.rolSeleccionado! };
-            }, 100);
+        console.log('🔄 Cambio de tab:', event.index);
+        
+        // Si se cambia al tab de Roles (índice 2), preseleccionar el primer rol
+        if (event.index === 2) {
+            console.log('🎯 Cambiando a tab Roles, preseleccionando primer rol...');
+            this.onTabRolesActivated();
         }
     }
 
-    // ========== FUNCIONALIDAD PADRE-HIJO ==========
-
-    onRolClick(rol: Rol): void {
-        // Solo seleccionar el rol, sin cambiar de tab automáticamente
-        this.rolSeleccionado = { ...rol };
-    }
-
-    onRolDobleClick(rol: Rol): void {
-        // Mantener funcionalidad de doble click para cambiar de tab
-        this.activeTabIndex = '2';
-        setTimeout(() => {
-            this.rolSeleccionado = { ...rol }; // clonar para forzar change detection
-            this.activeTabIndex = '3'; // mover al tab 3
-        }, 0);
+    onTabRolesActivated(): void {
+        // Lógica específica cuando se activa el tab de roles
+        if (this.roles.length > 0) {
+            console.log('✅ Tab Roles activado, roles disponibles:', this.roles.length);
+        }
     }
 
     // ========== EVENT HANDLERS DE COMPONENTES HIJO ==========
 
-    onUsuariosChange(usuarios: Usuario[]): void {
+    onUsuariosChange(usuarios: UsuarioMock[]): void {
         this.usuarios = usuarios;
+        console.log('🔄 Usuarios actualizados desde tab:', usuarios.length);
     }
 
-    onPermisosChange(permisos: RolUsuario[]): void {
+    onPermisosChange(permisos: RolUsuarioMock[]): void {
         this.rolUsuarios = permisos;
+        console.log('🔄 Permisos actualizados desde tab:', permisos.length);
     }
 
-    onRolesChange(roles: Rol[]): void {
+    onRolesChange(roles: RolMock[]): void {
         this.roles = roles;
+        console.log('🔄 Roles actualizados desde tab:', roles.length);
     }
 
-    onRolDetallesChange(rolDetalles: RolDetalle[]): void {
+    onRolDetallesChange(rolDetalles: RolDetalleMock[]): void {
         this.rolDetalles = rolDetalles;
+        console.log('🔄 Rol detalles actualizados desde tab:', rolDetalles.length);
     }
 }

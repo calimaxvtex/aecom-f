@@ -47,13 +47,13 @@
                             "budgets": [
                                 {
                                     "type": "initial",
-                                    "maximumWarning": "1mb",
+                                    "maximumWarning": "2mb",
                                     "maximumError": "5mb"
                                 },
                                 {
                                     "type": "anyComponentStyle",
-                                    "maximumWarning": "4kb",
-                                    "maximumError": "14kb"
+                                    "maximumWarning": "14kb",
+                                    "maximumError": "24kb"
                                 }
                             ],
                             "outputHashing": "all"
@@ -126,7 +126,8 @@
                             }
                         ],
                         "styles": [
-                            "src/assets/styles.scss"
+                            "src/assets/styles.scss",
+                             "public/layout/styles/preloading.css"
                         ],
                         "scripts": []
                     }

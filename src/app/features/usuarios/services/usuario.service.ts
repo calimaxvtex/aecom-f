@@ -5,6 +5,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { ApiConfigService } from '../../../core/services/api/api-config.service';
 import { SessionService } from '../../../core/services/session.service';
+import { MenuLoaderService } from '../../../core/services/menu/menu-loader.service';
 
 import {
   Usuario,
@@ -48,7 +49,8 @@ export class UsuarioService {
   constructor(
     private http: HttpClient,
     private apiConfig: ApiConfigService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private menuLoaderService: MenuLoaderService
   ) {}
 
   /**
@@ -67,7 +69,7 @@ export class UsuarioService {
    * Configura la URL base del servicio (para compatibilidad)
    */
   setBaseUrl(url: string): void {
-    console.log(`🔧 UsuarioService usa ApiConfigService - URL configurada: ${url}`);
+    // UsuarioService configurado con URL del ApiConfigService
     // Este método se mantiene por compatibilidad pero ahora usa ApiConfigService
   }
 
@@ -93,7 +95,7 @@ export class UsuarioService {
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log('❌ Error del backend detectado en getUsuarios:', response);
+          // Error del backend manejado por catchError
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
 
@@ -126,15 +128,13 @@ export class UsuarioService {
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log('❌ Error del backend detectado en createUsuario:', response);
+          // Error del backend manejado por catchError
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
         return response;
       }),
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`✅ Usuario creado exitosamente: ${usuario.nombre}`);
-        }
+      tap(() => {
+        // Usuario creado exitosamente
       }),
       catchError(this.handleError)
     );
@@ -150,15 +150,12 @@ export class UsuarioService {
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log('❌ Error del backend detectado en updateUsuario:', response);
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
         return response;
       }),
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`✅ Usuario actualizado exitosamente: ID ${id}`);
-        }
+      tap(() => {
+        // Usuario actualizado exitosamente
       }),
       catchError(this.handleError)
     );
@@ -174,15 +171,12 @@ export class UsuarioService {
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log('❌ Error del backend detectado en updateUsuarioCompleto:', response);
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
         return response;
       }),
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`✅ Usuario actualizado completamente: ID ${id}`);
-        }
+      tap(() => {
+        // Usuario actualizado completamente
       }),
       catchError(this.handleError)
     );
@@ -198,15 +192,12 @@ export class UsuarioService {
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log('❌ Error del backend detectado en deleteUsuario:', response);
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
         return response;
       }),
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`🗑️ Usuario eliminado exitosamente: ID ${id}`);
-        }
+      tap(() => {
+        // Usuario eliminado exitosamente
       }),
       catchError(this.handleError)
     );
@@ -223,21 +214,16 @@ export class UsuarioService {
     const url = this.getApiUrl();
     const body = { action, ...data };
 
-    console.log(`🔧 Ejecutando acción: ${action}`, body);
-
     return this.http.post<ApiResponse<Usuario>>(url, body, this.httpOptions).pipe(
       map(response => {
         // Verificar si hay error del backend en el body
         if (response.statuscode && response.statuscode !== 200) {
-          console.log(`❌ Error del backend detectado en executeAction (${action}):`, response);
           throw new Error(response.mensaje || `Error del servidor: ${response.statuscode}`);
         }
         return response;
       }),
-      tap(response => {
-        if (response.statuscode === 200) {
-          console.log(`✅ Acción ${action} ejecutada exitosamente`);
-        }
+      tap(() => {
+        // Acción ejecutada exitosamente
       }),
       catchError(this.handleError)
     );
@@ -260,21 +246,51 @@ export class UsuarioService {
    * IN - Insertar usuario usando executeAction
    */
   insertUsuario(usuario: UsuarioForm): Observable<ApiResponse<Usuario>> {
-    return this.executeAction('IN', { data: usuario });
+    const url = this.getApiUrl();
+
+    return this.http.post<ApiResponse<Usuario>>(url, { action: 'IN', ...usuario }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode !== 200) {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * UP - Actualizar usuario usando executeAction
    */
   updateUsuarioAction(id: number, usuario: Partial<UsuarioForm>): Observable<ApiResponse<Usuario>> {
-    return this.executeAction('UP', { id, data: usuario });
+    const url = this.getApiUrl();
+
+    return this.http.post<ApiResponse<Usuario>>(url, { action: 'UP', id, ...usuario }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode !== 200) {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * DL - Eliminar usuario usando executeAction
    */
   deleteUsuarioAction(id: number): Observable<ApiResponse<Usuario>> {
-    return this.executeAction('DL', { id });
+    const url = this.getApiUrl();
+
+    return this.http.post<ApiResponse<Usuario>>(url, { action: 'DL', id }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode !== 200) {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -374,25 +390,33 @@ export class UsuarioService {
       action: 'LG'
     };
 
-    console.log('🔐 UsuarioService - Iniciando proceso de login');
-
     return this.http.post<LoginResponse>(url, loginPayload, this.httpOptions).pipe(
       tap(response => {
-        if (response.statuscode === 200) {
-          console.log('✅ UsuarioService - Login exitoso');
+        // 🔍 VALIDAR RESPUESTA DEL SERVIDOR
+        if (response.statuscode !== 200) {
+          // Respuesta no exitosa - lanzar error con mensaje del servidor
+          const errorMessage = response.mensaje || `Error de autenticación: ${response.statuscode}`;
+          throw new Error(errorMessage);
+        }
 
-          // Procesar respuesta y guardar sesión
-          let loginData: LoginUserData | null = null;
+        // ✅ Respuesta exitosa - procesar y guardar sesión
+        let loginData: LoginUserData | null = null;
 
-          if (Array.isArray(response.data) && response.data.length > 0) {
-            loginData = response.data[0];
-          } else if (response.data) {
-            loginData = response.data as LoginUserData;
-          }
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          loginData = response.data[0];
+        } else if (response.data) {
+          loginData = response.data as LoginUserData;
+        }
 
-          if (loginData) {
-            this.sessionService.setSession(loginData);
-          }
+        if (loginData) {
+          this.sessionService.setSession(loginData);
+          // 🔄 ACTUALIZAR MENÚ: Reset completo del menú (igual que LoginService)
+          this.menuLoaderService.updateMenuOnLogin().catch(error => {
+            console.warn('⚠️ Error actualizando menú después del login:', error);
+          });
+        } else {
+          // No hay datos de usuario válidos
+          throw new Error('Respuesta de login inválida: no se encontraron datos de usuario');
         }
       }),
       catchError(this.handleError)
@@ -412,13 +436,8 @@ export class UsuarioService {
       id_session: sessionData?.id_session
     };
 
-    console.log('🚪 UsuarioService - Iniciando proceso de logout');
-
     return this.http.post<LogoutResponse>(url, logoutPayload, this.httpOptions).pipe(
       tap(response => {
-        if (response.statuscode === 200) {
-          console.log('✅ UsuarioService - Logout exitoso');
-        }
         // Limpiar sesión local independientemente del resultado del servidor
         this.sessionService.logout();
       }),
@@ -437,7 +456,6 @@ export class UsuarioService {
   testConnection(): Observable<boolean> {
     return this.http.get<ApiResponse<Usuario>>(this.getApiUrl(), this.httpOptions).pipe(
       map(response => {
-        console.log('✅ Conexión exitosa con la API de usuarios');
         return true;
       }),
       catchError(error => {
@@ -461,7 +479,6 @@ export class UsuarioService {
       if (error.error && error.error.statuscode && error.error.statuscode !== 200) {
         // Error del backend en el body (statuscode !== 200)
         errorMessage = error.error.mensaje || `Error del servidor: ${error.error.statuscode}`;
-        console.log('❌ Error del backend detectado:', error.error);
       } else {
         // Error HTTP estándar
         errorMessage = `Error del servidor: ${error.status} - ${error.message || 'Sin mensaje'}`;

@@ -753,7 +753,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     @ViewChild('dtConceptos') dtConceptos!: Table;
 
     ngOnInit(): void {
-        console.log('🏷️ BannersComponentsTabComponent inicializado');
         this.initializeForms();
         this.cargarOpcionesCatalogo();
         this.cargarConceptos();
@@ -762,7 +761,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         // Detectar cambios en el filtro de canal del padre y recargar componentes
         if (changes['canalFiltro']) {
-            console.log('🔄 Filtro de canal del padre cambió:', this.canalFiltro);
             this.cargarConceptos();
         }
     }
@@ -786,7 +784,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
     cargarConceptos(): void {
         this.loadingConceptos = true;
-        console.log('🔄 RECARGANDO LISTA - Cargando componentes con filtro de canal:', this.canalFiltroSeleccionado);
 
         // Aplicar filtro de canal si está seleccionado
         const filtros: any = {};
@@ -796,7 +793,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
         this.componentsService.getAllComponentes({ filters: filtros }).subscribe({
             next: (response) => {
-                console.log('✅ Componentes cargados:', response.data);
                 this.conceptos = response.data;
                 this.loadingConceptos = false;
 
@@ -881,11 +877,9 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
 
                 this.componentsService.updateComponente(updateData).subscribe({
                     next: (response) => {
-                        console.log('✅ UPDATE COMPLETADO - Respuesta del servidor:', response);
                         this.handleSaveSuccess('Concepto actualizado correctamente');
                     },
                     error: (error) => {
-                        console.log('❌ ERROR EN UPDATE:', error);
                         this.handleSaveError(error, 'actualizar');
                     }
                 });
@@ -896,7 +890,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                         this.handleSaveSuccess('Concepto creado correctamente');
                     },
                     error: (error) => {
-                        console.log('❌ ERROR EN CREATE:', error);
                         this.handleSaveError(error, 'crear');
                     }
                 });
@@ -905,7 +898,6 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
     }
 
     private handleSaveSuccess(message: string): void {
-        console.log('✅ OPERACIÓN EXITOSA - Cerrando formulario y recargando lista');
         this.messageService.add({
             severity: 'success',
             summary: 'Éxito',
@@ -1386,10 +1378,25 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                 }));
 
                 this.canalesOptions = options;
-
                 this.canalesFormOptions = options;
 
+                // Buscar la opción de "app" para establecerla como filtro por defecto
+                const appOption = this.canalesOptions.find(option => 
+                    option.label.toLowerCase().includes('app') || 
+                    option.value.toLowerCase().includes('app')
+                );
+                
+                if (appOption) {
+                    // Establecer app como filtro por defecto
+                    this.canalFiltroSeleccionado = appOption.value;
+                    console.log('🎯 Filtro de canal por defecto establecido:', appOption.label, 'con valor:', appOption.value);
+                    console.log('🎯 canalFiltroSeleccionado establecido como:', this.canalFiltroSeleccionado);
+                }
+
                 console.log('📊 Opciones de canal cargadas:', this.canalesOptions);
+                
+                // Cargar conceptos con el filtro por defecto aplicado
+                this.cargarConceptos();
             },
             error: (error) => {
                 console.error('❌ Error cargando opciones de canal:', error);

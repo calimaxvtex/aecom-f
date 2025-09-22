@@ -26,6 +26,7 @@
         "@types/pako": "^2.0.4",
         "chart.js": "4.4.2",
         "pako": "^2.1.0",
+        "pdfjs-dist": "^5.4.149",
         "primeclt": "^0.1.5",
         "primeicons": "^7.0.0",
         "primeng": "^20",

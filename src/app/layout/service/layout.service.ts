@@ -112,7 +112,7 @@ export class LayoutService {
 
     // 🔄 RESTABLECER A CONFIGURACIÓN POR DEFECTO
     resetToDefault() {
-        this.changeTheme('emerald', 'slate', 'emerald', 'emerald');
+        this.changeTheme('indigo', 'slate', 'dark', 'amber');
         this.layoutConfig.update((config) => ({
             ...config,
             darkTheme: false,
@@ -126,12 +126,12 @@ export class LayoutService {
     _config: layoutConfig = this.loadConfigFromStorage() || {
         // ⚙️ CONFIGURACIÓN POR DEFECTO PERSONALIZADA
         // Cambia estos valores según tus preferencias
-        primary: 'emerald',        // Color primario (emerald, blue, indigo, purple, etc.)
+        primary: 'indigo',         // Color primario (emerald, blue, indigo, purple, etc.)
         surface: 'slate',          // Superficie (slate, gray, zinc, neutral, etc.)
         darkTheme: false,          // Modo oscuro (true/false)
         menuMode: 'static',        // Modo del menú (static, overlay, slim, etc.)
-        menuTheme: 'emerald',      // Tema del menú lateral (emerald, light, dark, blue, indigo, etc.)
-        topbarTheme: 'emerald',    // Tema del header/topbar (emerald, blue, indigo, purple, etc.)
+        menuTheme: 'dark',         // Tema del menú lateral (emerald, light, dark, blue, indigo, etc.)
+        topbarTheme: 'amber',      // Tema del header/topbar (amber, blue, indigo, purple, etc.)
         menuProfilePosition: 'end' // Posición del perfil (start/end)
     };
 
@@ -192,6 +192,15 @@ export class LayoutService {
     private initialized = false;
 
     constructor() {
+        // 🔍 DEBUG: Verificar qué configuración se está cargando
+        const loadedConfig = this.loadConfigFromStorage();
+        console.log('🔍 LayoutService - Configuración cargada de localStorage:', loadedConfig);
+        console.log('🔍 LayoutService - Configuración por defecto:', this._config);
+        
+        // Verificar la configuración final que se usará
+        const finalConfig = loadedConfig || this._config;
+        console.log('🔍 LayoutService - Configuración FINAL que se usará:', finalConfig);
+        
         effect(() => {
             const config = this.layoutConfig();
             if (config) {
@@ -220,7 +229,17 @@ export class LayoutService {
     private loadConfigFromStorage(): layoutConfig | null {
         try {
             const savedConfig = localStorage.getItem(this.CONFIG_KEY);
-            return savedConfig ? JSON.parse(savedConfig) : null;
+            console.log('🔍 loadConfigFromStorage - Key:', this.CONFIG_KEY);
+            console.log('🔍 loadConfigFromStorage - Valor raw:', savedConfig);
+            
+            if (savedConfig) {
+                const parsed = JSON.parse(savedConfig);
+                console.log('🔍 loadConfigFromStorage - Configuración parseada:', parsed);
+                return parsed;
+            }
+            
+            console.log('🔍 loadConfigFromStorage - No hay configuración guardada');
+            return null;
         } catch (error) {
             console.warn('Error loading layout config from storage:', error);
             return null;

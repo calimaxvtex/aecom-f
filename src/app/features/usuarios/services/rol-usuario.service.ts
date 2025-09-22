@@ -205,21 +205,57 @@ export class RolUsuarioService {
    * IN - Insertar relación usando executeAction
    */
   insertRelacionRolUsuario(relacion: RolUsuarioForm): Observable<RolUsuarioApiResponse> {
-    return this.executeAction('IN', { data: relacion });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolUsuarioApiResponse>(url, { action: 'IN', ...relacion }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Relación rol-usuario insertada exitosamente`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * UP - Actualizar relación usando executeAction
    */
   updateRelacionRolUsuarioAction(id: number, relacion: Partial<RolUsuarioForm>): Observable<RolUsuarioApiResponse> {
-    return this.executeAction('UP', { id, data: relacion });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolUsuarioApiResponse>(url, { action: 'UP', id, ...relacion }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Relación rol-usuario actualizada exitosamente: ID ${id}`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * DL - Eliminar relación usando executeAction
    */
   deleteRelacionRolUsuarioAction(id: number): Observable<RolUsuarioApiResponse> {
-    return this.executeAction('DL', { id });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolUsuarioApiResponse>(url, { action: 'DL', id }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`🗑️ Relación rol-usuario eliminada exitosamente: ID ${id}`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**

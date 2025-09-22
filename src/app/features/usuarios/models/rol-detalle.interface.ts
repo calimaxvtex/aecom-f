@@ -8,6 +8,8 @@ export interface RolDetalle {
   id_rol: number;
   ren: number;
   id_menu: number;
+  swestado: number;  // 1 = Activo, 0 = Inactivo
+  swlock: number;    // 1 = Bloqueado, 0 = Desbloqueado
   fecha_m: string;
   nombre_rol: string;
   nombre_menu: string | null;
@@ -32,6 +34,8 @@ export interface RolDetalleForm {
   id_rol: number;
   ren: number;
   id_menu: number;
+  swestado?: number;  // 1 = Activo, 0 = Inactivo
+  swlock?: number;    // 1 = Bloqueado, 0 = Desbloqueado
   fecha_m?: string;
   nombre_rol?: string;
   nombre_menu?: string | null;
@@ -43,12 +47,30 @@ export interface RolDetalleForm {
 export type RolDetalleAction = 'SL' | 'UP' | 'IN' | 'DL';
 
 /**
- * Parámetros para operaciones con acción específica
+ * Parámetros para operaciones DELETE de detalle de roles
  */
-export interface RolDetalleActionParams {
+export interface RolDetalleDeleteParams {
   action: RolDetalleAction;
-  data?: Partial<RolDetalleForm>;
-  id?: number;
+  id_rold: number;
+  
+}
+
+/**
+ * Parámetros para operaciones UPDATE de detalle de roles
+ */
+export interface RolDetalleUpdateParams {
+  action: RolDetalleAction;
+  id_rold: number;
+  id_menu: number;
+}
+
+/**
+ * Parámetros para operaciones INSERT de detalle de roles
+ */
+export interface RolDetalleInsertParams {
+  action: RolDetalleAction;
+  id_rol: number;
+  id_menu: number;
 }
 
 /**

@@ -277,8 +277,8 @@ export class LoginService {
         // Establecer sesión
         this.sessionService.setSession(loginData);
 
-        // Actualizar menú
-        this.updateMenuAfterLogin();
+        // 🔐 SEGURIDAD: Esperar actualización completa del menú
+        await this.updateMenuAfterLogin();
 
         // Actualizar estado de autenticación
         this.updateAuthState({

@@ -62,13 +62,23 @@ export class AppMenu implements OnInit, OnDestroy {
     private maxRetries = 3;
 
     async ngOnInit(): Promise<void> {
-        // Suscribirse a cambios del menú
+        // 📋 Suscribirse a cambios del menú desde MenuLoaderService
+        // El login SIEMPRE garantiza menú fresco desde API (sin cache)
         this.subscriptions.push(
             this.menuLoaderService.menu$.subscribe(menu => {
-                if (menu !== null) {
+                if (menu !== null && menu.length > 0) {
                     this.model = menu;
+                    this.loading = false;
                     // Forzar detección de cambios para asegurar renderizado
                     this.forceMenuRender();
+                } else if (menu !== null && menu.length === 0) {
+                    // Menú vacío (sin permisos)
+                    this.model = [];
+                    this.loading = false;
+                } else {
+                    // Menú reseteado (null) - mostrar loading
+                    this.model = [];
+                    this.loading = true;
                 }
             })
         );
@@ -91,12 +101,14 @@ export class AppMenu implements OnInit, OnDestroy {
      */
     private forceMenuRender(): void {
         try {
+            // Forzar detección de cambios inmediata
             this.cdr.detectChanges();
-            
+
             // Verificar si el menú se renderizó correctamente
+            // Usar un timeout más largo para permitir que los observables se estabilicen
             setTimeout(() => {
                 this.verifyMenuRender();
-            }, 100);
+            }, 200); // Incrementado de 100ms a 200ms para mejor sincronización
         } catch (error) {
             console.warn('⚠️ Error forzando renderizado del menú:', error);
             this.retryMenuRender();
@@ -107,15 +119,21 @@ export class AppMenu implements OnInit, OnDestroy {
      * Verifica si el menú se renderizó correctamente y reintenta si es necesario
      */
     private verifyMenuRender(): void {
+        // 🔍 Verificar que tanto el menú esté cargado como el loading esté completo
+        if (this.loading || !this.model || this.model.length === 0) {
+            this.retryMenuRender();
+            return;
+        }
+
+        // Buscar elementos del menú en el DOM
         const menuElement = this.el.nativeElement.querySelector('.layout-menu');
         const menuItems = menuElement?.querySelectorAll('li');
-        
+
         // Si no hay elementos del menú visibles, reintentar
         if (!menuItems || menuItems.length === 0) {
-            console.warn('⚠️ Menú no renderizado correctamente, reintentando...');
             this.retryMenuRender();
         } else {
-            console.log('✅ Menú renderizado correctamente con', menuItems.length, 'elementos');
+            // Menú renderizado exitosamente
             this.renderRetryCount = 0; // Reset counter on success
         }
     }
@@ -126,8 +144,7 @@ export class AppMenu implements OnInit, OnDestroy {
     private retryMenuRender(): void {
         if (this.renderRetryCount < this.maxRetries) {
             this.renderRetryCount++;
-            console.log(`🔄 Reintento ${this.renderRetryCount}/${this.maxRetries} de renderizado del menú`);
-            
+
             setTimeout(() => {
                 this.forceMenuRender();
             }, 200 * this.renderRetryCount); // Incrementar delay con cada reintento

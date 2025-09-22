@@ -144,7 +144,6 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                                     (error)="onImageError($event)"
                                 />
                                 <i *ngIf="!banner.url_banner" class="pi pi-image text-gray-400 text-2xl"></i>
-                                <i class="pi pi-image text-gray-400 hidden"></i>
                             </div>
                         </div>
                     </td>
@@ -1019,7 +1018,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     @ViewChild('landingFileInput') landingFileInput!: any;
 
     ngOnInit(): void {
-        console.log('🎨 BannersTabComponent inicializado');
         this.initializeForms();
         this.cargarOpcionesCatalogo();
         this.cargarBanners();
@@ -1028,7 +1026,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         // Detectar cambios en el componente seleccionado y recargar banners
         if (changes['componenteSeleccionado']) {
-            console.log('🔄 Componente seleccionado cambió:', this.componenteSeleccionado);
             this.cargarBanners();
         }
     }
@@ -1046,7 +1043,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
         this.bannerForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.maxLength(100)]],
-            url_banner: ['', [Validators.pattern(/^https?:\/\/.+/)]],
+            url_banner: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
             url_banner_call: ['', [Validators.pattern(/^https?:\/\/.+/)]],
             tipo_call: ['NONE', [Validators.required]],
             call: [''],
@@ -1084,8 +1081,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     cargarBanners(): void {
         // Si no hay componente seleccionado, intentar cargar todos los banners o mostrar mensaje
         if (!this.componenteSeleccionado) {
-            console.log('ℹ️ No hay componente seleccionado para cargar banners específicos');
-
             // Opción 1: Limpiar lista y mostrar mensaje
             this.banners = [];
             this.loadingBanners = false;
@@ -1134,11 +1129,9 @@ export class BannersTabComponent implements OnInit, OnChanges {
         }
 
         this.loadingBanners = true;
-        console.log('📊 Cargando banners para componente:', this.componenteSeleccionado.id_comp);
 
         this.bannerService.getBannersByComponente(this.componenteSeleccionado.id_comp).subscribe({
             next: (response) => {
-                console.log('✅ Banners cargados:', response.data);
                 this.banners = response.data;
                 this.loadingBanners = false;
 
@@ -1169,23 +1162,10 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     openBannerForm(banner?: Banner): void {
         this.isEditingBanner = !!banner;
-        console.log('🎯 openBannerForm - isEditingBanner:', this.isEditingBanner);
-        console.log('🎯 openBannerForm - banner recibido:', banner);
-        console.log('🎯 openBannerForm - banner?.id_mb:', banner?.id_mb);
-        console.log('🎯 openBannerForm - Boolean(banner):', Boolean(banner));
 
         if (banner) {
             // Modo edición
-            console.log('✏️ === MODO EDICIÓN DETECTADO ===');
-            console.log('✏️ Editando banner:', banner);
-            console.log('✏️ Banner ID:', banner.id_mb);
-            console.log('✏️ Tipo de ID:', typeof banner.id_mb);
-            console.log('✏️ ID como número:', Number(banner.id_mb));
-            console.log('✏️ Banner completo:', JSON.stringify(banner, null, 2));
             this.bannerSeleccionado = banner;
-            console.log('✏️ bannerSeleccionado configurado:', this.bannerSeleccionado);
-            console.log('✏️ isEditingBanner establecido en:', this.isEditingBanner);
-            console.log('✏️ === FIN MODO EDICIÓN ===');
 
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
@@ -1225,9 +1205,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
             this.onTipoCallChange({ value: banner.tipo_call });
         } else {
             // Modo creación
-            console.log('🆕 Creando banner nuevo');
             this.bannerSeleccionado = null;
-            console.log('🆕 bannerSeleccionado limpiado:', this.bannerSeleccionado);
 
             const fechaHoy = new Date();
             const fechaFin = new Date();
@@ -1260,16 +1238,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     }
 
     saveBanner(): void {
-        console.log('💾 saveBanner - isEditingBanner:', this.isEditingBanner);
-        console.log('💾 saveBanner - bannerSeleccionado:', this.bannerSeleccionado);
-        console.log('💾 saveBanner - bannerSeleccionado.id_mb:', this.bannerSeleccionado?.id_mb);
-        console.log('💾 saveBanner - bannerSeleccionado?.id_mb tipo:', typeof this.bannerSeleccionado?.id_mb);
-        console.log('💾 saveBanner - bannerSeleccionado?.id_mb valor:', this.bannerSeleccionado?.id_mb);
-        console.log('💾 saveBanner - condición para UPDATE:', this.isEditingBanner && this.bannerSeleccionado && this.bannerSeleccionado.id_mb);
-        console.log('💾 saveBanner - componenteSeleccionado:', this.componenteSeleccionado);
-
         if (this.bannerForm.valid && this.componenteSeleccionado) {
-            console.log('✅ Formulario válido, procediendo con guardado');
             this.savingBanner = true;
             const formData = this.bannerForm.value;
 
@@ -1303,15 +1272,9 @@ export class BannersTabComponent implements OnInit, OnChanges {
             }
 
             if (this.isEditingBanner && this.bannerSeleccionado) {
-                console.log('🔄 === EJECUTANDO UPDATE - banner existente ===');
-                console.log('🔄 Banner ID:', this.bannerSeleccionado.id_mb);
-                console.log('🔄 Banner seleccionado:', this.bannerSeleccionado);
-                console.log('🔄 Tipo de ID:', typeof this.bannerSeleccionado.id_mb);
-                console.log('🔄 ID como número:', Number(this.bannerSeleccionado.id_mb));
-
                 // Validar que el ID sea válido
                 if (!this.bannerSeleccionado.id_mb || isNaN(Number(this.bannerSeleccionado.id_mb))) {
-                    console.error('❌ ERROR: ID del banner no es válido:', this.bannerSeleccionado.id_mb);
+                    console.error('❌ ID del banner no es válido:', this.bannerSeleccionado.id_mb);
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error de Validación',
@@ -1327,29 +1290,16 @@ export class BannersTabComponent implements OnInit, OnChanges {
                     id_mb: this.bannerSeleccionado.id_mb,
                     ...processedData
                 };
-                console.log('🔄 Datos para UPDATE:', updateData);
-                console.log('🔄 Componente seleccionado:', this.componenteSeleccionado);
-                console.log('🔄 === FIN PREPARACIÓN UPDATE ===');
 
                 this.bannerService.updateBanner(updateData).subscribe({
                     next: (response) => {
-                        console.log('✅ === RESPUESTA EXITOSA DEL UPDATE ===');
-                        console.log('✅ Respuesta del backend:', response);
-                        console.log('✅ === FIN RESPUESTA EXITOSA ===');
                         this.handleSaveSuccess('Banner actualizado correctamente');
                     },
                     error: (error) => {
-                        console.log('❌ === ERROR EN UPDATE ===');
-                        console.log('❌ Error recibido:', error);
-                        console.log('❌ Tipo de error:', typeof error);
-                        console.log('❌ Error completo:', JSON.stringify(error, null, 2));
-                        console.log('❌ === FIN ERROR ===');
                         this.handleSaveError(error, 'actualizar');
                     }
                 });
             } else {
-                console.log('🆕 Ejecutando CREATE - banner nuevo');
-                console.log('🆕 Datos para CREATE:', processedData);
                 // Crear
                 this.bannerService.createBanner(processedData).subscribe({
                     next: (response) => {
@@ -1375,9 +1325,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
     private handleSaveError(error: any, operation: string): void {
         console.error(`❌ Error al ${operation} banner:`, error);
-        console.log('🔍 Estructura completa del error:', JSON.stringify(error, null, 2));
-        console.log('🔍 Tipo del error:', typeof error);
-        console.log('🔍 Keys del error:', error ? Object.keys(error) : 'null/undefined');
 
         let errorMessage = `Error al ${operation} el banner`;
 
@@ -1386,31 +1333,24 @@ export class BannersTabComponent implements OnInit, OnChanges {
             // Forma 1: error.mensaje (como viene del backend)
             if (error.mensaje) {
                 errorMessage = error.mensaje;
-                console.log('✅ Mensaje encontrado en error.mensaje:', errorMessage);
             }
             // Forma 2: error.message (Error estándar)
             else if (error.message) {
                 errorMessage = error.message;
-                console.log('✅ Mensaje encontrado en error.message:', errorMessage);
             }
             // Forma 3: error.error?.mensaje (respuesta HTTP anidada)
             else if (error.error && error.error.mensaje) {
                 errorMessage = error.error.mensaje;
-                console.log('✅ Mensaje encontrado en error.error.mensaje:', errorMessage);
             }
             // Forma 4: error.error?.message
             else if (error.error && error.error.message) {
                 errorMessage = error.error.message;
-                console.log('✅ Mensaje encontrado en error.error.message:', errorMessage);
             }
             // Forma 5: string directo
             else if (typeof error === 'string') {
                 errorMessage = error;
-                console.log('✅ Error es string directo:', errorMessage);
             }
         }
-
-        console.log('📤 Mensaje final que se mostrará:', errorMessage);
 
         this.messageService.add({
             severity: 'error',
@@ -1427,14 +1367,10 @@ export class BannersTabComponent implements OnInit, OnChanges {
     editInlineBanner(banner: Banner, field: string): void {
         this.editingCell = banner.id_mb + '_' + field;
         this.originalValue = (banner as any)[field];
-        console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
     }
 
     saveInlineEditBanner(banner: Banner, field: string): void {
-        console.log('💾 Guardando inline:', field, 'Nuevo valor:', (banner as any)[field]);
-
         if ((banner as any)[field] === this.originalValue) {
-            console.log('ℹ️ Valor no cambió, cancelando');
             this.cancelInlineEdit();
             return;
         }
@@ -1466,7 +1402,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
             },
             error: (error) => {
                 console.error('❌ Error al actualizar campo:', error);
-                console.log('🚨 ERROR HANDLER EJECUTADO - Mostrando mensaje de error');
 
                 // Revertir el cambio local
                 (banner as any)[field] = this.originalValue;
@@ -1475,7 +1410,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
                 // Mostrar mensaje de error al usuario
                 const errorMessage = error instanceof Error ? error.message : 'Error desconocido al actualizar';
-                console.log('📢 Mostrando mensaje de error:', errorMessage);
 
                 this.messageService.add({
                     severity: 'error',
@@ -1483,8 +1417,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
                     detail: `${this.getFieldLabel(field)}: ${errorMessage}`,
                     life: 5000
                 });
-
-                console.log('✅ Mensaje de error enviado al MessageService');
             }
         });
     }
@@ -1497,11 +1429,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // ========== TOGGLE DE CAMPOS ==========
 
     onBannerStatusClick(banner: Banner, event: Event): void {
-        console.log('🖱️ onBannerStatusClick - Evento clic detectado');
-        console.log('🖱️ onBannerStatusClick - Banner:', banner);
-        console.log('🖱️ onBannerStatusClick - swEnable:', banner.swEnable);
-        console.log('🖱️ onBannerStatusClick - swEnable tipo:', typeof banner.swEnable);
-
         event.stopPropagation();
         // Simular el cambio del ToggleSwitch para mostrar confirmación
         const nuevoValor = banner.swEnable === 1 ? false : true;
@@ -1515,10 +1442,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     }
 
     onToggleSwitchChange(isChecked: boolean, banner: Banner): void {
-        console.log('🔄 onToggleSwitchChange - Banner:', banner);
-        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
-        console.log('🔄 onToggleSwitchChange - Estado actual:', banner.swEnable);
-
         const valorActual = banner.swEnable;
         const nuevoValor = isChecked ? 1 : 0;
 
@@ -1553,7 +1476,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
             reject: () => {
                 // Revertir el estado temporal al estado original
                 delete this.toggleStates[banner.id_mb];
-                console.log('❌ Usuario canceló la desactivación');
             }
         });
     }
@@ -1570,7 +1492,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
         this.bannerService.toggleBannerStatus(banner.id_mb, nuevoValor === 1).subscribe({
             next: (response) => {
                 this.togglingStatus = false;
-                console.log('✅ Estado actualizado exitosamente:', response);
 
                 const estadoTexto = nuevoValor === 1 ? 'ACTIVO' : 'DESACTIVADO';
                 const icono = nuevoValor === 1 ? '✅' : '🚫';
@@ -1689,7 +1610,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // ========== MÉTODOS DE CATÁLOGO ==========
 
     cargarOpcionesCatalogo(): void {
-        console.log('📊 Cargando opciones de catálogo');
         this.cargarTipoCallOptions();
         this.cargarCollectionsOptions();
         this.cargarSucursalesOptions();
@@ -1709,8 +1629,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
 
                 // Agregar opción por defecto
                 this.tipoCallOptions.unshift({ label: 'Ninguno', value: 'NONE', valor1: 0 });
-
-                console.log('📊 Opciones de tipo call cargadas:', this.tipoCallOptions);
             },
             error: (error) => {
                 console.error('❌ Error cargando tipos de call:', error);
@@ -1728,7 +1646,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
                         label: coll.nombre || `Colección ${coll.id_coll}`,
                         value: coll.id_coll
                     }));
-                    console.log('📊 Opciones de colecciones cargadas:', this.collectionsOptions);
                 } else {
                     // Fallback a mockup si no hay datos
                     this.collectionsOptions = [
@@ -1736,7 +1653,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
                         { label: 'Colección Secundaria', value: 2 },
                         { label: 'Colección Promocional', value: 3 }
                     ];
-                    console.log('📊 Opciones de colecciones (fallback):', this.collectionsOptions);
                 }
             },
             error: (error) => {
@@ -1753,8 +1669,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     }
 
     private cargarSucursalesOptions(): void {
-        console.log('🏪 Cargando sucursales activas del proyecto 2...');
-        console.log('🔧 SucService disponible:', !!this.sucService);
 
         // Verificar que el servicio esté disponible antes de usarlo
         if (!this.sucService) {
@@ -1780,21 +1694,12 @@ export class BannersTabComponent implements OnInit, OnChanges {
                         value: suc.sucursal
                     }));
 
-                    console.log('✅ Sucursales cargadas:', this.sucursalesOptions.length);
-                    console.log('📊 Detalles de sucursales:', this.sucursalesOptions);
                 } else {
-                    console.warn('⚠️ No se encontraron sucursales activas');
                     this.sucursalesOptions = [];
                 }
             },
             error: (error) => {
                 console.error('❌ Error cargando sucursales:', error);
-                console.log('🔍 Detalles del error en componente:', {
-                    statuscode: error.statuscode,
-                    titulo: error.titulo,
-                    mensaje: error.mensaje,
-                    originalError: error.originalError
-                });
 
                 // Fallback a opciones mockup para desarrollo/testing
                 this.sucursalesOptions = [
@@ -1853,8 +1758,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
         }
 
         // Mostrar/ocultar selector de colección
-        console.log('🔍 Valor de selectedTipo recibido:', selectedTipo);
-        console.log('🔍 Comparación case-insensitive:', selectedTipo?.toLowerCase() === 'coll');
         this.mostrarCollectionSelector = selectedTipo?.toLowerCase() === 'coll';
 
         // Reset campos dependientes
@@ -1951,8 +1854,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     onFileSelected(event: any): void {
         const file = event.target.files[0] as File;
         if (file) {
-            console.log('📎 Archivo seleccionado:', file.name, '(', this.formatFileSize(file.size), ')');
-
             // Validar archivo
             const validation = this.imageUploadService.validateFiles([file]);
             if (!validation.isValid) {
@@ -1987,8 +1888,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     uploadImage(file: File): void {
         this.uploadingImage = true;
 
-        console.log('🚀 Iniciando carga de imagen:', file.name);
-
         this.imageUploadService.uploadSingleBannerImage(file).subscribe({
             next: (response) => {
                 this.uploadingImage = false;
@@ -1996,8 +1895,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 if (response.images && response.images.length > 0) {
                     const imageData = response.images[0];
                     const urlImg = imageData.img;
-
-                    console.log('✅ Imagen subida exitosamente:', urlImg);
 
                     // Actualizar automáticamente el campo URL_BANNER
                     this.bannerForm.patchValue({
@@ -2082,7 +1979,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     onLandingFileSelected(event: any): void {
         const file = event.target.files[0] as File;
         if (file) {
-            console.log('📎 Archivo landing seleccionado:', file.name, '(', this.formatFileSize(file.size), ')');
 
             // Validar archivo
             const validation = this.imageUploadService.validateFiles([file]);
@@ -2118,8 +2014,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
     uploadLandingImage(file: File): void {
         this.uploadingLandingImage = true;
 
-        console.log('🚀 Iniciando carga de imagen landing:', file.name);
-
         this.imageUploadService.uploadSingleBannerImage(file).subscribe({
             next: (response) => {
                 this.uploadingLandingImage = false;
@@ -2127,8 +2021,6 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 if (response.images && response.images.length > 0) {
                     const imageData = response.images[0];
                     const urlImg = imageData.img;
-
-                    console.log('✅ Imagen landing subida exitosamente:', urlImg);
 
                     // Actualizar el campo URL_BANNER_CALL con la nueva URL
                     this.bannerForm.patchValue({

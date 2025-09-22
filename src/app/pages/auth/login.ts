@@ -91,18 +91,10 @@ export class Login {
         // Suscribirse al estado de carga del servicio de usuario
         // Nota: UsuarioService no tiene estado de carga, se maneja localmente
 
-        // Debug: Monitorear cambios en el formulario
-        this.loginForm.valueChanges.subscribe(value => {
-            console.log('🔍 Form values:', value);
-            console.log('🔍 Form valid:', this.loginForm.valid);
-            console.log('🔍 Usuario errors:', this.loginForm.get('usuario')?.errors);
-            console.log('🔍 Password errors:', this.loginForm.get('password')?.errors);
-        });
+        // Monitoreo de cambios en el formulario (sin logs de debug)
     }
 
     onLogin(): void {
-        console.log('🔐 Iniciando proceso de login usando UsuarioService');
-
         if (this.loginForm.valid) {
             this.isLoading = true;
             const formData = this.loginForm.value;
@@ -111,13 +103,8 @@ export class Login {
                 password: formData.password
             };
 
-            console.log('📤 Enviando login con credenciales:', { ...credentials, password: '***' });
-
             this.usuarioService.login(credentials).subscribe({
-                next: (response: any) => {
-                    console.log('✅ Login exitoso a través de UsuarioService:', response);
-                    this.isLoading = false;
-
+                next: async (response: any) => {
                     // Mostrar mensaje de éxito
                     let userName = 'Usuario';
                     if (Array.isArray(response.data) && response.data.length > 0) {
@@ -133,13 +120,22 @@ export class Login {
                         life: 3000
                     });
 
-                    // Redirigir al dashboard usando Angular Router
+                    // Esperar carga completa del menú antes de continuar
+                    try {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } catch (error) {
+                        // Continuar si hay error esperando menú
+                    }
+
+                    this.isLoading = false;
+
+                    // Redirigir al dashboard
                     setTimeout(() => {
                         this.router.navigate(['/dashboards']);
-                    }, 1500);
+                    }, 1000);
                 },
                 error: (error: any) => {
-                    console.error('❌ Error en login a través de UsuarioService:', error);
+                    console.error('❌ Error en login:', error);
                     this.isLoading = false;
 
                     // Mostrar mensaje de error

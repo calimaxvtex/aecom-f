@@ -25,7 +25,7 @@ import { ROL_API_CONFIG } from '../models/rol.constants';
   providedIn: 'root'
 })
 export class RolService {
-  private readonly API_ID: number = 2; // ID del endpoint de Roles
+  private readonly API_ID: number = 1; // ID del endpoint de Roles
   private readonly endpoints = {
     ROLES: ROL_API_CONFIG.ENDPOINTS.ROLES // Mantener por compatibilidad
   };
@@ -202,21 +202,57 @@ export class RolService {
    * IN - Insertar rol usando executeAction
    */
   insertRol(rol: RolForm): Observable<RolApiResponse> {
-    return this.executeAction('IN', { data: rol });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolApiResponse>(url, { action: 'IN', ...rol }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Rol insertado exitosamente: ${rol.nombre}`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * UP - Actualizar rol usando executeAction
    */
   updateRolAction(id: number, rol: Partial<RolForm>): Observable<RolApiResponse> {
-    return this.executeAction('UP', { id, data: rol });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolApiResponse>(url, { action: 'UP', id_rol: id, ...rol }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`✅ Rol actualizado exitosamente: ID ${id}`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
    * DL - Eliminar rol usando executeAction
    */
   deleteRolAction(id: number): Observable<RolApiResponse> {
-    return this.executeAction('DL', { id });
+    const url = this.getApiUrl();
+
+    return this.http.post<RolApiResponse>(url, { action: 'DL', id_rol: id }, this.httpOptions).pipe(
+      tap(response => {
+        if (response.statuscode === 200) {
+          console.log(`🗑️ Rol eliminado exitosamente: ID ${id}`);
+        } else {
+          // Si el backend devuelve error, lanzar el error
+          throw new Error(response.mensaje || `Error del backend: ${response.statuscode}`);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**

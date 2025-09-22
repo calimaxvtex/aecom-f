@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -46,6 +46,8 @@ import { SessionService } from '@/core/services/session.service';
     ],
     providers: [MessageService],
     template: `
+        <!-- Contenedor del visor PDF (oculto por defecto) -->
+        <div #pdfContainer class="hidden"></div>
         <div class="card">
             <p-toast></p-toast>
             
@@ -399,32 +401,74 @@ import { SessionService } from '@/core/services/session.service';
                             <!-- Preview del Tabloide maximizado (2/3 del ancho) -->
                             <div class="lg:col-span-2 bg-white rounded-lg border shadow-sm h-full overflow-hidden">
                                 <div class="h-full flex flex-col">
-                                    <!-- Iframe maximizado -->
+                                    <!-- Contenedor del preview (Iframe o PDF.js) -->
                                     <div class="flex-1 p-2">
-                                        <iframe 
-                                            [src]="getSafeUrl(tabloideSeleccionado.src)"
-                                            class="w-full h-full rounded border-0"
-                                            frameborder="0"
-                                            allowfullscreen
-                                            title="Preview del Tabloide"
-                                            style="min-height: calc(100vh - 320px);"
-                                        ></iframe>
+                                        <!-- Modo Iframe (FlipHTML5) -->
+                                        <div *ngIf="!usePdfViewer" class="h-full">
+                                            <!-- NOTA: Las advertencias de Canvas2D en consola son NORMALES cuando se cargan
+                                                 tabloides desde servicios externos como FlipHTML5. Estas advertencias indican
+                                                 que el contenido usa getImageData() sin willReadFrequently, lo cual es común
+                                                 en librerías de renderizado de PDFs. NO AFECTAN la funcionalidad del preview. -->
+                                            <iframe
+                                                [src]="getSafeUrl(tabloideSeleccionado.src)"
+                                                class="w-full h-full rounded border-0"
+                                                frameborder="0"
+                                                allowfullscreen
+                                                title="Preview del Tabloide"
+                                                style="min-height: calc(100vh - 320px);"
+                                                sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                                            ></iframe>
+                                        </div>
+
+                                        <!-- Modo PDF.js (visor nativo) -->
+                                        <div *ngIf="usePdfViewer" class="h-full bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <i class="pi pi-file-pdf text-4xl text-gray-400 mb-4"></i>
+                                                <h3 class="text-lg font-semibold text-gray-600 mb-2">Visor PDF.js</h3>
+                                                <p class="text-gray-500 mb-4">
+                                                    Esta función estará disponible próximamente.<br>
+                                                    Por ahora, usa el modo Iframe para ver los tabloides.
+                                                </p>
+                                                <button
+                                                    (click)="toggleViewerMode()"
+                                                    pButton
+                                                    label="Volver a Iframe"
+                                                    icon="pi pi-arrow-left"
+                                                    class="p-button-outlined"
+                                                ></button>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Footer con controles en la parte inferior -->
                                     <div class="flex justify-between items-center p-3 border-t bg-gray-50">
                                         <div class="flex items-center gap-2">
                                             <i class="pi pi-file-pdf text-red-500"></i>
-                                            <span class="text-sm font-medium text-gray-700">Preview del Tabloide</span>
+                                            <span class="text-sm font-medium text-gray-700">
+                                                Preview del Tabloide
+                                                <span class="text-xs text-gray-500 ml-1">
+                                                    ({{usePdfViewer ? 'PDF.js' : 'Iframe'}})
+                                                </span>
+                                            </span>
                                         </div>
-                                        <button 
-                                            (click)="abrirTabloide(tabloideSeleccionado.src)" 
-                                            pButton 
-                                            label="Ventana Nueva" 
-                                            icon="pi pi-external-link"
-                                            class="p-button-outlined p-button-sm"
-                                            pTooltip="Abrir en pestaña nueva"
-                                        ></button>
+                                        <div class="flex gap-2">
+                                            <button
+                                                (click)="toggleViewerMode()"
+                                                pButton
+                                                [label]="usePdfViewer ? 'Iframe' : 'PDF.js'"
+                                                [icon]="usePdfViewer ? 'pi pi-globe' : 'pi pi-file-pdf'"
+                                                class="p-button-outlined p-button-sm"
+                                                pTooltip="Cambiar modo de visualización"
+                                            ></button>
+                                            <button
+                                                (click)="abrirTabloide(tabloideSeleccionado.src)"
+                                                pButton
+                                                label="Ventana Nueva"
+                                                icon="pi pi-external-link"
+                                                class="p-button-outlined p-button-sm"
+                                                pTooltip="Abrir en pestaña nueva"
+                                            ></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -701,6 +745,7 @@ import { SessionService } from '@/core/services/session.service';
     `]
 })
 export class TabAdmComponent implements OnInit {
+    @ViewChild('pdfContainer', { static: false }) pdfContainer!: ElementRef;
     // Datos
     tabloides: Tabloide[] = [];
     tabloideSeleccionado: Tabloide | null = null;
@@ -720,6 +765,11 @@ export class TabAdmComponent implements OnInit {
     imageLoaded = false;
     imageError = false;
     imageModalSrc = '';
+
+    // Estados del visor PDF
+    usePdfViewer = false; // Alternar entre iframe y PDF.js
+    pdfLoading = false;
+    pdfError = false;
 
     // Formularios
     tabloideForm!: FormGroup;
@@ -753,6 +803,7 @@ export class TabAdmComponent implements OnInit {
         // console.log('🚀 TabAdmComponent inicializado');
         this.cargarTableides();
     }
+
 
     // ========== MÉTODOS DE INICIALIZACIÓN ==========
 
@@ -1242,6 +1293,29 @@ export class TabAdmComponent implements OnInit {
             { label: 'Activo', value: 'A' },
             { label: 'Inactivo', value: 'I' }
         ];
+    }
+
+    // ========== MÉTODOS DE VISUALIZACIÓN ==========
+
+    /**
+     * Alternar entre modo Iframe y PDF.js
+     */
+    toggleViewerMode(): void {
+        this.usePdfViewer = !this.usePdfViewer;
+
+        if (this.usePdfViewer) {
+            // TODO: Implementar visor PDF.js aquí
+            // Por ahora solo mostramos placeholder
+            console.log('🔄 Modo PDF.js activado - Implementación pendiente');
+        } else {
+            console.log('🔄 Modo Iframe activado');
+        }
+
+        this.messageService.add({
+            severity: 'info',
+            summary: 'Modo de Visualización',
+            detail: `Cambiado a ${this.usePdfViewer ? 'PDF.js' : 'Iframe (FlipHTML5)'}`
+        });
     }
 
     // ========== MÉTODO PARA IFRAME SEGURO ==========

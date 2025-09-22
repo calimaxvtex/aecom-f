@@ -41,11 +41,18 @@ export type RolAction = 'SL' | 'UP' | 'IN' | 'DL';
  */
 export interface RolActionParams {
   action: RolAction;
-  data?: Partial<RolForm>;
-  id?: number;
+  id_rol?: number;
 }
-
-/**
+export interface RolDeleteParams {
+  action: RolAction;
+  id_rol: number;
+}
+export interface RolUpdateParams {
+  action: RolAction;
+  id_rol: number;
+}
+ 
+/** 
  * Filtros para búsqueda de roles
  */
 export interface RolFilters {

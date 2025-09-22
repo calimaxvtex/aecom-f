@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AppLayout } from '@/layout/components/app.layout';
+import { AuthGuard } from '@/core/guards';
 
 export const appRoutes: Routes = [
     // Ruta por defecto - redirige al login
@@ -9,6 +10,7 @@ export const appRoutes: Routes = [
     {
         path: '',
         component: AppLayout,
+        canActivate: [AuthGuard], // 🔒 Protección con AuthGuard
         children: [
             {
                 path: 'dashboards',

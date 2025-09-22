@@ -12,11 +12,12 @@ import { AppRightMenu } from '@/layout/components/app.rightmenu';
 import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { SessionService } from '@/core/services/session.service';
+import { DevToolsComponent } from '@/core/components';
 
 @Component({
     selector: 'app-layout',
     standalone: true,
-    imports: [CommonModule, AppTopbar, AppSidebar, RouterModule, AppFooter, AppConfigurator, AppBreadcrumb, AppRightMenu, Toast],
+    imports: [CommonModule, AppTopbar, AppSidebar, RouterModule, AppFooter, AppConfigurator, AppBreadcrumb, AppRightMenu, Toast, DevToolsComponent],
     template: `
         <div class="layout-container" [ngClass]="containerClass()">
             <div app-topbar></div>
@@ -31,6 +32,7 @@ import { SessionService } from '@/core/services/session.service';
             </div>
         </div>
         <app-configurator />
+        <app-dev-tools />
         <p-toast />
     `,
     providers: [MessageService]

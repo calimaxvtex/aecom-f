@@ -11,6 +11,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ApiMonitorInterceptor } from './app/api-monitor.interceptor';
 import { SimpleTestInterceptor } from './app/simple-test.interceptor';
 import { ApiConfigService } from './app/core/services/api/api-config.service';
+import { environment } from './environments/environment';
 // import { HttpLoggingInterceptor } from './core/interceptors/http-logging.interceptor';
 
 // console.log('🔍 App Config: ApiMonitorInterceptor importado:', ApiMonitorInterceptor);
@@ -99,18 +100,19 @@ export const appConfig: ApplicationConfig = {
             multi: true
         },
 
-        // Interceptor simple para testing
-        {
+        // Interceptor simple para testing (solo en desarrollo)
+        ...(environment.enableLogs ? [{
             provide: HTTP_INTERCEPTORS,
             useClass: SimpleTestInterceptor,
             multi: true
-        },
-        // Interceptor para monitoreo de APIs
-        {
+        }] : []),
+        
+        // Interceptor para monitoreo de APIs (solo si está habilitado)
+        ...(environment.enableApiMonitor ? [{
             provide: HTTP_INTERCEPTORS,
             useClass: ApiMonitorInterceptor,
             multi: true
-        }
+        }] : [])
         // {
         //     provide: HTTP_INTERCEPTORS,
         //     useClass: HttpLoggingInterceptor,

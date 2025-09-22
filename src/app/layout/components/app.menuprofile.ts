@@ -1,21 +1,25 @@
-import {Component, computed, effect, ElementRef, inject, OnDestroy, Renderer2} from '@angular/core';
+import {Component, computed, effect, ElementRef, inject, OnDestroy, OnInit, Renderer2} from '@angular/core';
 import {animate, style, transition, trigger} from '@angular/animations';
 import {LayoutService} from '@/layout/service/layout.service';
 import {TooltipModule} from 'primeng/tooltip';
 import {ButtonModule} from 'primeng/button';
 import {CommonModule} from '@angular/common';
-import {RouterModule} from '@angular/router';
+import {RouterModule, Router} from '@angular/router';
 import {Subscription} from "rxjs";
+import {UsuarioService} from '@/features/usuarios/services/usuario.service';
+import {MessageService} from 'primeng/api';
+import {ToastModule} from 'primeng/toast';
+import {SessionService} from '@/core/services/session.service';
 
 @Component({
     selector: '[app-menu-profile]',
     standalone: true,
-    imports: [CommonModule, TooltipModule, ButtonModule, RouterModule],
+    imports: [CommonModule, TooltipModule, ButtonModule, RouterModule, ToastModule],
     template: `<button (click)="toggleMenu()" pTooltip="Profile" [tooltipDisabled]="isTooltipDisabled()">
-            <img src="/images/avatar/amyelsner.png" alt="avatar" style="width: 32px; height: 32px;" />
+            <img [src]="userAvatar" alt="avatar" style="width: 32px; height: 32px;" />
             <span class="text-start">
-                <strong>Amy Elsner</strong>
-                <small>Webmaster</small>
+                <strong>{{ userName }}</strong>
+                <small>{{ userRole }}</small>
             </span>
             <i class="layout-menu-profile-toggler pi pi-fw" [ngClass]="{ 'pi-angle-down': menuProfilePosition() === 'start' || isHorizontal(), 'pi-angle-up': menuProfilePosition() === 'end' && !isHorizontal() }"></i>
         </button>
@@ -27,25 +31,14 @@ import {Subscription} from "rxjs";
                     <span>Settings</span>
                 </button>
             </li>
-            <li pTooltip="Profile" [tooltipDisabled]="isTooltipDisabled()">
-                <button [routerLink]="['/documentation']">
-                    <i class="pi pi-file-o pi-fw"></i>
-                    <span>Profile</span>
-                </button>
-            </li>
-            <li pTooltip="Support" [tooltipDisabled]="isTooltipDisabled()">
-                <button [routerLink]="['/documentation']">
-                    <i class="pi pi-compass pi-fw"></i>
-                    <span>Support</span>
-                </button>
-            </li>
-            <li pTooltip="Logout" [tooltipDisabled]="isTooltipDisabled()" [routerLink]="['/auth/login2']">
-                <button class="p-link">
+            <li pTooltip="Logout" [tooltipDisabled]="isTooltipDisabled()">
+                <button class="p-link" (click)="onLogout()">
                     <i class="pi pi-power-off pi-fw"></i>
                     <span>Logout</span>
                 </button>
             </li>
-        </ul>`,
+        </ul>
+        <p-toast position="top-right"></p-toast>`,
     animations: [
         trigger('menu', [
             transition('void => inline', [style({ height: 0 }), animate('400ms cubic-bezier(0.86, 0, 0.07, 1)', style({ opacity: 1, height: '*' }))]),
@@ -58,12 +51,25 @@ import {Subscription} from "rxjs";
         class: 'layout-menu-profile'
     }
 })
-export class AppMenuProfile implements OnDestroy {
+export class AppMenuProfile implements OnInit, OnDestroy {
     layoutService = inject(LayoutService);
 
     renderer = inject(Renderer2);
 
     el = inject(ElementRef);
+
+    private usuarioService = inject(UsuarioService);
+
+    private router = inject(Router);
+
+    private messageService = inject(MessageService);
+
+    private sessionService = inject(SessionService);
+
+    // Propiedades para el usuario actual
+    userName = 'Usuario';
+    userRole = 'Usuario';
+    userAvatar = '/images/avatar/amyelsner.png';
 
     isHorizontal = computed(() => this.layoutService.isHorizontal() && this.layoutService.isDesktop());
 
@@ -76,6 +82,31 @@ export class AppMenuProfile implements OnDestroy {
     subscription!: Subscription;
 
     outsideClickListener: any;
+
+    ngOnInit() {
+        // Cargar datos del usuario actual
+        this.loadCurrentUser();
+
+        // Suscribirse a cambios en la sesión
+        this.sessionService.session$.subscribe(session => {
+            if (session && session.isLoggedIn) {
+                this.userName = session.nombre || 'Usuario';
+                this.userRole = 'Usuario'; // Puedes agregar lógica para determinar el rol
+                // Mantener el avatar por defecto o puedes agregar lógica para cambiarlo
+            } else {
+                this.userName = 'Usuario';
+                this.userRole = 'Usuario';
+            }
+        });
+    }
+
+    private loadCurrentUser() {
+        const session = this.sessionService.getSession();
+        if (session && session.isLoggedIn) {
+            this.userName = session.nombre || 'Usuario';
+            this.userRole = 'Usuario';
+        }
+    }
 
     constructor() {
         this.subscription = this.layoutService.overlayOpen$.subscribe(() => {
@@ -122,5 +153,52 @@ export class AppMenuProfile implements OnDestroy {
 
     toggleMenu() {
         this.layoutService.onMenuProfileToggle();
+    }
+
+    /**
+     * Maneja el logout desde el menu profile
+     */
+    onLogout(): void {
+        console.log('🚪 Logout iniciado desde menu profile');
+
+        this.usuarioService.logout().subscribe({
+            next: (response) => {
+                console.log('✅ Logout exitoso desde menu profile:', response);
+
+                // Mostrar mensaje de éxito
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Sesión Cerrada',
+                    detail: 'Has cerrado sesión exitosamente',
+                    life: 3000
+                });
+
+                // Cerrar el menú antes de redirigir
+                this.layoutService.layoutState.update(value => ({...value, menuProfileActive: false}));
+
+                // Redirigir a login2 después de un breve delay
+                setTimeout(() => {
+                    this.router.navigate(['/login2']);
+                }, 1000);
+            },
+            error: (error) => {
+                console.error('❌ Error en logout desde menu profile:', error);
+
+                // Mostrar mensaje de error
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al Cerrar Sesión',
+                    detail: 'Ocurrió un error al cerrar la sesión',
+                    life: 5000
+                });
+
+                // Cerrar el menú y redirigir de todas formas
+                this.layoutService.layoutState.update(value => ({...value, menuProfileActive: false}));
+
+                setTimeout(() => {
+                    this.router.navigate(['/login2']);
+                }, 1000);
+            }
+        });
     }
 }

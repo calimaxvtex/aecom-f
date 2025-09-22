@@ -1,0 +1,1082 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+// PrimeNG Modules (standalone)
+import { TabsModule } from 'primeng/tabs';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
+import { TagModule } from 'primeng/tag';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { InputMaskModule } from 'primeng/inputmask';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { MessageService, ConfirmationService } from 'primeng/api';
+
+// Modelos y servicios
+import { CollItem, CollTypeItem } from '@/features/coll/models/coll.interface';
+import { CollService } from '@/features/coll/services/coll.service';
+import { SessionService } from '@/core/services/session.service';
+
+@Component({
+    selector: 'app-collections',
+    standalone: true,
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        TabsModule,
+        TableModule,
+        ButtonModule,
+        InputTextModule,
+        DialogModule,
+        ToastModule,
+        TagModule,
+        SelectModule,
+        SelectButtonModule,
+        InputMaskModule,
+        ToggleSwitchModule,
+        ConfirmPopupModule,
+        SplitButtonModule
+    ],
+    providers: [MessageService, ConfirmationService],
+    template: `
+        <div class="card">
+            <p-toast></p-toast>
+
+            <!-- ConfirmPopup para confirmaciones -->
+            
+<p-confirmPopup [appendTo]="'body'" [autoZIndex]="true"></p-confirmPopup>
+
+
+            <!-- Pestañas principales -->
+            <p-tabs [value]="activeTabIndex.toString()" (onTabChange)="onTabChange($event)">
+                <p-tablist>
+                    <p-tab value="0">
+                        <i class="pi pi-folder mr-2"></i>
+                        Colecciones
+                    </p-tab>
+                    <p-tab value="1">
+                        <i class="pi pi-list mr-2"></i>
+                        Items
+                    </p-tab>
+                </p-tablist>
+
+                <p-tabpanels>
+                    <!-- Panel 1: Colecciones CRUD -->
+                    <p-tabpanel value="0">
+                        <div class="mb-4">
+                            <h1 class="text-2xl font-bold mb-2">🗂️ Administración de Colecciones</h1>
+                            <p class="text-gray-600 mb-4">Gestiona las colecciones y sus configuraciones</p>
+                        </div>
+
+
+                        <p-table
+                            #dtTable
+                            [value]="filteredCollections"
+                            [paginator]="true"
+                            [rows]="10"
+                            [showCurrentPageReport]="true"
+                            responsiveLayout="scroll"
+                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} colecciones"
+                            [rowsPerPageOptions]="[10, 25, 50]"
+                            [globalFilterFields]="['nombre', 'descripcion']"
+                            selectionMode="single"
+                            [(selection)]="collectionSeleccionada"
+                            (onRowSelect)="onCollectionSelect($event)"
+                        >
+                            <ng-template #caption>
+                                <div class="flex flex-wrap gap-2 items-center justify-between">
+                                    <input
+                                        pInputText
+                                        type="text"
+                                        (input)="onGlobalFilter(dtTable, $event)"
+                                        placeholder="Buscar colecciones..."
+                                        class="w-full sm:w-80 order-1 sm:order-0"
+                                    />
+                                    <div class="flex gap-2 order-0 sm:order-1 items-center">
+                                        <!-- SplitButton para filtros -->
+                                        <p-splitButton
+                                            label="Filtrar"
+                                            icon="pi pi-filter"
+                                            (onClick)="clearFilters()"
+                                            [model]="filterMenuItems"
+                                            styleClass="p-button-sm"
+                                        ></p-splitButton>
+
+                                        <!-- Botones solo con iconos justificados a la derecha -->
+                                        <div class="flex gap-1">
+                                            <p-button
+                                                icon="pi pi-refresh"
+                                                (onClick)="cargarCollections()"
+                                                [loading]="loadingCollections"
+                                                styleClass="p-button-sm p-button-outlined"
+                                                pTooltip="Actualizar"
+                                            ></p-button>
+                                            <p-button
+                                                icon="pi pi-plus"
+                                                (onClick)="openCollectionForm()"
+                                                styleClass="p-button-sm p-button-outlined"
+                                                pTooltip="Agregar Colección"
+                                            ></p-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ng-template>
+
+                            <ng-template #header>
+                                <tr>
+                                    <th pSortableColumn="id_coll" style="width: 80px">ID <p-sortIcon field="id_coll"></p-sortIcon></th>
+                                    <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+                                    <th pSortableColumn="products" style="width: 100px">Products</th>
+                                    <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                                    <th style="width: 100px">Banner</th>
+                                    <th style="width: 150px">Acciones</th>
+                                </tr>
+                            </ng-template>
+
+                            <ng-template #body let-collection>
+                                <tr
+                                    [class.bg-blue-50]="collection === collectionSeleccionada"
+                                    class="cursor-pointer hover:bg-gray-50 transition-colors"
+                                >
+                                    <!-- ID - NO EDITABLE -->
+                                    <td>{{collection.id_coll}}</td>
+
+                                    <!-- Nombre - EDITABLE -->
+                                    <td>
+                                        <span
+                                            *ngIf="editingCell !== collection.id_coll + '_nombre'"
+                                            (click)="editInlineCollection(collection, 'nombre'); $event.stopPropagation()"
+                                            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                            title="Clic para editar"
+                                        >
+                                            {{collection.nombre}}
+                                        </span>
+                                        <div
+                                            *ngIf="editingCell === collection.id_coll + '_nombre'"
+                                            class="inline-edit-container"
+                                        >
+                                            <input
+                                                pInputText
+                                                type="text"
+                                                [(ngModel)]="collection.nombre"
+                                                (keyup.enter)="saveInlineEditCollection(collection, 'nombre')"
+                                                (keyup.escape)="cancelInlineEdit()"
+                                                class="p-inputtext-sm flex-1"
+                                                #input
+                                                (focus)="input.select()"
+                                                autofocus
+                                                placeholder="Nombre de la colección"
+                                            />
+                                            <button
+                                                pButton
+                                                icon="pi pi-check"
+                                                (click)="saveInlineEditCollection(collection, 'nombre')"
+                                                class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                                pTooltip="Guardar (Enter)"
+                                            ></button>
+                                            <button
+                                                pButton
+                                                icon="pi pi-undo"
+                                                (click)="cancelInlineEdit()"
+                                                class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                                pTooltip="Deshacer (Escape)"
+                                            ></button>
+                                        </div>
+                                    </td>
+
+                                    <!-- Products - SOLO LECTURA -->
+                                    <td>{{collection.products}}</td>
+
+                                    <!-- Estado - TOGGLE BUTTON -->
+                                    <td>
+                            <span #estadoAnchor (click)="toggleEstado(collection, estadoAnchor); $event.stopPropagation()">
+  <p-tag
+    [value]="getEstadoLabel(collection.estado)"
+    [severity]="getEstadoSeverity(collection.estado)"
+    class="cursor-pointer hover:opacity-80 transition-opacity">
+  </p-tag>
+</span>
+
+                                    </td>
+
+                                    <!-- Banner Preview -->
+                                    <td>
+                                        <div class="flex justify-center">
+                                            <img
+                                                *ngIf="collection.url_banner"
+                                                [src]="collection.url_banner"
+                                                [alt]="'Banner de ' + collection.nombre"
+                                                class="w-12 h-12 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
+                                                (click)="previewBanner(collection.url_banner, collection.nombre); $event.stopPropagation()"
+                                                pTooltip="Clic para ampliar"
+                                                onerror="this.style.display='none'"
+                                            />
+                                            <div
+                                                *ngIf="!collection.url_banner"
+                                                class="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center"
+                                            >
+                                                <i class="pi pi-image text-gray-400 text-lg"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Acciones -->
+                                    <td (click)="$event.stopPropagation()">
+                                        <div class="flex gap-1">
+                                            <button
+                                                pButton
+                                                icon="pi pi-pencil"
+                                                (click)="openCollectionForm(collection)"
+                                                class="p-button-sm p-button-text p-button-warning"
+                                                pTooltip="Editar Colección"
+                                            ></button>
+                                            <button
+  #delBtn
+  pButton
+  icon="pi pi-trash"
+  (click)="eliminarCollection(collection, delBtn)"
+  class="p-button-sm p-button-text p-button-danger"
+  pTooltip="Eliminar Colección">
+</button>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-tabpanel>
+
+                    <!-- Panel 2: Detalles de Colecciones -->
+                    <p-tabpanel value="1">
+                        <div class="p-4">
+                            <h2 class="text-xl font-semibold mb-2">📋 Detalles de Colecciones</h2>
+                            <p class="text-gray-600">Aquí se mostrarán los detalles de las colecciones (COLLD)</p>
+                            <div class="mt-4 p-4 bg-gray-50 rounded">
+                                <p>Contenido del tab COLLD próximamente...</p>
+                            </div>
+                        </div>
+                    </p-tabpanel>
+                </p-tabpanels>
+            </p-tabs>
+        </div>
+
+        <!-- Modal Colección -->
+        <p-dialog
+            [(visible)]="showCollectionModal"
+            [header]="isEditingCollection ? 'Editar Colección' : 'Nueva Colección'"
+            [modal]="true"
+            [style]="{width: '600px', maxHeight: '70vh'}"
+            [draggable]="false"
+            [resizable]="false"
+            [closable]="true"
+        >
+            <form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
+                <div class="space-y-3" style="max-height: 50vh; overflow-y: auto;">
+                    <!-- Nombre -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nombre *</label>
+                        <input
+                            pInputText
+                            formControlName="nombre"
+                            placeholder="tag-Collection"
+                            class="w-full"
+                        />
+                        <small *ngIf="collectionForm.get('nombre')?.invalid && collectionForm.get('nombre')?.touched"
+                               class="text-red-500">
+                            El nombre es obligatorio
+                        </small>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Descripción</label>
+                        <textarea
+                            pInputText
+                            formControlName="descripcion"
+                            placeholder="Descripción de la colección (opcional)"
+                            class="w-full"
+                            rows="2"
+                        ></textarea>
+                    </div>
+
+                    <!-- URL Banner -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">URL Banner</label>
+                        <input
+                            pInputText
+                            formControlName="url_banner"
+                            placeholder="https://imagenes.calimaxjs.com/banner.jpg"
+                            class="w-full"
+                        />
+                    </div>
+
+                    <!-- Tipo de Colección (más pequeño) -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tipo de Colección *</label>
+                        <p-select
+                            formControlName="id_tipoc"
+                            [options]="tipoCollOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Seleccionar tipo"
+                            styleClass="w-full text-sm"
+                        ></p-select>
+                    </div>
+
+                    <!-- Fecha Inicio -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Fecha Inicio</label>
+                        <p-inputMask
+                            formControlName="fecha_ini"
+                            mask="99/99/9999"
+                            placeholder="mm/dd/yyyy"
+                            class="w-full"
+                        ></p-inputMask>
+                    </div>
+
+                    <!-- SWSCHED entre las fechas -->
+                    <div class="flex justify-center py-2">
+                        <div class="flex flex-col items-center">
+                            <label class="block text-xs font-medium mb-1">Sched</label>
+                            <p-toggleSwitch
+                                formControlName="swsched"
+                                (onChange)="onSwschedChange($event)"
+                            ></p-toggleSwitch>
+                        </div>
+                    </div>
+
+                    <!-- Fecha Fin (solo si swsched está activo) -->
+                    <div *ngIf="collectionForm.get('swsched')?.value">
+                        <label class="block text-sm font-medium mb-1">Fecha Fin</label>
+                        <p-inputMask
+                            formControlName="fecha_fin"
+                            mask="99/99/9999"
+                            placeholder="mm/dd/yyyy"
+                            class="w-full"
+                        ></p-inputMask>
+                    </div>
+
+                    <!-- Toggle Switches: swtag, swsrc y Estado en la misma fila -->
+                    <div class="grid grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                {{collectionForm.get('swtag')?.value ? 'Tag ON' : 'Tag OFF'}}
+                            </label>
+                            <p-toggleSwitch
+                                formControlName="swtag"
+                            ></p-toggleSwitch>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                {{collectionForm.get('swsrc')?.value ? 'Modo búsqueda ON' : 'Modo búsqueda OFF'}}
+                            </label>
+                            <p-toggleSwitch
+                                formControlName="swsrc"
+                            ></p-toggleSwitch>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Estado</label>
+                            <p-tag
+                                [value]="collectionForm.get('estado')?.value ? 'Activo' : 'Inactivo'"
+                                [severity]="collectionForm.get('estado')?.value ? 'success' : 'danger'"
+                                (click)="collectionForm.patchValue({estado: !collectionForm.get('estado')?.value})"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                            ></p-tag>
+                        </div>
+                    </div>
+
+                    <!-- Información de solo lectura -->
+                    <div *ngIf="isEditingCollection" class="border-t pt-3 grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1">Última Modificación</label>
+                            <input
+                                pInputText
+                                [value]="collectionSeleccionada?.fecha_mod | date:'short'"
+                                readonly
+                                class="w-full bg-gray-100 text-xs"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1">Usuario</label>
+                            <input
+                                pInputText
+                                [value]="collectionSeleccionada?.usr_m"
+                                readonly
+                                class="w-full bg-gray-100 text-xs"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+                    <button
+                        pButton
+                        type="button"
+                        (click)="closeCollectionForm()"
+                        label="Cancelar"
+                        class="p-button-text"
+                    ></button>
+                    <button
+                        pButton
+                        type="submit"
+                        [label]="isEditingCollection ? 'Actualizar' : 'Crear'"
+                        [disabled]="!collectionForm.valid || savingCollection"
+                        [loading]="savingCollection"
+                        class="p-button-success"
+                        raised
+                    ></button>
+                </div>
+            </form>
+        </p-dialog>
+
+        <!-- Modal para previsualizar banner -->
+        <p-dialog
+            [(visible)]="showBannerModal"
+            [header]="bannerPreviewTitle"
+            [modal]="true"
+            [style]="{width: '80vw', maxWidth: '800px'}"
+            [draggable]="false"
+            [resizable]="false"
+            [closable]="true"
+        >
+            <div class="text-center">
+                <img
+                    [src]="bannerPreviewSrc"
+                    [alt]="bannerPreviewTitle"
+                    class="max-w-full h-auto rounded-lg shadow-lg"
+                />
+            </div>
+        </p-dialog>
+
+    `,
+    styles: [`
+        .inline-edit-container {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .inline-action-btn {
+            padding: 0.25rem;
+            min-width: 2rem;
+        }
+
+        .editable-cell {
+            display: block;
+            min-height: 1.5rem;
+        }
+
+        .p-datatable .p-datatable-tbody > tr > td {
+            padding: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .p-datatable .p-datatable-tbody > tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Estilos para botones de tabla */
+        .p-button.p-button-text.p-button-sm {
+            width: 2rem !important;
+            height: 2rem !important;
+            min-width: 2rem !important;
+            padding: 0 !important;
+            border-radius: 0.25rem !important;
+        }
+
+        .p-button.p-button-text.p-button-sm .p-button-icon {
+            font-size: 0.875rem !important;
+        }
+
+        /* Fila seleccionada */
+        .bg-blue-50 {
+            background-color: #eff6ff !important;
+        }
+
+        /* Scroll personalizado para formularios */
+        .grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .grid::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .grid::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    `]
+})
+export class CollectionsComponent implements OnInit {
+    // Datos
+    collections: CollItem[] = [];
+    filteredCollections: CollItem[] = [];
+    tipoCollOptions: any[] = [];
+    collectionSeleccionada: CollItem | null = null;
+
+    // Estados de carga
+    loadingCollections = false;
+    savingCollection = false;
+    deletingCollection = false;
+
+    // Estados de modales
+    showCollectionModal = false;
+    showConfirmDeleteCollection = false;
+    showBannerModal = false;
+
+    // Estados del formulario
+    collectionForm!: FormGroup;
+    isEditingCollection = false;
+
+    // Edición inline
+    editingCell: string | null = null;
+    originalValue: any = null;
+
+    // Confirmaciones
+    collectionToDelete: CollItem | null = null;
+
+    // Filtros
+    selectedTipoFilter: number[] = [];
+    filterMenuItems: any[] = [];
+
+    // Banner preview
+    bannerPreviewSrc = '';
+    bannerPreviewTitle = '';
+
+    // Tabs
+    activeTabIndex = 0;
+
+    constructor(
+        private fb: FormBuilder,
+        private collService: CollService,
+        private sessionService: SessionService,
+        private messageService: MessageService,
+        private confirmationService: ConfirmationService
+    ) {
+        this.initializeForms();
+        this.initializeFilterMenu();
+    }
+
+    ngOnInit(): void {
+        console.log('🚀 CollectionsComponent inicializado');
+        this.cargarCollections();
+        this.cargarTipoCollOptions();
+    }
+
+    // ========== MÉTODOS DE INICIALIZACIÓN ==========
+
+    initializeForms(): void {
+        const currentDate = this.getCurrentDate();
+        this.collectionForm = this.fb.group({
+            nombre: ['', [Validators.required]],
+            descripcion: [''],
+            url_banner: [''],
+            swtag: [false],
+            swsrc: [false],
+            estado: [true],
+            id_tipoc: [null, [Validators.required]],
+            fecha_ini: [currentDate],
+            swsched: [false],
+            fecha_fin: [currentDate]
+        });
+    }
+
+    initializeFilterMenu(): void {
+        this.filterMenuItems = [
+            {
+                label: 'Limpiar filtros',
+                icon: 'pi pi-filter-slash',
+                command: () => this.clearFilters()
+            },
+            {
+                label: 'Todos los tipos',
+                icon: 'pi pi-list',
+                command: () => this.showAllTypes()
+            },
+            { separator: true }
+        ];
+
+        // Agregar tipos de colección dinámicamente
+        this.tipoCollOptions.forEach(tipo => {
+            this.filterMenuItems.push({
+                label: `- ${tipo.label}`,
+                icon: 'pi pi-filter',
+                command: () => this.filterByType(tipo.value)
+            });
+        });
+    }
+
+    clearFilters(): void {
+        this.selectedTipoFilter = [];
+        this.filteredCollections = [...this.collections];
+        console.log('Filtros limpiados');
+    }
+
+    showAllTypes(): void {
+        this.selectedTipoFilter = this.tipoCollOptions.map(option => option.value);
+        this.onTipoFilterChange({ value: this.selectedTipoFilter });
+        console.log('Mostrando todos los tipos');
+    }
+
+    filterByType(tipoId: number): void {
+        this.selectedTipoFilter = [tipoId];
+        this.onTipoFilterChange({ value: this.selectedTipoFilter });
+        console.log('Filtrando por tipo:', tipoId);
+    }
+
+    getCurrentDate(): string {
+        const today = new Date();
+        return `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+    }
+
+    // ========== MÉTODOS DE DATOS ==========
+
+    cargarCollections(): void {
+        console.log('📊 Cargando colecciones...');
+        this.loadingCollections = true;
+
+        // Obtener datos de sesión
+        const sessionBase = this.sessionService.getApiPayloadBase();
+        const payload = { action: 'SL' as const, ...sessionBase };
+
+        this.collService.getAllCollections({ filters: {} }).subscribe({
+            next: (response) => {
+                console.log('✅ Colecciones cargadas:', response);
+                if (response && response.data) {
+                    this.collections = response.data;
+                    this.filteredCollections = [...this.collections];
+                    console.log('✅ Colecciones procesadas:', this.collections.length, 'registros');
+                } else {
+                    this.collections = [];
+                    this.filteredCollections = [];
+                }
+                this.loadingCollections = false;
+            },
+            error: (error) => {
+                console.error('❌ Error al cargar colecciones:', error);
+                this.loadingCollections = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al cargar las colecciones',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    cargarTipoCollOptions(): void {
+        console.log('🔄 Cargando tipos de colección...');
+        this.collService.getCollTypes().subscribe({
+            next: (response) => {
+                console.log('✅ Tipos de colección obtenidos:', response);
+                if (response && response.data) {
+                    this.tipoCollOptions = response.data.map((tipo: CollTypeItem) => ({
+                        label: tipo.nomTipo,
+                        value: tipo.id_tipoc
+                    }));
+                    console.log('✅ Opciones procesadas:', this.tipoCollOptions);
+                    // Actualizar el menú del SplitButton con los nuevos tipos
+                    this.initializeFilterMenu();
+                } else {
+                    console.warn('⚠️ No se encontraron tipos de colección');
+                    this.tipoCollOptions = [];
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error al cargar tipos de colección:', error);
+                this.tipoCollOptions = [];
+            }
+        });
+    }
+
+    // ========== MÉTODOS DE UI ==========
+
+    onTabChange(event: any): void {
+        const newIndex = event.index !== undefined ? parseInt(event.index) : parseInt(event.value);
+        this.activeTabIndex = newIndex;
+        console.log('📑 Tab cambiado a:', this.activeTabIndex);
+    }
+
+    onGlobalFilter(table: any, event: any): void {
+        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    }
+
+    onTipoFilterChange(event: any): void {
+        if (event.value && event.value.length > 0) {
+            this.filteredCollections = this.collections.filter(coll =>
+                event.value.includes(coll.id_tipoc)
+            );
+        } else {
+            this.filteredCollections = [...this.collections];
+        }
+    }
+
+    onCollectionSelect(event: any): void {
+        console.log('📋 Colección seleccionada:', event.data);
+        this.collectionSeleccionada = event.data;
+    }
+
+    onSwschedChange(event: any): void {
+        // Si se desactiva swsched, resetear fecha_fin
+        if (!event.checked) {
+            this.collectionForm.patchValue({ fecha_fin: this.getCurrentDate() });
+        }
+    }
+
+    // ========== MÉTODOS DE FORMULARIO ==========
+
+    openCollectionForm(collection?: CollItem): void {
+        this.isEditingCollection = !!collection;
+
+        if (collection) {
+            console.log('✏️ Editando colección:', collection);
+            this.collectionForm.patchValue({
+                nombre: collection.nombre,
+                descripcion: collection.descripcion || '',
+                url_banner: collection.url_banner || '',
+                swtag: collection.swtag === 1,
+                swsrc: collection.swsrc === 1,
+                estado: collection.estado === 'A',
+                id_tipoc: collection.id_tipoc,
+                fecha_ini: this.formatDateForInput(collection.fecha_ini),
+                swsched: collection.sw_fijo === 1,
+                fecha_fin: this.formatDateForInput(collection.fecha_fin)
+            });
+            this.collectionSeleccionada = collection;
+        } else {
+            console.log('➕ Creando nueva colección');
+            const currentDate = this.getCurrentDate();
+            this.collectionForm.reset({
+                estado: true,
+                swtag: false,
+                swsrc: false,
+                swsched: false,
+                fecha_ini: currentDate,
+                fecha_fin: currentDate
+            });
+            this.collectionSeleccionada = null;
+        }
+
+        this.showCollectionModal = true;
+    }
+
+    closeCollectionForm(): void {
+        this.showCollectionModal = false;
+        this.collectionForm.reset();
+        this.isEditingCollection = false;
+        this.collectionSeleccionada = null;
+    }
+
+    saveCollection(): void {
+        if (this.collectionForm.valid) {
+            this.savingCollection = true;
+            const formData = this.collectionForm.value;
+
+            // Convertir valores booleanos a números
+            const processedData = {
+                ...formData,
+                swtag: formData.swtag ? 1 : 0,
+                swsrc: formData.swsrc ? 1 : 0,
+                estado: formData.estado ? 'A' : 'I',
+                swsched: formData.swsched ? 1 : 0,
+                fecha_ini: this.convertDateToISO(formData.fecha_ini),
+                fecha_fin: this.convertDateToISO(formData.fecha_fin)
+            };
+
+            // Obtener datos de sesión
+            const sessionBase = this.sessionService.getApiPayloadBase();
+
+            if (this.isEditingCollection && this.collectionSeleccionada) {
+                // Actualizar
+                const payload = {
+                    action: 'UP' as const,
+                    id_coll: this.collectionSeleccionada.id_coll,
+                    ...processedData,
+                    ...sessionBase
+                };
+
+                this.collService.updateCollection(payload).subscribe({
+                    next: (response) => {
+                        console.log('✅ Colección actualizada:', response);
+                        this.handleSaveSuccess('Colección actualizada correctamente');
+                    },
+                    error: (error) => this.handleSaveError(error, 'actualizar')
+                });
+            } else {
+                // Crear
+                const payload = {
+                    action: 'IN' as const,
+                    ...processedData,
+                    ...sessionBase
+                };
+
+                this.collService.createCollection(payload).subscribe({
+                    next: (response) => {
+                        console.log('✅ Colección creada:', response);
+                        this.handleSaveSuccess('Colección creada correctamente');
+                    },
+                    error: (error) => this.handleSaveError(error, 'crear')
+                });
+            }
+        }
+    }
+
+    private handleSaveSuccess(message: string): void {
+        this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: message
+        });
+
+        this.closeCollectionForm();
+        this.cargarCollections();
+        this.savingCollection = false;
+    }
+
+    private handleSaveError(error: any, operation: string): void {
+        console.error(`❌ Error al ${operation} colección:`, error);
+
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `Error al ${operation} la colección`,
+            life: 5000
+        });
+
+        this.savingCollection = false;
+    }
+
+    // ========== EDICIÓN INLINE ==========
+
+    editInlineCollection(collection: CollItem, field: string): void {
+        this.editingCell = collection.id_coll + '_' + field;
+        this.originalValue = (collection as any)[field];
+        console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
+    }
+
+    saveInlineEditCollection(collection: CollItem, field: string): void {
+        console.log('💾 Guardando inline:', field, 'Nuevo valor:', (collection as any)[field]);
+
+        if ((collection as any)[field] === this.originalValue) {
+            console.log('ℹ️ Valor no cambió, cancelando');
+            this.cancelInlineEdit();
+            return;
+        }
+
+        // Obtener datos de sesión
+        const sessionBase = this.sessionService.getApiPayloadBase();
+
+        this.collService.updateCollection({
+            id_coll: collection.id_coll,
+            [field]: (collection as any)[field],
+            ...sessionBase
+        }).subscribe({
+            next: (response) => {
+                console.log('✅ Campo actualizado:', response);
+
+                // Actualizar fecha de modificación local
+                collection.fecha_mod = new Date().toISOString();
+                collection.usr_m = String(sessionBase.usr || collection.usr_m);
+
+                this.editingCell = null;
+                this.originalValue = null;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Campo Actualizado',
+                    detail: `${this.getFieldLabel(field)} actualizado correctamente`
+                });
+            },
+            error: (error) => {
+                console.error('❌ Error al actualizar campo:', error);
+
+                // Revertir el cambio local
+                (collection as any)[field] = this.originalValue;
+                this.editingCell = null;
+                this.originalValue = null;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: `Error al actualizar ${this.getFieldLabel(field)}`,
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    cancelInlineEdit(): void {
+        this.editingCell = null;
+        this.originalValue = null;
+    }
+
+    private getFieldLabel(field: string): string {
+        const labels: { [key: string]: string } = {
+            nombre: 'Nombre',
+            descripcion: 'Descripción',
+            url_banner: 'URL Banner'
+        };
+        return labels[field] || field;
+    }
+
+    // ========== TOGGLE ESTADO ==========
+
+    toggleEstado(collection: CollItem, anchor: HTMLElement) {
+        const nuevoEstado = collection.estado === 'A' ? 'I' : 'A';
+        if (nuevoEstado === 'I') {
+          this.confirmationService.confirm({
+            target: anchor,
+            message: `¿Está seguro de que desea desactivar la colección "${collection.nombre}"?`,
+            header: 'Confirmar Desactivación',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Sí, desactivar',
+            rejectLabel: 'Cancelar',
+            accept: () => this.procesarCambioEstado(collection, nuevoEstado)
+          });
+        } else {
+          this.procesarCambioEstado(collection, nuevoEstado);
+        }
+      }
+      
+
+    private procesarCambioEstado(collection: CollItem, nuevoEstado: string): void {
+        const estadoAnterior = collection.estado;
+        collection.estado = nuevoEstado;
+
+        // Obtener datos de sesión
+        const sessionBase = this.sessionService.getApiPayloadBase();
+
+        this.collService.updateCollection({
+            id_coll: collection.id_coll,
+            estado: nuevoEstado,
+            ...sessionBase
+        }).subscribe({
+            next: (response) => {
+                console.log('✅ Estado actualizado:', response);
+
+                collection.fecha_mod = new Date().toISOString();
+                collection.usr_m = String(sessionBase.usr || collection.usr_m);
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Estado Actualizado',
+                    detail: `Colección ${nuevoEstado === 'A' ? 'activada' : 'desactivada'} correctamente`
+                });
+            },
+            error: (error) => {
+                console.error('❌ Error al cambiar estado:', error);
+
+                // Revertir cambio local
+                collection.estado = estadoAnterior;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al cambiar el estado de la colección',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    // ========== ELIMINACIÓN ==========
+
+    eliminarCollection(collection: CollItem, anchor: HTMLElement) {
+        this.confirmationService.confirm({
+          target: anchor,
+          message: `¿Estás seguro de que deseas eliminar la colección "${collection.nombre}"?`,
+          header: 'Confirmar Eliminación',
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabel: 'Sí, eliminar',
+          rejectLabel: 'Cancelar',
+          accept: () => this.confirmDeleteCollection(collection)
+        });
+      }
+      
+
+    confirmDeleteCollection(collection: CollItem): void {
+        this.deletingCollection = true;
+
+        // Obtener datos de sesión
+        const sessionBase = this.sessionService.getApiPayloadBase();
+
+        this.collService.deleteCollection(collection.id_coll).subscribe({
+            next: (response) => {
+                console.log('✅ Colección eliminada:', response);
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Eliminada',
+                    detail: 'Colección eliminada correctamente'
+                });
+
+                // Si la colección eliminada estaba seleccionada, deseleccionar
+                if (this.collectionSeleccionada?.id_coll === collection.id_coll) {
+                    this.collectionSeleccionada = null;
+                }
+
+                this.cargarCollections();
+                this.deletingCollection = false;
+            },
+            error: (error) => {
+                console.error('❌ Error al eliminar colección:', error);
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al eliminar la colección',
+                    life: 5000
+                });
+
+                this.deletingCollection = false;
+            }
+        });
+    }
+
+
+    // ========== MÉTODOS DE UTILIDAD ==========
+
+    getEstadoLabel(estado: string): string {
+        return estado === 'A' ? 'Activo' : 'Inactivo';
+    }
+
+    getEstadoSeverity(estado: string): 'success' | 'danger' {
+        return estado === 'A' ? 'success' : 'danger';
+    }
+
+    private formatDateForInput(dateString: string): string {
+        if (!dateString) return this.getCurrentDate();
+        const date = new Date(dateString);
+        return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    }
+
+    private convertDateToISO(dateString: string): string {
+        if (!dateString) return new Date().toISOString();
+        const [month, day, year] = dateString.split('/');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
+    }
+
+    // ========== BANNER PREVIEW ==========
+
+    previewBanner(bannerUrl: string, collectionName: string): void {
+        this.bannerPreviewSrc = bannerUrl;
+        this.bannerPreviewTitle = `Banner de ${collectionName}`;
+        this.showBannerModal = true;
+        console.log('🖼️ Mostrando preview del banner:', bannerUrl);
+    }
+}

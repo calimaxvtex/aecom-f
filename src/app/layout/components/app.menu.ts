@@ -1,470 +1,159 @@
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
+import { MenuLoaderService } from '@/core/services/menu/menu-loader.service';
+import { SkeletonModule } from 'primeng/skeleton';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-menu, [app-menu]',
     standalone: true,
-    imports: [CommonModule, AppMenuitem, RouterModule],
-    template: ` <ul class="layout-menu" #menuContainer>
-        <ng-container *ngFor="let item of model; let i = index">
-            <li app-menuitem *ngIf="!item.separator" [item]="item" [index]="i" [root]="true"></li>
-            <li *ngIf="item.separator" class="menu-separator"></li>
-        </ng-container>
-    </ul>`
+    imports: [CommonModule, AppMenuitem, RouterModule, SkeletonModule],
+    template: `
+        <!-- Loading state -->
+        <div *ngIf="loading || model.length === 0" class="layout-menu-loading">
+            <ng-container *ngFor="let i of skeletonItems">
+                <div class="menu-skeleton-item">
+                    <p-skeleton width="100%" height="40px" styleClass="mb-2"></p-skeleton>
+                    <ng-container *ngIf="i < 3">
+                        <p-skeleton width="80%" height="32px" styleClass="mb-1 ml-4" *ngFor="let j of [1,2]"></p-skeleton>
+                    </ng-container>
+                </div>
+            </ng-container>
+        </div>
+
+        <!-- Menu content -->
+        <ul *ngIf="!loading && model.length > 0" class="layout-menu" #menuContainer>
+            <ng-container *ngFor="let item of model; let i = index">
+                <li app-menuitem *ngIf="!item.separator" [item]="item" [index]="i" [root]="true"></li>
+                <li *ngIf="item.separator" class="menu-separator"></li>
+            </ng-container>
+        </ul>
+    `,
+    styles: [`
+        .layout-menu-loading {
+            padding: 1rem;
+        }
+
+        .menu-skeleton-item {
+            margin-bottom: 1rem;
+        }
+
+        .menu-skeleton-item p-skeleton {
+            border-radius: 6px;
+        }
+    `]
 })
-export class AppMenu {
+export class AppMenu implements OnInit, OnDestroy {
     el: ElementRef = inject(ElementRef);
+    private menuLoaderService = inject(MenuLoaderService);
+    private cdr = inject(ChangeDetectorRef);
 
     @ViewChild('menuContainer') menuContainer!: ElementRef;
 
-    model: MenuItem[] = [
-        {
-            label: 'Dashboards',
-            icon: 'pi pi-home',
-            items: [
-                {
-                    label: 'Analytics Dashboard',
-                    icon: 'pi pi-fw pi-chart-pie',
-                    routerLink: ['/dashboards/analytics']
-                },
-                {
-                    label: 'Sales Dashboard',
-                    icon: 'pi pi-fw pi-home',
-                    routerLink: ['/dashboards/sales']
-                },
-                {
-                    label: 'SaaS Dashboard',
-                    icon: 'pi pi-fw pi-bolt',
-                    routerLink: ['/dashboards/saas']
+    model: MenuItem[] = [];
+    loading = true;
+    skeletonItems = [1, 2, 3, 4, 5]; // 5 items de skeleton
+
+    private subscriptions: Subscription[] = [];
+    private renderRetryCount = 0;
+    private maxRetries = 3;
+
+    async ngOnInit(): Promise<void> {
+        // 📋 Suscribirse a cambios del menú desde MenuLoaderService
+        // El login SIEMPRE garantiza menú fresco desde API (sin cache)
+        this.subscriptions.push(
+            this.menuLoaderService.menu$.subscribe(menu => {
+                if (menu !== null && menu.length > 0) {
+                    this.model = menu;
+                    this.loading = false;
+                    // Forzar detección de cambios para asegurar renderizado
+                    this.forceMenuRender();
+                } else if (menu !== null && menu.length === 0) {
+                    // Menú vacío (sin permisos)
+                    this.model = [];
+                    this.loading = false;
+                } else {
+                    // Menú reseteado (null) - mostrar loading
+                    this.model = [];
+                    this.loading = true;
                 }
-            ]
-        },
-        {
-            label: 'Apps',
-            icon: 'pi pi-th-large',
-            items: [
-                {
-                    label: 'Blog',
-                    icon: 'pi pi-fw pi-comment',
-                    items: [
-                        {
-                            label: 'List',
-                            icon: 'pi pi-fw pi-image',
-                            routerLink: ['/apps/blog/list']
-                        },
-                        {
-                            label: 'Detail',
-                            icon: 'pi pi-fw pi-list',
-                            routerLink: ['/apps/blog/detail']
-                        },
-                        {
-                            label: 'Edit',
-                            icon: 'pi pi-fw pi-pencil',
-                            routerLink: ['/apps/blog/edit']
-                        }
-                    ]
-                },
-                {
-                    label: 'Chat',
-                    icon: 'pi pi-fw pi-comments',
-                    routerLink: ['/apps/chat']
-                },
-                {
-                    label: 'Files',
-                    icon: 'pi pi-fw pi-folder',
-                    routerLink: ['/apps/files']
-                },
-                {
-                    label: 'Kanban',
-                    icon: 'pi pi-fw pi-sliders-v',
-                    routerLink: ['/apps/kanban']
-                },
-                {
-                    label: 'Mail',
-                    icon: 'pi pi-fw pi-envelope',
-                    items: [
-                        {
-                            label: 'Inbox',
-                            icon: 'pi pi-fw pi-inbox',
-                            routerLink: ['/apps/mail/inbox']
-                        },
-                        {
-                            label: 'Compose',
-                            icon: 'pi pi-fw pi-pencil',
-                            routerLink: ['/apps/mail/compose']
-                        },
-                        {
-                            label: 'Detail',
-                            icon: 'pi pi-fw pi-comment',
-                            routerLink: ['/apps/mail/detail/1000']
-                        }
-                    ]
-                },
-                {
-                    label: 'Task List',
-                    icon: 'pi pi-fw pi-check-square',
-                    routerLink: ['/apps/tasklist']
-                }
-            ]
-        },
-        {
-            label: 'UI Kit',
-            icon: 'pi pi-fw pi-star-fill',
-            items: [
-                {
-                    label: 'Form Layout',
-                    icon: 'pi pi-fw pi-id-card',
-                    routerLink: ['/uikit/formlayout']
-                },
-                {
-                    label: 'Input',
-                    icon: 'pi pi-fw pi-check-square',
-                    routerLink: ['/uikit/input']
-                },
-                {
-                    label: 'Button',
-                    icon: 'pi pi-fw pi-box',
-                    routerLink: ['/uikit/button']
-                },
-                {
-                    label: 'Table',
-                    icon: 'pi pi-fw pi-table',
-                    routerLink: ['/uikit/table']
-                },
-                {
-                    label: 'List',
-                    icon: 'pi pi-fw pi-list',
-                    routerLink: ['/uikit/list']
-                },
-                {
-                    label: 'Tree',
-                    icon: 'pi pi-fw pi-share-alt',
-                    routerLink: ['/uikit/tree']
-                },
-                {
-                    label: 'Panel',
-                    icon: 'pi pi-fw pi-tablet',
-                    routerLink: ['/uikit/panel']
-                },
-                {
-                    label: 'Overlay',
-                    icon: 'pi pi-fw pi-clone',
-                    routerLink: ['/uikit/overlay']
-                },
-                {
-                    label: 'Media',
-                    icon: 'pi pi-fw pi-image',
-                    routerLink: ['/uikit/media']
-                },
-                {
-                    label: 'Menu',
-                    icon: 'pi pi-fw pi-bars',
-                    routerLink: ['/uikit/menu'],
-                    routerLinkActiveOptions: { paths: 'subset', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }
-                },
-                {
-                    label: 'Message',
-                    icon: 'pi pi-fw pi-comment',
-                    routerLink: ['/uikit/message']
-                },
-                {
-                    label: 'File',
-                    icon: 'pi pi-fw pi-file',
-                    routerLink: ['/uikit/file']
-                },
-                {
-                    label: 'Chart',
-                    icon: 'pi pi-fw pi-chart-bar',
-                    routerLink: ['/uikit/charts']
-                },
-                {
-                    label: 'Timeline',
-                    icon: 'pi pi-fw pi-calendar',
-                    routerLink: ['/uikit/timeline']
-                },
-                {
-                    label: 'Misc',
-                    icon: 'pi pi-fw pi-circle-off',
-                    routerLink: ['/uikit/misc']
-                }
-            ]
-        },
-        {
-            label: 'Prime Blocks',
-            icon: 'pi pi-fw pi-prime',
-            items: [
-                {
-                    label: 'Free Blocks',
-                    icon: 'pi pi-fw pi-eye',
-                    routerLink: ['/blocks']
-                },
-                {
-                    label: 'All Blocks',
-                    icon: 'pi pi-fw pi-globe',
-                    url: 'https://primeblocks.org/',
-                    target: '_blank'
-                }
-            ]
-        },
-        {
-            label: 'Utilities',
-            icon: 'pi pi-fw pi-compass',
-            items: [
-                {
-                    label: 'Figma',
-                    icon: 'pi pi-fw pi-pencil',
-                    url: 'https://www.figma.com/file/ijQrxq13lxacgkb6XHlLxA/Preview-%7C-Ultima-2022?node-id=354%3A7715&t=4HWBlQ8kHvfpLU08-1',
-                    target: '_blank'
-                }
-            ]
-        },
-        {
-            label: 'Pages',
-            icon: 'pi pi-fw pi-briefcase',
-            items: [
-                {
-                    label: 'Landing',
-                    icon: 'pi pi-fw pi-globe',
-                    routerLink: ['/landing']
-                },
-                {
-                    label: 'Auth',
-                    icon: 'pi pi-fw pi-user',
-                    items: [
-                        {
-                            label: 'Login',
-                            icon: 'pi pi-fw pi-sign-in',
-                            routerLink: ['/auth/login']
-                        },
-                        {
-                            label: 'Login 2',
-                            icon: 'pi pi-fw pi-sign-in',
-                            routerLink: ['/auth/login2']
-                        },
-                        {
-                            label: 'Error',
-                            icon: 'pi pi-fw pi-times-circle',
-                            routerLink: ['/auth/error']
-                        },
-                        {
-                            label: 'Error 2',
-                            icon: 'pi pi-fw pi-times-circle',
-                            routerLink: ['/auth/error2']
-                        },
-                        {
-                            label: 'Access Denied',
-                            icon: 'pi pi-fw pi-lock',
-                            routerLink: ['/auth/access']
-                        },
-                        {
-                            label: 'Access Denied 2',
-                            icon: 'pi pi-fw pi-lock',
-                            routerLink: ['/auth/access2']
-                        },
-                        {
-                            label: 'Register',
-                            icon: 'pi pi-fw pi-user-plus',
-                            routerLink: ['/auth/register']
-                        },
-                        {
-                            label: 'Forgot Password',
-                            icon: 'pi pi-fw pi-question',
-                            routerLink: ['/auth/forgotpassword']
-                        },
-                        {
-                            label: 'New Password',
-                            icon: 'pi pi-fw pi-cog',
-                            routerLink: ['/auth/newpassword']
-                        },
-                        {
-                            label: 'Verification',
-                            icon: 'pi pi-fw pi-envelope',
-                            routerLink: ['/auth/verification']
-                        },
-                        {
-                            label: 'Lock Screen',
-                            icon: 'pi pi-fw pi-eye-slash',
-                            routerLink: ['/auth/lockscreen']
-                        }
-                    ]
-                },
-                {
-                    label: 'Crud',
-                    icon: 'pi pi-fw pi-pencil',
-                    routerLink: ['/pages/crud']
-                },
-                {
-                    label: 'Invoice',
-                    icon: 'pi pi-fw pi-dollar',
-                    routerLink: ['/pages/invoice']
-                },
-                {
-                    label: 'Help',
-                    icon: 'pi pi-fw pi-question-circle',
-                    routerLink: ['/pages/help']
-                },
-                {
-                    label: 'Not Found',
-                    icon: 'pi pi-fw pi-exclamation-circle',
-                    routerLink: ['/pages/notfound']
-                },
-                {
-                    label: 'Empty',
-                    icon: 'pi pi-fw pi-circle-off',
-                    routerLink: ['/pages/empty']
-                },
-                {
-                    label: 'Contact Us',
-                    icon: 'pi pi-fw pi-phone',
-                    routerLink: ['/pages/contact']
-                }
-            ]
-        },
-        {
-            label: 'E-Commerce',
-            icon: 'pi pi-fw pi-wallet',
-            items: [
-                {
-                    label: 'Product Overview',
-                    icon: 'pi pi-fw pi-image',
-                    routerLink: ['ecommerce/product-overview']
-                },
-                {
-                    label: 'Product List',
-                    icon: 'pi pi-fw pi-list',
-                    routerLink: ['ecommerce/product-list']
-                },
-                {
-                    label: 'New Product',
-                    icon: 'pi pi-fw pi-plus',
-                    routerLink: ['ecommerce/new-product']
-                },
-                {
-                    label: 'Shopping Cart',
-                    icon: 'pi pi-fw pi-shopping-cart',
-                    routerLink: ['ecommerce/shopping-cart']
-                },
-                {
-                    label: 'Checkout Form',
-                    icon: 'pi pi-fw pi-check-square',
-                    routerLink: ['ecommerce/checkout-form']
-                },
-                {
-                    label: 'Order History',
-                    icon: 'pi pi-fw pi-history',
-                    routerLink: ['ecommerce/order-history']
-                },
-                {
-                    label: 'Order Summary',
-                    icon: 'pi pi-fw pi-file',
-                    routerLink: ['ecommerce/order-summary']
-                }
-            ]
-        },
-        {
-            label: 'User Management',
-            icon: 'pi pi-fw pi-user',
-            items: [
-                {
-                    label: 'List',
-                    icon: 'pi pi-fw pi-list',
-                    routerLink: ['profile/list']
-                },
-                {
-                    label: 'Create',
-                    icon: 'pi pi-fw pi-plus',
-                    routerLink: ['profile/create']
-                }
-            ]
-        },
-        {
-            label: 'Hierarchy',
-            icon: 'pi pi-fw pi-align-left',
-            items: [
-                {
-                    label: 'Submenu 1',
-                    icon: 'pi pi-fw pi-align-left',
-                    items: [
-                        {
-                            label: 'Submenu 1.1',
-                            icon: 'pi pi-fw pi-align-left',
-                            items: [
-                                {
-                                    label: 'Submenu 1.1.1',
-                                    icon: 'pi pi-fw pi-align-left'
-                                },
-                                {
-                                    label: 'Submenu 1.1.2',
-                                    icon: 'pi pi-fw pi-align-left'
-                                },
-                                {
-                                    label: 'Submenu 1.1.3',
-                                    icon: 'pi pi-fw pi-align-left'
-                                }
-                            ]
-                        },
-                        {
-                            label: 'Submenu 1.2',
-                            icon: 'pi pi-fw pi-align-left',
-                            items: [
-                                {
-                                    label: 'Submenu 1.2.1',
-                                    icon: 'pi pi-fw pi-align-left'
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    label: 'Submenu 2',
-                    icon: 'pi pi-fw pi-align-left',
-                    items: [
-                        {
-                            label: 'Submenu 2.1',
-                            icon: 'pi pi-fw pi-align-left',
-                            items: [
-                                {
-                                    label: 'Submenu 2.1.1',
-                                    icon: 'pi pi-fw pi-align-left'
-                                },
-                                {
-                                    label: 'Submenu 2.1.2',
-                                    icon: 'pi pi-fw pi-align-left'
-                                }
-                            ]
-                        },
-                        {
-                            label: 'Submenu 2.2',
-                            icon: 'pi pi-fw pi-align-left',
-                            items: [
-                                {
-                                    label: 'Submenu 2.2.1',
-                                    icon: 'pi pi-fw pi-align-left'
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            label: 'Start',
-            icon: 'pi pi-fw pi-download',
-            items: [
-                {
-                    label: 'Buy Now',
-                    icon: 'pi pi-fw pi-shopping-cart',
-                    url: 'https://www.primefaces.org/store'
-                },
-                {
-                    label: 'Documentation',
-                    icon: 'pi pi-fw pi-info-circle',
-                    routerLink: ['/documentation']
-                }
-            ]
+            })
+        );
+
+        // Suscribirse a cambios de loading
+        this.subscriptions.push(
+            this.menuLoaderService.loading$.subscribe(loading => {
+                this.loading = loading;
+                // Forzar detección de cambios para asegurar renderizado
+                this.cdr.detectChanges();
+            })
+        );
+
+        // Inicializar el menú dinámico
+        await this.menuLoaderService.initialize();
+    }
+
+    /**
+     * Fuerza el renderizado del menú con reintentos
+     */
+    private forceMenuRender(): void {
+        try {
+            // Forzar detección de cambios inmediata
+            this.cdr.detectChanges();
+
+            // Verificar si el menú se renderizó correctamente
+            // Usar un timeout más largo para permitir que los observables se estabilicen
+            setTimeout(() => {
+                this.verifyMenuRender();
+            }, 200); // Incrementado de 100ms a 200ms para mejor sincronización
+        } catch (error) {
+            console.warn('⚠️ Error forzando renderizado del menú:', error);
+            this.retryMenuRender();
         }
-    ];
+    }
+
+    /**
+     * Verifica si el menú se renderizó correctamente y reintenta si es necesario
+     */
+    private verifyMenuRender(): void {
+        // 🔍 Verificar que tanto el menú esté cargado como el loading esté completo
+        if (this.loading || !this.model || this.model.length === 0) {
+            this.retryMenuRender();
+            return;
+        }
+
+        // Buscar elementos del menú en el DOM
+        const menuElement = this.el.nativeElement.querySelector('.layout-menu');
+        const menuItems = menuElement?.querySelectorAll('li');
+
+        // Si no hay elementos del menú visibles, reintentar
+        if (!menuItems || menuItems.length === 0) {
+            this.retryMenuRender();
+        } else {
+            // Menú renderizado exitosamente
+            this.renderRetryCount = 0; // Reset counter on success
+        }
+    }
+
+    /**
+     * Reintenta el renderizado del menú
+     */
+    private retryMenuRender(): void {
+        if (this.renderRetryCount < this.maxRetries) {
+            this.renderRetryCount++;
+
+            setTimeout(() => {
+                this.forceMenuRender();
+            }, 200 * this.renderRetryCount); // Incrementar delay con cada reintento
+        } else {
+            console.error('❌ Falló el renderizado del menú después de', this.maxRetries, 'intentos');
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.forEach(sub => sub.unsubscribe());
+    }
 }

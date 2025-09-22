@@ -34,6 +34,7 @@ interface ExportColumn {
 @Component({
     selector: 'app-crud',
     standalone: true,
+    host: { 'crud-radio-group': 'true' },
     imports: [
         CommonModule,
         TableModule,

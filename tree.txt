@@ -1,0 +1,336 @@
+src
+├── app
+│   ├── apps
+│   │   ├── apps.routes.ts
+│   │   ├── blog
+│   │   │   ├── blog.routes.ts
+│   │   │   ├── detail.ts
+│   │   │   ├── edit.ts
+│   │   │   └── list.ts
+│   │   ├── chat
+│   │   │   ├── chatbox.ts
+│   │   │   ├── chatsidebar.ts
+│   │   │   ├── index.ts
+│   │   │   ├── service
+│   │   │   │   └── chat.service.ts
+│   │   │   └── usercard.ts
+│   │   ├── files
+│   │   │   ├── index.ts
+│   │   │   ├── service
+│   │   │   │   └── file.service.ts
+│   │   │   └── uploader
+│   │   │       └── uploader.ts
+│   │   ├── kanban
+│   │   │   ├── index.ts
+│   │   │   ├── kanbancard.ts
+│   │   │   ├── kanbanlist.ts
+│   │   │   ├── kanbansidebar.ts
+│   │   │   └── service
+│   │   │       └── kanban.service.ts
+│   │   ├── mail
+│   │   │   ├── index.ts
+│   │   │   ├── mail-archive.ts
+│   │   │   ├── mail-compose.ts
+│   │   │   ├── mail-detail.ts
+│   │   │   ├── mail-important.ts
+│   │   │   ├── mail-inbox.ts
+│   │   │   ├── mail-reply.ts
+│   │   │   ├── mail.routes.ts
+│   │   │   ├── mail-sent.ts
+│   │   │   ├── mail-sidebar.ts
+│   │   │   ├── mail-spam.ts
+│   │   │   ├── mail-starred.ts
+│   │   │   ├── mail-table.ts
+│   │   │   ├── mail-trash.ts
+│   │   │   └── service
+│   │   │       └── mail.service.ts
+│   │   └── tasklist
+│   │       ├── create-task.ts
+│   │       ├── index.ts
+│   │       ├── service
+│   │       │   └── task.service.ts
+│   │       └── task-list.ts
+│   ├── core
+│   │   ├── constants
+│   │   ├── models
+│   │   │   ├── api-response.interface.ts
+│   │   │   └── common.interface.ts
+│   │   └── services
+│   │       ├── api
+│   │       ├── auth
+│   │       └── storage
+│   ├── features
+│   │   ├── clientes
+│   │   │   ├── models
+│   │   │   └── services
+│   │   └── productos
+│   │       ├── models
+│   │       └── services
+│   ├── layout
+│   │   ├── components
+│   │   │   ├── app.breadcrumb.ts
+│   │   │   ├── app.configurator.ts
+│   │   │   ├── app.footer.ts
+│   │   │   ├── app.layout.ts
+│   │   │   ├── app.menuitem.ts
+│   │   │   ├── app.menuprofile.ts
+│   │   │   ├── app.menu.ts
+│   │   │   ├── app.rightmenu.ts
+│   │   │   ├── app.sidebar.ts
+│   │   │   └── app.topbar.ts
+│   │   └── service
+│   │       └── layout.service.ts
+│   ├── pages
+│   │   ├── aboutus
+│   │   │   └── aboutus.ts
+│   │   ├── auth
+│   │   │   ├── accessdenied2.ts
+│   │   │   ├── accessdenied.ts
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── error2.ts
+│   │   │   ├── error.ts
+│   │   │   ├── forgotpassword.ts
+│   │   │   ├── lockscreen.ts
+│   │   │   ├── login2.ts
+│   │   │   ├── login.ts
+│   │   │   ├── newpassword.ts
+│   │   │   ├── register.ts
+│   │   │   └── verification.ts
+│   │   ├── blocks
+│   │   │   ├── blocks.routes.ts
+│   │   │   ├── blocks.ts
+│   │   │   └── components
+│   │   │       └── blockviewer.ts
+│   │   ├── contactus
+│   │   │   └── contactus.ts
+│   │   ├── crud
+│   │   │   └── crud.ts
+│   │   ├── dashboard
+│   │   │   ├── analytics
+│   │   │   │   ├── components
+│   │   │   │   │   ├── analyticstablewidget.ts
+│   │   │   │   │   ├── expenseswidget.ts
+│   │   │   │   │   ├── insightswidget.ts
+│   │   │   │   │   ├── monthlycomparisonwidget.ts
+│   │   │   │   │   ├── ratingswidget.ts
+│   │   │   │   │   ├── statswidget.ts
+│   │   │   │   │   ├── storeswidget.ts
+│   │   │   │   │   └── topsearcheswidget.ts
+│   │   │   │   └── dashboardanalytics.ts
+│   │   │   ├── dashboard.routes.ts
+│   │   │   ├── saas
+│   │   │   │   ├── components
+│   │   │   │   │   ├── calendarwidget.ts
+│   │   │   │   │   ├── dailytaskwidget.ts
+│   │   │   │   │   ├── introducewidget.ts
+│   │   │   │   │   ├── myworkspacewidget.ts
+│   │   │   │   │   ├── performancewidget.ts
+│   │   │   │   │   ├── projectoverviewwidget.ts
+│   │   │   │   │   ├── saastablewidget.ts
+│   │   │   │   │   ├── teamswidget.ts
+│   │   │   │   │   └── upgradewidget.ts
+│   │   │   │   └── dashboardsaas.ts
+│   │   │   └── sales
+│   │   │       ├── components
+│   │   │       │   ├── activitywidget.ts
+│   │   │       │   ├── bestsellerswidget.ts
+│   │   │       │   ├── chatwidget.ts
+│   │   │       │   ├── contactwidget.ts
+│   │   │       │   ├── customtimelinewidget.ts
+│   │   │       │   ├── ordergraphwidget.ts
+│   │   │       │   ├── salestablewidget.ts
+│   │   │       │   └── statswidget.ts
+│   │   │       └── dashboardsales.ts
+│   │   ├── documentation
+│   │   │   └── documentation.ts
+│   │   ├── ecommerce
+│   │   │   ├── checkoutform.ts
+│   │   │   ├── ecommerce.routes.ts
+│   │   │   ├── newproduct.ts
+│   │   │   ├── orderhistory.ts
+│   │   │   ├── ordersummary.ts
+│   │   │   ├── productlist.ts
+│   │   │   ├── productoverview.ts
+│   │   │   └── shoppingcart.ts
+│   │   ├── empty
+│   │   │   └── empty.ts
+│   │   ├── help
+│   │   │   └── help.ts
+│   │   ├── invoice
+│   │   │   └── invoice.ts
+│   │   ├── landing
+│   │   │   ├── components
+│   │   │   │   ├── collaborationwidget.ts
+│   │   │   │   ├── easyfollowwidget.ts
+│   │   │   │   ├── featureswidget.ts
+│   │   │   │   ├── footerwidget.ts
+│   │   │   │   ├── herowidget.ts
+│   │   │   │   ├── newsletterwidget.ts
+│   │   │   │   ├── showreelswidget.ts
+│   │   │   │   ├── topbar.ts
+│   │   │   │   └── whouses.ts
+│   │   │   └── landing.ts
+│   │   ├── notfound
+│   │   │   └── notfound.ts
+│   │   ├── pages.routes.ts
+│   │   ├── service
+│   │   │   ├── country.service.ts
+│   │   │   ├── customer.service.ts
+│   │   │   ├── member.service.ts
+│   │   │   ├── node.service.ts
+│   │   │   ├── photo.service.ts
+│   │   │   └── product.service.ts
+│   │   ├── uikit
+│   │   │   ├── buttondemo.ts
+│   │   │   ├── chartdemo.ts
+│   │   │   ├── filedemo.ts
+│   │   │   ├── formlayoutdemo.ts
+│   │   │   ├── inputdemo.ts
+│   │   │   ├── listdemo.ts
+│   │   │   ├── mediademo.ts
+│   │   │   ├── menudemo.ts
+│   │   │   ├── messagesdemo.ts
+│   │   │   ├── miscdemo.ts
+│   │   │   ├── overlaydemo.ts
+│   │   │   ├── panelsdemo.ts
+│   │   │   ├── tabledemo.ts
+│   │   │   ├── timelinedemo.ts
+│   │   │   ├── treedemo.ts
+│   │   │   └── uikit.routes.ts
+│   │   └── usermanagement
+│   │       ├── usercreate.ts
+│   │       ├── userlist.ts
+│   │       └── usermanagement.routes.ts
+│   ├── shared
+│   │   └── services
+│   └── types
+│       ├── blog.ts
+│       ├── chat.ts
+│       ├── customer.ts
+│       ├── file.ts
+│       ├── folder.ts
+│       ├── image.ts
+│       ├── kanban.ts
+│       ├── mail.ts
+│       ├── member.ts
+│       ├── message.ts
+│       ├── metric.ts
+│       ├── product.ts
+│       ├── task.ts
+│       └── user.ts
+├── app.component.ts
+├── app.config.ts
+├── app.routes.ts
+├── assets
+│   ├── demo
+│   │   ├── code.css
+│   │   ├── code.scss
+│   │   ├── demo.scss
+│   │   └── flags
+│   │       ├── flags_responsive.png
+│   │       └── flags.scss
+│   ├── layout
+│   │   ├── _animation.scss
+│   │   ├── _breadcrumb.scss
+│   │   ├── _config.scss
+│   │   ├── _content.scss
+│   │   ├── fonts
+│   │   │   ├── roboto-v20-latin-ext_latin-500.woff
+│   │   │   ├── roboto-v20-latin-ext_latin-500.woff2
+│   │   │   ├── roboto-v20-latin-ext_latin-700.woff
+│   │   │   ├── roboto-v20-latin-ext_latin-700.woff2
+│   │   │   ├── roboto-v20-latin-ext_latin-regular.woff
+│   │   │   └── roboto-v20-latin-ext_latin-regular.woff2
+│   │   ├── _fonts.scss
+│   │   ├── _footer.scss
+│   │   ├── _invoice.scss
+│   │   ├── _landing.scss
+│   │   ├── layout.scss
+│   │   ├── _main.scss
+│   │   ├── _megamenu.scss
+│   │   ├── _menuprofile.scss
+│   │   ├── _overrides.scss
+│   │   ├── _responsive.scss
+│   │   ├── _rightmenu.scss
+│   │   ├── _sass_variables.scss
+│   │   ├── sidebar
+│   │   │   ├── _sidebar_drawer.scss
+│   │   │   ├── _sidebar_horizontal.scss
+│   │   │   ├── _sidebar_reveal.scss
+│   │   │   ├── _sidebar.scss
+│   │   │   ├── _sidebar_slim_plus.scss
+│   │   │   ├── _sidebar_slim.scss
+│   │   │   ├── _sidebar_vertical.scss
+│   │   │   └── themes
+│   │   │       ├── _menu_bluegrey.scss
+│   │   │       ├── _menu_brown.scss
+│   │   │       ├── _menu_cyan.scss
+│   │   │       ├── _menu_dark.scss
+│   │   │       ├── _menu_deeporange.scss
+│   │   │       ├── _menu_deeppurple.scss
+│   │   │       ├── _menu_green.scss
+│   │   │       ├── _menu_indigo.scss
+│   │   │       ├── _menu_light.scss
+│   │   │       ├── _menu_pink.scss
+│   │   │       ├── _menu_purple.scss
+│   │   │       └── _menu_teal.scss
+│   │   ├── styles
+│   │   │   └── theme
+│   │   │       └── designer
+│   │   │           └── components
+│   │   │               ├── button
+│   │   │               ├── data
+│   │   │               ├── file
+│   │   │               ├── input
+│   │   │               ├── menu
+│   │   │               ├── messages
+│   │   │               ├── misc
+│   │   │               ├── multimedia
+│   │   │               ├── overlay
+│   │   │               └── panel
+│   │   ├── topbar
+│   │   │   ├── themes
+│   │   │   │   ├── _topbar_amber.scss
+│   │   │   │   ├── _topbar_bluegrey.scss
+│   │   │   │   ├── _topbar_blue.scss
+│   │   │   │   ├── _topbar_brown.scss
+│   │   │   │   ├── _topbar_cyan.scss
+│   │   │   │   ├── _topbar_dark.scss
+│   │   │   │   ├── _topbar_deeporange.scss
+│   │   │   │   ├── _topbar_deeppurple.scss
+│   │   │   │   ├── _topbar_green.scss
+│   │   │   │   ├── _topbar_grey.scss
+│   │   │   │   ├── _topbar_indigo.scss
+│   │   │   │   ├── _topbar_lightblue.scss
+│   │   │   │   ├── _topbar_lightgreen.scss
+│   │   │   │   ├── _topbar_lime.scss
+│   │   │   │   ├── _topbar_orange.scss
+│   │   │   │   ├── _topbar_pink.scss
+│   │   │   │   ├── _topbar_purple.scss
+│   │   │   │   ├── _topbar_teal.scss
+│   │   │   │   ├── _topbar_white.scss
+│   │   │   │   └── _topbar_yellow.scss
+│   │   │   ├── _topbar_main.scss
+│   │   │   └── _topbar.scss
+│   │   ├── _utils.scss
+│   │   └── variables
+│   │       ├── _common.scss
+│   │       ├── _dark.scss
+│   │       └── _light.scss
+│   ├── logos
+│   │   ├── Banco_Sucursal_CXPEN_27.jpg
+│   │   ├── Banco_Sucursal_CXPEN_31.jpg
+│   │   ├── Banco_Sucursal_CXPEN_41.jpg
+│   │   ├── Banco_Sucursal_CXPEN_52.jpg
+│   │   ├── Banco_Sucursal_CXPEN_58.jpg
+│   │   ├── Fachada CX Popotla
+│   │   ├── ic_calimax_banner.svg
+│   │   ├── ic_calimax_logo.svg
+│   │   └── logos.config.ts
+│   ├── styles.scss
+│   └── tailwind.css
+├── favicon.ico
+├── index.html
+└── main.ts
+
+84 directories, 249 files

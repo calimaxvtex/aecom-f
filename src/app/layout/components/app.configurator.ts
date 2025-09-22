@@ -38,6 +38,7 @@ declare type SurfacesType = {
 @Component({
     selector: 'app-configurator',
     standalone: true,
+    host: { 'config-radio-group': 'true' },
     imports: [CommonModule, FormsModule, SelectButtonModule, DrawerModule, ToggleSwitchModule, RadioButtonModule],
     template: `
         <button *ngIf="simple" class="layout-config-button config-link" type="button" (click)="toggleConfigSidebar()">
@@ -99,38 +100,38 @@ declare type SurfacesType = {
                         <div class="flex flex-wrap flex-col gap-3">
                             <div class="flex">
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="static" [(ngModel)]="menuMode"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="static" [(ngModel)]="menuMode"></p-radiobutton>
                                     <label for="static">Static</label>
                                 </div>
 
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="overlay" [(ngModel)]="menuMode"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="overlay" [(ngModel)]="menuMode"></p-radiobutton>
                                     <label for="overlay">Overlay</label>
                                 </div>
                             </div>
                             <div class="flex">
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="slim" [(ngModel)]="menuMode"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="slim" [(ngModel)]="menuMode"></p-radiobutton>
                                     <label for="slim">Slim</label>
                                 </div>
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="slim-plus" [(ngModel)]="menuMode" inputId="slim-plus"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="slim-plus" [(ngModel)]="menuMode" inputId="slim-plus"></p-radiobutton>
                                     <label for="slim-plus">Slim+</label>
                                 </div>
                             </div>
                             <div class="flex">
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="reveal" [(ngModel)]="menuMode"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="reveal" [(ngModel)]="menuMode"></p-radiobutton>
                                     <label for="reveal">Reveal</label>
                                 </div>
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="drawer" [(ngModel)]="menuMode" inputId="drawer"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="drawer" [(ngModel)]="menuMode" inputId="drawer"></p-radiobutton>
                                     <label for="drawer">Drawer</label>
                                 </div>
                             </div>
                             <div class="flex">
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuMode" value="horizontal" [(ngModel)]="menuMode"></p-radio-button>
+                                    <p-radiobutton name="menuMode" value="horizontal" [(ngModel)]="menuMode"></p-radiobutton>
                                     <label for="horizontal">Horizontal</label>
                                 </div>
                             </div>
@@ -142,12 +143,12 @@ declare type SurfacesType = {
                         <div class="flex flex-wrap flex-col gap-3">
                             <div class="flex">
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuProfilePosition" value="start" [(ngModel)]="menuProfilePosition"></p-radio-button>
+                                    <p-radiobutton name="menuProfilePosition" value="start" [(ngModel)]="menuProfilePosition"></p-radiobutton>
                                     <label for="start">Start</label>
                                 </div>
 
                                 <div class="flex items-center gap-2 w-1/2">
-                                    <p-radio-button name="menuProfilePosition" value="end" [(ngModel)]="menuProfilePosition"></p-radio-button>
+                                    <p-radiobutton name="menuProfilePosition" value="end" [(ngModel)]="menuProfilePosition"></p-radiobutton>
                                     <label for="end">End</label>
                                 </div>
                             </div>
@@ -615,4 +616,5 @@ export class AppConfigurator {
     toggleConfigSidebar() {
         this.layoutService.layoutState.update((val) => ({ ...val, configSidebarVisible: !val.configSidebarVisible }));
     }
+
 }

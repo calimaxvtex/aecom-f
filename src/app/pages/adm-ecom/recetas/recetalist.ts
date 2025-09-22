@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { map, catchError, throwError } from 'rxjs';
 
 // PrimeNG Modules (standalone)
 import { TableModule, Table } from 'primeng/table';
@@ -17,7 +20,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Servicios específicos del dominio
 import { RecetaService, RecetaItem, RecetaFormItem } from '@/features/receta/services/receta.service';
+import { CollService } from '@/features/coll/services/coll.service';
+import { CollItem, ParsedCollTypesResponse } from '@/features/coll/models/coll.interface';
 import { SessionService } from '@/core/services/session.service';
+import { ApiConfigService } from '@/core/services/api/api-config.service';
 
 @Component({
     selector: 'receta-list',
@@ -94,6 +100,7 @@ import { SessionService } from '@/core/services/session.service';
                         <th class="white-space-nowrap" style="width:8%">Tiempo</th>
                         <th class="white-space-nowrap" style="width:6%">Porc.</th>
                         <th class="white-space-nowrap" style="width:10%">Fecha</th>
+                        <th class="white-space-nowrap" style="width:12%">Colección</th>
                         <th class="white-space-nowrap" style="width:8%">Acciones</th>
                     </tr>
                 </ng-template>
@@ -140,14 +147,14 @@ import { SessionService } from '@/core/services/session.service';
                                                 pButton
                                                 icon="pi pi-check"
                                                 (click)="saveInlineEditReceta(Receta, 'title')"
-                                                class="p-button-xs p-button-success p-button-text"
+                                                class="inline-action-btn p-button-success p-button-text"
                                                 pTooltip="Guardar título"
                                             ></button>
                                             <button
                                                 pButton
                                                 icon="pi pi-undo"
                                                 (click)="cancelInlineEdit()"
-                                                class="p-button-xs p-button-secondary p-button-text"
+                                                class="inline-action-btn p-button-secondary p-button-text"
                                                 pTooltip="Cancelar"
                                             ></button>
                                         </div>
@@ -188,14 +195,14 @@ import { SessionService } from '@/core/services/session.service';
                                                 pButton
                                                 icon="pi pi-check"
                                                 (click)="saveInlineEditReceta(Receta, 'title_min')"
-                                                class="p-button-xs p-button-success p-button-text"
+                                                class="inline-action-btn p-button-success p-button-text"
                                                 pTooltip="Guardar título corto"
                                             ></button>
                                             <button
                                                 pButton
                                                 icon="pi pi-undo"
                                                 (click)="cancelInlineEdit()"
-                                                class="p-button-xs p-button-secondary p-button-text"
+                                                class="inline-action-btn p-button-secondary p-button-text"
                                                 pTooltip="Cancelar"
                                             ></button>
                                         </div>
@@ -348,14 +355,14 @@ import { SessionService } from '@/core/services/session.service';
                                                 pButton
                                                 icon="pi pi-check"
                                                 (click)="saveInlineEditReceta(Receta, 'description')"
-                                                class="p-button-xs p-button-success p-button-text"
+                                                class="inline-action-btn p-button-success p-button-text"
                                                 pTooltip="Guardar descripción"
                                             ></button>
                                             <button
                                                 pButton
                                                 icon="pi pi-undo"
                                                 (click)="cancelInlineEdit()"
-                                                class="p-button-xs p-button-secondary p-button-text"
+                                                class="inline-action-btn p-button-secondary p-button-text"
                                                 pTooltip="Cancelar"
                                             ></button>
                                         </div>
@@ -396,14 +403,14 @@ import { SessionService } from '@/core/services/session.service';
                                                 pButton
                                                 icon="pi pi-check"
                                                 (click)="saveInlineEditReceta(Receta, 'ingredients')"
-                                                class="p-button-xs p-button-success p-button-text"
+                                                class="inline-action-btn p-button-success p-button-text"
                                                 pTooltip="Guardar ingredientes"
                                             ></button>
                                             <button
                                                 pButton
                                                 icon="pi pi-undo"
                                                 (click)="cancelInlineEdit()"
-                                                class="p-button-xs p-button-secondary p-button-text"
+                                                class="inline-action-btn p-button-secondary p-button-text"
                                                 pTooltip="Cancelar"
                                             ></button>
                                         </div>
@@ -416,7 +423,7 @@ import { SessionService } from '@/core/services/session.service';
                                     (click)="editInlineReceta(Receta, 'ingredients'); $event.stopPropagation()"
                                     pButton
                                     icon="pi pi-plus"
-                                    class="p-button-xs p-button-text p-button-secondary"
+                                    class="inline-action-btn p-button-text p-button-secondary"
                                     pTooltip="Agregar ingredientes"
                                 ></button>
                             </div>
@@ -482,6 +489,57 @@ import { SessionService } from '@/core/services/session.service';
                         <!-- Fecha -->
                         <td class="text-center">
                             <span class="text-sm">{{ formatFecha(Receta.date || Receta.fecha_cre || Receta.createdAt) }}</span>
+                        </td>
+
+                        <!-- Colección -->
+                        <td>
+                            <!-- Vista normal -->
+                            <span
+                                *ngIf="editingCell !== Receta.id + '_id_coll'"
+                                (click)="editInlineReceta(Receta, 'id_coll'); $event.stopPropagation()"
+                                class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                title="Clic para editar"
+                            >
+                                <span *ngIf="getCollectionName(Receta.id_coll); else noCollection" class="text-sm">
+                                    {{ getCollectionName(Receta.id_coll) }}
+                                </span>
+                                <ng-template #noCollection>
+                                    <span class="text-gray-400 italic text-sm">Sin colección</span>
+                                </ng-template>
+                            </span>
+
+                            <!-- Vista de edición -->
+                            <div
+                                *ngIf="editingCell === Receta.id + '_id_coll'"
+                                class="inline-edit-container"
+                            >
+                                <select
+                                    [(ngModel)]="Receta.id_coll"
+                                    (change)="onInputChange(Receta, 'id_coll')"
+                                    class="p-inputtext-sm flex-1 border rounded px-2 py-1"
+                                >
+                                    <option value="">Sin colección</option>
+                                    <option *ngFor="let coll of colecciones" [attr.value]="coll.id_coll">
+                                        {{ coll.nombre }}
+                                    </option>
+                                </select>
+                                <button
+                                    *ngIf="hasChanges"
+                                    pButton
+                                    icon="pi pi-check"
+                                    (click)="saveInlineEditReceta(Receta, 'id_coll')"
+                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                    pTooltip="Guardar (Enter)"
+                                ></button>
+                                <button
+                                    *ngIf="hasChanges"
+                                    pButton
+                                    icon="pi pi-undo"
+                                    (click)="cancelInlineEdit()"
+                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                    pTooltip="Deshacer (Escape)"
+                                ></button>
+                            </div>
                         </td>
 
                         <!-- Acciones -->
@@ -625,6 +683,29 @@ import { SessionService } from '@/core/services/session.service';
                                        class="w-full" />
                                 <label>Título Corto</label>
                             </p-floatLabel>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Colección</label>
+                            <p-select
+                                formControlName="id_coll"
+                                [options]="colecciones"
+                                optionLabel="nombre"
+                                optionValue="id_coll"
+                                [placeholder]="colecciones && colecciones.length > 0 ? 'Selecciona una colección RECET' : 'No hay colecciones RECET disponibles'"
+                                class="w-full"
+                                [showClear]="true"
+                                [disabled]="!colecciones || colecciones.length === 0">
+                            </p-select>
+                            <small class="text-gray-500 mt-1 block" *ngIf="!colecciones || colecciones.length === 0">
+                                No hay colecciones de tipo RECET disponibles.
+                                <button
+                                    type="button"
+                                    class="text-blue-500 hover:text-blue-700 underline ml-1"
+                                    (click)="openColeccionesPage()">
+                                    Crear colección RECET
+                                </button>
+                            </small>
                         </div>
                         </div>
                     </div>
@@ -827,6 +908,22 @@ import { SessionService } from '@/core/services/session.service';
             font-size: 0.875rem !important;
         }
 
+        /* Botones ultra pequeños para edición inline */
+        .p-button.p-button-text.inline-action-btn {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+            min-width: 1.5rem !important;
+            max-width: 1.5rem !important;
+            padding: 0 !important;
+            border-radius: 0.2rem !important;
+            margin: 0 0.125rem !important;
+        }
+
+        .p-button.p-button-text.inline-action-btn .p-button-icon {
+            font-size: 0.75rem !important;
+            line-height: 1 !important;
+        }
+
         /* Fila seleccionada */
         .bg-blue-50 {
             background-color: #eff6ff !important;
@@ -915,6 +1012,7 @@ import { SessionService } from '@/core/services/session.service';
 export class RecetaList implements OnInit {
     // Datos
     recetas: RecetaItem[] = [];
+    colecciones: CollItem[] = []; // Lista de colecciones disponibles
     RecetaSeleccionado: RecetaItem | null = null;
 
     // Estados de carga
@@ -947,15 +1045,21 @@ export class RecetaList implements OnInit {
     constructor(
         private fb: FormBuilder,
         private RecetaService: RecetaService,
+        private collService: CollService,
         private sessionService: SessionService,
         private confirmationService: ConfirmationService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private router: Router,
+        private http: HttpClient,
+        private apiConfigService: ApiConfigService,
+        private cdr: ChangeDetectorRef
     ) {
         this.initializeForms();
     }
 
     ngOnInit() {
         this.loadRecetas();
+        this.loadColecciones();
     }
 
     // Inicialización
@@ -987,7 +1091,8 @@ export class RecetaList implements OnInit {
             url_mini: ['', [Validators.required]],                            // → url_mini
             time: [''],                                                        // → tiempo
             people: [1, [Validators.min(1), Validators.max(50)]],             // → personas
-            difficulty: ['medio', [Validators.required]]                      // → dificultad
+            difficulty: ['medio', [Validators.required]],                     // → dificultad
+            id_coll: [null]                                                    // → id_coll (colección)
         });
     }
 
@@ -1008,6 +1113,91 @@ export class RecetaList implements OnInit {
                     life: 5000
                 });
                 this.loadingRecetas = false;
+            }
+        });
+    }
+
+    loadColecciones() {
+        console.log('📚 Cargando colecciones RECET usando API específica...');
+
+        const collUrl = this.apiConfigService.getCollCrudUrl();
+
+        // Preparar el body con los parámetros específicos para RECET (id_tipoc: 3)
+        const body: any = {
+            action: 'SL',
+            id_tipoc: 3, // Tipo RECET según especificación del usuario
+            ...this.sessionService.getApiPayloadBase() // Incluir datos de sesión
+        };
+
+        console.log('🔗 URL destino para colecciones RECET:', collUrl);
+        console.log('📋 Body enviado:', body);
+
+        // Hacer petición directa usando HttpClient
+        this.http.post<any>(collUrl, body).pipe(
+            map((response: any) => {
+                console.log('🔍 Respuesta cruda del backend para RECET:', response);
+
+                // Procesar respuesta similar al método getAllCollections del servicio
+                let responseData: any;
+
+                if (Array.isArray(response)) {
+                    responseData = response.length > 0 ? response[0] : null;
+                } else if (response && typeof response === 'object') {
+                    responseData = response;
+                } else {
+                    responseData = null;
+                }
+
+                // Si hay datos, procesar el string JSON si es necesario
+                if (responseData && responseData.data) {
+                    if (typeof responseData.data === 'string') {
+                        try {
+                            const parsedData = JSON.parse(responseData.data);
+                            responseData.data = parsedData;
+                        } catch (error) {
+                            console.error('❌ Error parseando datos RECET:', error);
+                            responseData.data = [];
+                        }
+                    } else if (Array.isArray(responseData.data)) {
+                        // Ya es array, verificar si necesita aplanamiento
+                        if (responseData.data.length > 0 && responseData.data[0] && typeof responseData.data[0] === 'object' && responseData.data[0].data) {
+                            responseData.data = responseData.data[0].data;
+                        }
+                    }
+                }
+
+                return responseData;
+            }),
+            catchError((error: any) => {
+                console.error('Error en loadColecciones:', error);
+                return throwError(() => ({
+                    statuscode: error.status || 500,
+                    mensaje: error.message || 'Error desconocido',
+                    originalError: error
+                }));
+            })
+        ).subscribe({
+            next: (response) => {
+                this.colecciones = response?.data || [];
+                console.log('✅ Colecciones RECET cargadas:', this.colecciones);
+                console.log('📊 Número de colecciones RECET:', this.colecciones?.length || 0);
+
+                if (this.colecciones && this.colecciones.length > 0) {
+                    console.log('🎯 Primera colección RECET de ejemplo:', this.colecciones[0]);
+                    console.log('📋 Nombres disponibles:', this.colecciones.map(c => c.nombre));
+                } else {
+                    console.warn('⚠️ No se encontraron colecciones de tipo RECET');
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error al cargar colecciones RECET:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al cargar las colecciones RECET',
+                    life: 5000
+                });
+                this.colecciones = [];
             }
         });
     }
@@ -1166,6 +1356,7 @@ export class RecetaList implements OnInit {
 
     // Abrir formulario
     openRecetaForm(Receta?: RecetaItem): void {
+        console.log('🚪 Abriendo modal de receta. Colecciones disponibles:', this.colecciones);
         if (Receta) {
             this.isEditingReceta = true;
             console.log('✏️ Editando Receta - Datos originales:', Receta);
@@ -1182,7 +1373,8 @@ export class RecetaList implements OnInit {
                 url_mini: Receta.url_mini || '',
                 time: Receta.time || '',
                 people: Receta.people || 1,
-                difficulty: Receta.difficulty || 'medio'
+                difficulty: Receta.difficulty || 'medio',
+                id_coll: Receta.id_coll || null // Campo de colección
             };
 
             console.log('📝 Datos preparados para formulario:', formData);
@@ -1207,7 +1399,8 @@ export class RecetaList implements OnInit {
                 url_mini: '',
                 time: '',
                 people: 1,
-                difficulty: 'medio'
+                difficulty: 'medio',
+                id_coll: null
             });
 
             console.log('✅ Formulario reseteado para nueva receta');
@@ -1221,6 +1414,13 @@ export class RecetaList implements OnInit {
         this.showRecetaModal = false;
         this.isEditingReceta = false;
         this.RecetaSeleccionado = null;
+    }
+
+    // Abrir página de colecciones
+    openColeccionesPage(): void {
+        console.log('🔗 Navegando a la página de colecciones...');
+        this.closeRecetaForm(); // Cerrar el modal antes de navegar
+        this.router.navigate(['/adm-ecom/collections']);
     }
 
     // Guardar
@@ -1309,15 +1509,33 @@ export class RecetaList implements OnInit {
 
     // ========== EDICIÓN INLINE ESTÁNDAR ==========
 
+    // Estado para controlar la transición entre campos
+    private isTransitioningFields = false;
+
     // Iniciar edición
     editInlineReceta(Receta: RecetaItem, field: string): void {
-        this.editingCell = Receta.id + '_' + field;
+        const newEditingCell = Receta.id + '_' + field;
+
+        // Si ya estamos editando otro campo y hay cambios pendientes
+        if (this.editingCell && this.hasChanges && this.editingCell !== newEditingCell) {
+            console.warn('⚠️ Cambiando de campo con cambios pendientes - cancelando edición anterior');
+            this.cancelInlineEdit(); // Cancelar la edición anterior
+        }
+
+        // Marcar que estamos cambiando de campo
+        this.isTransitioningFields = true;
+
+        // Iniciar nueva edición
+        this.editingCell = newEditingCell;
         this.originalValue = (Receta as any)[field];
         this.hasChanges = false;
-        console.log('✏️ Editando inline:', field, 'Valor:', this.originalValue);
+        console.log(`✏️ Iniciando edición ${field}:`, {
+            originalValue: this.originalValue,
+            originalType: typeof this.originalValue,
+            recetaValue: (Receta as any)[field]
+        });
 
         // Programáticamente enfocamos y posicionamos el cursor al final del texto
-        // para asegurar que el DOM esté listo
         setTimeout(() => {
             const inputElement = document.querySelector(`input[aria-label="${field}-${Receta.id}"]`) as HTMLInputElement;
             const textareaElement = document.querySelector(`textarea[aria-label="${field}-${Receta.id}"]`) as HTMLTextAreaElement;
@@ -1325,22 +1543,40 @@ export class RecetaList implements OnInit {
             const element = inputElement || textareaElement;
             if (element) {
                 element.focus();
-                // Posicionar el cursor al final del texto en lugar de seleccionar todo
+                // Posicionar el cursor al final del texto
                 const textLength = element.value.length;
                 element.setSelectionRange(textLength, textLength);
+                console.log('🎯 Elemento enfocado:', element.tagName);
             }
+
+            // Resetear el flag de transición después de enfocar
+            setTimeout(() => {
+                this.isTransitioningFields = false;
+            }, 100);
         }, 50);
     }
 
     // Detectar cambios en el input
     onInputChange(Receta: RecetaItem, field: string): void {
         const currentValue = (Receta as any)[field];
+        console.log(`📝 onInputChange ${field}:`, {
+            current: currentValue,
+            original: this.originalValue,
+            currentType: typeof currentValue,
+            originalType: typeof this.originalValue,
+            areEqual: currentValue === this.originalValue
+        });
         this.hasChanges = currentValue !== this.originalValue;
     }
 
     // Guardar edición
     saveInlineEditReceta(Receta: RecetaItem, field: string): void {
         console.log('💾 Guardando inline:', field, 'Nuevo valor:', (Receta as any)[field]);
+
+        if (field === 'id_coll') {
+            const collectionName = this.getCollectionName((Receta as any)[field]);
+            console.log('📚 Guardando colección:', collectionName || 'Sin colección', 'para receta:', Receta.id);
+        }
 
         if ((Receta as any)[field] === this.originalValue) {
             console.log('ℹ️ Valor no cambió, cancelando');
@@ -1367,6 +1603,10 @@ export class RecetaList implements OnInit {
                 this.editingCell = null;
                 this.originalValue = null;
                 this.hasChanges = false;
+                this.isTransitioningFields = false; // Resetear flag de transición
+
+                // Forzar detección de cambios para actualizar la vista
+                this.cdr.detectChanges();
 
                 this.messageService.add({
                     severity: 'success',
@@ -1382,6 +1622,7 @@ export class RecetaList implements OnInit {
                 this.editingCell = null;
                 this.originalValue = null;
                 this.hasChanges = false;
+                this.isTransitioningFields = false; // Resetear flag de transición
 
                 this.messageService.add({
                     severity: 'error',
@@ -1393,40 +1634,75 @@ export class RecetaList implements OnInit {
         });
     }
 
-    // Cancelar edición por blur (siempre cancela, incluso sin cambios)
+    // Cancelar edición por blur (comportamiento inteligente)
     cancelInlineEditByBlur(): void {
-        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges);
-        // Siempre restaurar el valor original cuando se pierde el foco
-        if (this.editingCell) {
-            const [recetaId, field] = this.editingCell.split('_');
-            const receta = this.recetas.find(r => r.id === parseInt(recetaId));
-            if (receta) {
-                (receta as any)[field] = this.originalValue;
-                console.log('🔄 Valor restaurado por blur:', field, 'Valor original:', this.originalValue);
-            }
-        }
+        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges, ' transitioning >', this.isTransitioningFields);
 
-        this.editingCell = null;
-        this.originalValue = null;
-        this.hasChanges = false;
+        // Usar setTimeout para permitir que los eventos de click se ejecuten primero
+        setTimeout(() => {
+            // Si estamos en transición entre campos, no cancelar
+            if (this.isTransitioningFields) {
+                console.log('🔄 Blur durante transición - ignorando');
+                return;
+            }
+
+            // Verificar si aún estamos en modo edición (puede haber sido cancelado por un click)
+            if (this.editingCell) {
+                console.log('🔄 Ejecutando blur - restaurando valor original');
+                // Siempre restaurar el valor original cuando se pierde el foco
+                const [recetaId, field] = this.editingCell.split('_');
+                const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+                if (receta) {
+                    (receta as any)[field] = this.originalValue;
+                    console.log('🔄 Valor restaurado por blur:', field, 'Valor original:', this.originalValue);
+                }
+
+                this.editingCell = null;
+                this.originalValue = null;
+                this.hasChanges = false;
+                this.isTransitioningFields = false; // Resetear flag de transición
+            }
+        }, 150); // Pequeño delay para permitir que los clicks se ejecuten primero
     }
 
     // Cancelar edición
     cancelInlineEdit(): void {
-        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges);
-        // Si hay cambios, restaurar el valor original
+        console.log('🛑 CANCELANDO:', {
+            editingCell: this.editingCell,
+            hasChanges: this.hasChanges,
+            originalValue: this.originalValue,
+            originalType: typeof this.originalValue
+        });
+
         if (this.editingCell && this.hasChanges) {
             const [recetaId, field] = this.editingCell.split('_');
             const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+
             if (receta) {
+                const valorAntes = (receta as any)[field];
+                console.log(`🔄 Restaurando ${field}:`, {
+                    antes: valorAntes,
+                    antesType: typeof valorAntes,
+                    original: this.originalValue,
+                    originalType: typeof this.originalValue
+                });
+
+                // Restaurar el valor original (misma lógica para todos los campos)
                 (receta as any)[field] = this.originalValue;
-                console.log('🔄 Valor restaurado:', field, 'Valor original:', this.originalValue);
+                this.cdr.detectChanges();
+
+                const valorDespues = (receta as any)[field];
+                console.log(`✅ Después de restaurar ${field}:`, {
+                    despues: valorDespues,
+                    restauracionExitosa: valorDespues === this.originalValue
+                });
             }
         }
 
         this.editingCell = null;
         this.originalValue = null;
         this.hasChanges = false;
+        this.isTransitioningFields = false;
     }
 
     // ========== MÉTODOS DE UTILIDAD ESTÁNDAR ==========
@@ -1464,6 +1740,24 @@ export class RecetaList implements OnInit {
             { label: 'Activo', value: 'A' },
             { label: 'Inactivo', value: 'I' }
         ];
+    }
+
+    // Método auxiliar para obtener el nombre de la colección por ID
+    getCollectionName(id_coll: number | string | null | undefined): string {
+        // Convertir a number si es string
+        const idNum = typeof id_coll === 'string' ? parseInt(id_coll, 10) : id_coll;
+
+        if (!idNum || !this.colecciones) {
+            return '';
+        }
+
+        const collection = this.colecciones.find(coll => coll.id_coll === idNum);
+        return collection ? collection.nombre : '';
+    }
+
+    // Método para manejar cambios en el select de colección durante edición inline
+    onCollectionChange(Receta: RecetaItem): void {
+        // No llamar onInputChange aquí porque el select con ngModel ya maneja los cambios automáticamente
     }
 
     private handleSaveSuccess(message: string): void {

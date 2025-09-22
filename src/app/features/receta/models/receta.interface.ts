@@ -16,6 +16,7 @@ export interface RecetaItem {
     instructions?: string;
     url_banner?: string;
     title_min?: string; // Para el PUT request
+    id_coll?: number | null; // ID de colección
     fecha_cre?: string;
     fecha_mod?: string;
     usr_c?: string;

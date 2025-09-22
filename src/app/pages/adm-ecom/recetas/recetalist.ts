@@ -95,7 +95,6 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
                         <th class="white-space-nowrap" style="width:15%">Título</th>
                         <th class="white-space-nowrap" style="width:10%">Imagen</th>
                         <th class="white-space-nowrap" style="width:10%">Categoría</th>
-                        <th class="white-space-nowrap" style="width:15%">Descripción</th>
                         <th class="white-space-nowrap" style="width:8%">Dificultad</th>
                         <th class="white-space-nowrap" style="width:8%">Tiempo</th>
                         <th class="white-space-nowrap" style="width:6%">Porc.</th>
@@ -317,118 +316,6 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
                             </div>
                         </td>
 
-                        <!-- Descripción e Ingredientes -->
-                        <td class="text-xs">
-                            <div class="flex flex-col gap-1">
-                                <!-- Descripción -->
-                                <div>
-                                    <span
-                                        *ngIf="editingCell !== Receta.id + '_description'"
-                                        (click)="editInlineReceta(Receta, 'description'); $event.stopPropagation()"
-                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
-                                        title="Clic para editar descripción"
-                                        [class.text-gray-500]="!Receta.description"
-                                    >
-                                        <strong>Desc:</strong> {{ Receta.description || 'Sin descripción' | slice:0:20 }}{{ Receta.description && Receta.description.length > 20 ? '...' : '' }}
-                                    </span>
-
-                                    <!-- Vista de edición descripción -->
-                                    <div
-                                        *ngIf="editingCell === Receta.id + '_description'"
-                                        class="inline-edit-container mb-1"
-                                    >
-                                        <textarea
-                                            [(ngModel)]="Receta.description"
-                                            (input)="onInputChange(Receta, 'description')"
-                                            (blur)="cancelInlineEditByBlur()"
-                                            (keyup.enter)="saveInlineEditReceta(Receta, 'description')"
-                                            (keyup.escape)="cancelInlineEdit()"
-                                            class="p-inputtext-xs w-full border rounded px-1 py-0.5"
-                                            rows="2"
-                                            #input
-                                            [attr.aria-label]="'description-' + Receta.id"
-                                            placeholder="Descripción de la receta"
-                                            style="resize: none;"
-                                        ></textarea>
-                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditReceta(Receta, 'description')"
-                                                class="inline-action-btn p-button-success p-button-text"
-                                                pTooltip="Guardar descripción"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEdit()"
-                                                class="inline-action-btn p-button-secondary p-button-text"
-                                                pTooltip="Cancelar"
-                                            ></button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Ingredientes -->
-                                <div *ngIf="Receta.ingredients" class="text-gray-600">
-                                    <span
-                                        *ngIf="editingCell !== Receta.id + '_ingredients'"
-                                        (click)="editInlineReceta(Receta, 'ingredients'); $event.stopPropagation()"
-                                        class="editable-cell cursor-pointer hover:bg-green-50 px-1 py-0.5 rounded transition-colors"
-                                        title="Clic para editar ingredientes"
-                                    >
-                                        <strong>Ing:</strong> {{ Receta.ingredients | slice:0:25 }}{{ Receta.ingredients && Receta.ingredients.length > 25 ? '...' : '' }}
-                                    </span>
-
-                                    <!-- Vista de edición ingredientes -->
-                                    <div
-                                        *ngIf="editingCell === Receta.id + '_ingredients'"
-                                        class="inline-edit-container"
-                                    >
-                                        <textarea
-                                            [(ngModel)]="Receta.ingredients"
-                                            (input)="onInputChange(Receta, 'ingredients')"
-                                            (blur)="cancelInlineEditByBlur()"
-                                            (keyup.enter)="saveInlineEditReceta(Receta, 'ingredients')"
-                                            (keyup.escape)="cancelInlineEdit()"
-                                            class="p-inputtext-xs w-full border rounded px-1 py-0.5"
-                                            rows="3"
-                                            #input
-                                            [attr.aria-label]="'ingredients-' + Receta.id"
-                                            placeholder="Lista de ingredientes separados por comas"
-                                            style="resize: none;"
-                                        ></textarea>
-                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditReceta(Receta, 'ingredients')"
-                                                class="inline-action-btn p-button-success p-button-text"
-                                                pTooltip="Guardar ingredientes"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEdit()"
-                                                class="inline-action-btn p-button-secondary p-button-text"
-                                                pTooltip="Cancelar"
-                                            ></button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Botón para agregar ingredientes si no existen -->
-                                <button
-                                    *ngIf="!Receta.ingredients && editingCell !== Receta.id + '_description' && editingCell !== Receta.id + '_ingredients'"
-                                    (click)="editInlineReceta(Receta, 'ingredients'); $event.stopPropagation()"
-                                    pButton
-                                    icon="pi pi-plus"
-                                    class="inline-action-btn p-button-text p-button-secondary"
-                                    pTooltip="Agregar ingredientes"
-                                ></button>
-                            </div>
-                        </td>
-
                         <!-- Dificultad -->
                         <td>
                             <!-- Vista normal -->
@@ -518,7 +405,6 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
                                     (change)="onInputChange(Receta, 'id_coll')"
                                     class="p-inputtext-sm flex-1 border rounded px-2 py-1"
                                 >
-                                    <option value="">Sin colección</option>
                                     <option *ngFor="let coll of colecciones" [attr.value]="coll.id_coll">
                                         {{ coll.nombre }}
                                     </option>
@@ -1070,8 +956,6 @@ export class RecetaList implements OnInit {
          * Campos del Formulario → Campos de la BD:
          * - title (requerido) → titulo (Título principal completo)
          * - title_min → titulo_min (Título corto/acortado)
-         * - description → descripcion (Descripción detallada)
-         * - ingredients → ingredientes (Lista de ingredientes)
          * - instructions → instrucciones (Pasos de preparación)
          * - category → categoria (Categoría de la receta)
          * - url_mini (requerido) → url_mini (URL de imagen miniatura)
@@ -1711,8 +1595,6 @@ export class RecetaList implements OnInit {
         const labels: { [key: string]: string } = {
             'title': 'Título Principal',
             'title_min': 'Título Corto',
-            'description': 'Descripción',
-            'ingredients': 'Ingredientes',
             'instructions': 'Instrucciones',
             'url_mini': 'URL Imagen Miniatura',
             'url_banner': 'URL Imagen Banner',

@@ -1,9 +1,8 @@
+import { environment } from '../../../environments/environment';
+
 export const API_CONFIG = {
-   // BASE_URL: 'http://localhost:3000',
-    //BASE_URL: 'http://10.10.250.168:3012',
-   // BASE_URL: 'http://10.10.254.127:3012',
-    BASE_URL: 'https://ec.calimax.digital',
-    BASE_URL_IMG: 'http://10.10.254.127:3013',
+    BASE_URL: environment.apiUrl,
+    BASE_URL_IMG: environment.apiUrlImg,
     ENDPOINTS: {
         MENU: {CRUD: '/api/menu/v1'},
         SPCONFIG: {GET: '/api/spconfig/v1'},

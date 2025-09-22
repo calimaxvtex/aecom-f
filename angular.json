@@ -38,18 +38,47 @@
                     },
                     "configurations": {
                         "production": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/environments/environment.ts",
+                                    "with": "src/environments/environment.prod.ts"
+                                }
+                            ],
                             "budgets": [
                                 {
                                     "type": "initial",
-                                    "maximumWarning": "1mb",
+                                    "maximumWarning": "2mb",
                                     "maximumError": "5mb"
                                 },
                                 {
                                     "type": "anyComponentStyle",
-                                    "maximumWarning": "4kb",
-                                    "maximumError": "14kb"
+                                    "maximumWarning": "14kb",
+                                    "maximumError": "24kb"
                                 }
                             ],
+                            "outputHashing": "all"
+                        },
+                        "qa": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/environments/environment.ts",
+                                    "with": "src/environments/environment.qa.ts"
+                                }
+                            ],
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true
+                        },
+                        "staging": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/environments/environment.ts",
+                                    "with": "src/environments/environment.staging.ts"
+                                }
+                            ],
+                            "optimization": true,
+                            "extractLicenses": true,
+                            "sourceMap": true,
                             "outputHashing": "all"
                         },
                         "development": {
@@ -65,6 +94,12 @@
                     "configurations": {
                         "production": {
                             "buildTarget": "ultima-ng:build:production"
+                        },
+                        "qa": {
+                            "buildTarget": "ultima-ng:build:qa"
+                        },
+                        "staging": {
+                            "buildTarget": "ultima-ng:build:staging"
                         },
                         "development": {
                             "buildTarget": "ultima-ng:build:development"
@@ -91,7 +126,8 @@
                             }
                         ],
                         "styles": [
-                            "src/assets/styles.scss"
+                            "src/assets/styles.scss",
+                             "public/layout/styles/preloading.css"
                         ],
                         "scripts": []
                     }

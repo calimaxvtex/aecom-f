@@ -78,21 +78,20 @@ export const environment = {
 }
 ```
 
-## 🔧 DevTools Component
+## 🔧 Sistema Automático (Sin UI Visible)
 
 ### **Características**
-- **Visible solo en desarrollo/staging**
-- **Panel flotante** en esquina superior derecha
-- **Control de bypass** de autenticación
-- **Creación de sesiones mock**
-- **Información del entorno** en tiempo real
+- **Completamente automático** según el ambiente
+- **Sin paneles flotantes** que estorben la UI
+- **Bypass automático** en desarrollo
+- **Configuración transparente** para el usuario
+- **Logging en consola** para debugging
 
-### **Funciones Disponibles**
-- ✅ **Bypass Auth**: Toggle para activar/desactivar bypass
-- 👤 **Mock Session**: Crear sesión de desarrollo
-- 🗑️ **Limpiar Sesión**: Remover sesión actual
-- 🔐 **Ir a Login**: Navegar a página de login
-- 📊 **Ir a Dashboard**: Navegar al dashboard
+### **Funcionamiento Automático**
+- ✅ **Bypass Auth**: Se activa automáticamente en desarrollo según `environment.bypassAuth`
+- 👤 **Mock Session**: Se crea automáticamente si no existe sesión
+- 🔒 **Auth Real**: Se requiere en QA, staging y producción
+- 📊 **Navegación**: Funciona normalmente sin interferencias
 
 ## 🏗️ Configuración de Build
 
@@ -194,7 +193,29 @@ Los interceptors se activan/desactivan según el entorno:
 | `debugMode` | ✅ `true` | ✅ `true` | ❌ `false` | Modo debug |
 | `enableLogs` | ✅ `true` | ✅ `true` | ❌ `false` | Logs habilitados |
 | `enableApiMonitor` | ✅ `true` | ✅ `true` | ❌ `false` | Monitor de APIs |
-| `devToolsEnabled` | ✅ `true` | ✅ `true` | ❌ `false` | DevTools visible |
+| `devToolsEnabled` | ❌ N/A | ❌ N/A | ❌ N/A | Sistema automático (sin UI) |
+
+## 🔍 Verificación de Ambiente
+
+### **Sin UI Visible - Cómo Saber el Ambiente:**
+- **Consola del navegador**: Revisa los logs de autenticación
+- **Comportamiento**: Bypass automático = Ambiente DEV
+- **Login requerido**: Ambientes QA/Staging/Producción
+
+### **Logs en Consola por Ambiente:**
+
+#### **Desarrollo (DEV):**
+```
+🔓 [DEV] Bypass de autenticación activo
+👤 [DEV] Sesión mock creada
+✅ [AUTH] Usuario autenticado, acceso permitido
+```
+
+#### **QA/Staging/Producción:**
+```
+🔒 [AUTH] Usuario no autenticado, redirigiendo al login
+```
+*(O mensajes de login exitoso si ya está autenticado)*
 
 ## 🔗 Integraciones
 

@@ -7,7 +7,8 @@ export const environment = {
   
   // URLs de la API
   apiUrl: 'https://ec.calimax.digital',
-  apiUrlImg: 'http://10.10.254.127:3013',
+ // apiUrlImg: 'http://10.10.254.127:3013',
+  apiUrlImg: 'https://ec.calimax.digital',
   
   // Configuración de autenticación
   bypassAuth: true,  // Bypass para desarrollo - permite acceso sin login

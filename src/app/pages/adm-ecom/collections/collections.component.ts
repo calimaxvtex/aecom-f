@@ -147,10 +147,10 @@ import { ItemsComponent } from './items.component';
                                         <!-- Botones de filtro por tipo colección -->
                                         <button
                                             *ngFor="let tipo of tipoCollOptions"
-                                            (click)="onTipoFiltroClick(tipo.value)"
+                                            (click)="onTipoFiltroClick(tipo.value?.toString())"
                                             pButton
                                             raised
-                                            [class]="tipoFiltroSeleccionado === tipo.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                                            [class]="tipoFiltroSeleccionado === tipo.value?.toString() ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
                                             [label]="tipo.label"
                                             pTooltip="Filtrar por {{ tipo.label }}"
                                             tooltipPosition="top"
@@ -1678,6 +1678,9 @@ export class CollectionsComponent implements OnInit {
         const params: any = {};
         if (filtros?.id_tipoc) {
             params.filters = { id_tipoc: filtros.id_tipoc };
+        } else if (this.tipoFiltroSeleccionado && !filtros) {
+            // Si hay un filtro seleccionado por defecto y no se pasaron filtros específicos, usarlo
+            params.filters = { id_tipoc: parseInt(this.tipoFiltroSeleccionado) };
         }
 
         this.collService.getAllCollections(params).subscribe({
@@ -1718,7 +1721,21 @@ export class CollectionsComponent implements OnInit {
                         value: tipo.valor1 // Usar valor1 como el valor a setear
                     }));
 
-                    // Después de cargar los tipos, cargar las colecciones para que los labels estén disponibles
+                    // Buscar la opción de "promo" o "promocional" para establecerla como filtro por defecto
+                    const promoOption = this.tipoCollOptions.find(option => 
+                        option.label.toLowerCase().includes('promo') || 
+                        option.label.toLowerCase().includes('promocional')
+                    );
+                    
+                    if (promoOption) {
+                        // Establecer promo como filtro por defecto
+                        this.tipoFiltroSeleccionado = promoOption.value.toString();
+                        console.log('🎯 Filtro por defecto establecido:', promoOption.label, 'con valor:', promoOption.value);
+                        console.log('🎯 tipoFiltroSeleccionado establecido como:', this.tipoFiltroSeleccionado);
+                        console.log('🎯 Opciones disponibles:', this.tipoCollOptions.map(opt => ({ label: opt.label, value: opt.value, valueString: opt.value?.toString() })));
+                    }
+
+                    // Después de cargar los tipos, cargar las colecciones con el filtro por defecto
                     this.cargarCollections();
                 } else {
                     this.tipoCollOptions = [];

@@ -1378,10 +1378,25 @@ export class BannersComponentsTabComponent implements OnInit, OnChanges {
                 }));
 
                 this.canalesOptions = options;
-
                 this.canalesFormOptions = options;
 
+                // Buscar la opción de "app" para establecerla como filtro por defecto
+                const appOption = this.canalesOptions.find(option => 
+                    option.label.toLowerCase().includes('app') || 
+                    option.value.toLowerCase().includes('app')
+                );
+                
+                if (appOption) {
+                    // Establecer app como filtro por defecto
+                    this.canalFiltroSeleccionado = appOption.value;
+                    console.log('🎯 Filtro de canal por defecto establecido:', appOption.label, 'con valor:', appOption.value);
+                    console.log('🎯 canalFiltroSeleccionado establecido como:', this.canalFiltroSeleccionado);
+                }
+
                 console.log('📊 Opciones de canal cargadas:', this.canalesOptions);
+                
+                // Cargar conceptos con el filtro por defecto aplicado
+                this.cargarConceptos();
             },
             error: (error) => {
                 console.error('❌ Error cargando opciones de canal:', error);

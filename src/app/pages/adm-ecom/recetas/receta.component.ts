@@ -16,6 +16,7 @@ import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { TabsModule } from 'primeng/tabs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Servicios específicos del dominio
@@ -41,7 +42,8 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
         TagModule,
         SelectModule,
         TooltipModule,
-        FloatLabelModule
+        FloatLabelModule,
+        TabsModule
     ],
     providers: [MessageService, ConfirmationService, DatePipe],
     templateUrl: './receta.component.html',
@@ -333,9 +335,8 @@ export class RecetaComponent implements OnInit {
     }
 
     // Detectar cambios en el input
-    onInputChange(Receta: RecetaItem, field: string): void {
-        const currentValue = (Receta as any)[field];
-        this.hasChanges = currentValue !== this.originalValue;
+    onInputChange(Receta: any, field: string): void {
+        this.hasChanges = String(Receta[field]) !== String(this.originalValue);
     }
 
     // Guardar edición
@@ -416,7 +417,7 @@ export class RecetaComponent implements OnInit {
                 console.log('🔄 Ejecutando blur - restaurando valor original');
 
                 // Siempre restaurar el valor original cuando se pierde el foco
-                const [recetaId, field] = this.editingCell.split('_');
+                const [recetaId, field] = this.editingCell.split('-');
                 const receta = this.recetas.find(r => r.id === parseInt(recetaId));
                 if (receta) {
                     const valorAntes = (receta as any)[field];
@@ -456,53 +457,22 @@ export class RecetaComponent implements OnInit {
 
     // Cancelar edición
     cancelInlineEdit(): void {
-        console.log('🛑 CANCELANDO:', {
-            editingCell: this.editingCell,
-            hasChanges: this.hasChanges,
-            originalValue: this.originalValue,
-            originalType: typeof this.originalValue
-        });
-
+        console.log('🔄 Cancelando edición:', this.editingCell, 'hasChanges:', this.hasChanges);
         if (this.editingCell && this.hasChanges) {
-            const [recetaId, field] = this.editingCell.split('_');
-            const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+            const [recetaId, field] = this.editingCell.split('-');
 
-            if (receta) {
-                const valorAntes = (receta as any)[field];
-                console.log(`🔄 Restaurando ${field}:`, {
-                    antes: valorAntes,
-                    antesType: typeof valorAntes,
-                    original: this.originalValue,
-                    originalType: typeof this.originalValue
-                });
+            const receta: any = this.recetas[parseInt(recetaId) - 1];
+            receta[field] = this.originalValue;
+            this.recetas[parseInt(recetaId) - 1] = receta;
 
-                // Restaurar el valor original (misma lógica para todos los campos)
-                (receta as any)[field] = this.originalValue;
-
-                // Para campos que usan select HTML, necesitamos forzar la actualización visual
-                if (field === 'id_coll' || field === 'difficulty') {
-                    console.log('🎯 Campo select detectado - forzando actualización visual');
-
-                    // Crear una nueva referencia del objeto para forzar la actualización del binding
-                    const index = this.recetas.findIndex(r => r.id === receta.id);
-                    if (index !== -1) {
-                        this.recetas[index] = { ...this.recetas[index] };
-                    }
-
-                    // Múltiples detecciones de cambios para asegurar la actualización
-                    this.cdr.detectChanges();
-                    setTimeout(() => this.cdr.detectChanges(), 0);
-                    setTimeout(() => this.cdr.detectChanges(), 10);
-                } else {
-                    this.cdr.detectChanges();
-                }
-
-                const valorDespues = (receta as any)[field];
-                console.log(`✅ Después de restaurar ${field}:`, {
-                    despues: valorDespues,
-                    restauracionExitosa: valorDespues === this.originalValue
-                });
+            if (field === 'id_coll' || field === 'difficulty') {
+                this.cdr.detectChanges();
+                setTimeout(() => this.cdr.detectChanges(), 0);
+                setTimeout(() => this.cdr.detectChanges(), 10);
+            } else {
+                this.cdr.detectChanges();
             }
+
         }
 
         this.editingCell = null;
@@ -514,7 +484,7 @@ export class RecetaComponent implements OnInit {
     // ========== MÉTODOS DE UTILIDAD ESTÁNDAR ==========
 
     editInlineReceta(Receta: RecetaItem, field: string): void {
-        const newEditingCell = Receta.id + '_' + field;
+        const newEditingCell = Receta.id + '-' + field;
 
         // Si ya estamos editando otro campo y hay cambios pendientes
         if (this.editingCell && this.hasChanges && this.editingCell !== newEditingCell) {
@@ -777,6 +747,47 @@ export class RecetaComponent implements OnInit {
         });
 
         this.savingReceta = false;
+    }
+
+    // Probar URL de imagen
+    testImageUrl(): void {
+        const url = this.RecetaForm.get('url_mini')?.value;
+
+        if (!url || !url.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'URL Vacía',
+                detail: 'Por favor ingrese una URL de imagen primero',
+                life: 3000
+            });
+            return;
+        }
+
+        // Crear una nueva imagen para probar la URL
+        const testImg = new Image();
+
+        testImg.onload = () => {
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Imagen Válida',
+                detail: 'La URL de la imagen es accesible',
+                life: 3000
+            });
+        };
+
+        testImg.onerror = () => {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Imagen No Accesible',
+                detail: 'La URL proporcionada no es válida o no se puede acceder',
+                life: 5000
+            });
+        };
+
+        // Establecer timeout para evitar que la petición quede colgada
+        setTimeout(() => {
+            testImg.src = url;
+        }, 100);
     }
 
     onImageError(event: Event): void {

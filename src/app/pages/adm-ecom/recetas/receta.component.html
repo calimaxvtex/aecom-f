@@ -68,7 +68,7 @@
                                 <!-- Título Principal -->
                                 <div>
                                     <span
-                                        *ngIf="editingCell !== Receta.id + '_title'"
+                                        *ngIf="editingCell !== Receta.id + '-title'"
                                         (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
                                         class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors font-medium"
                                         pTooltip="Clic para editar título principal"
@@ -78,7 +78,7 @@
 
                                     <!-- Vista de edición título principal -->
                                     <div
-                                        *ngIf="editingCell === Receta.id + '_title'"
+                                        *ngIf="editingCell === Receta.id + '-title'"
                                         class="inline-edit-container mb-1"
                                     >
                                         <input
@@ -116,7 +116,7 @@
                                 <!-- Título Corto (si existe) -->
                                 <div *ngIf="Receta.title_min" class="text-gray-500">
                                     <span
-                                        *ngIf="editingCell !== Receta.id + '_title_min'"
+                                        *ngIf="editingCell !== Receta.id + '-title_min'"
                                         (click)="editInlineReceta(Receta, 'title_min'); $event.stopPropagation()"
                                         class="editable-cell cursor-pointer hover:bg-blue-100 px-1 py-0.5 rounded transition-colors text-xs"
                                         title="Clic para editar título corto"
@@ -126,7 +126,7 @@
 
                                     <!-- Vista de edición título corto -->
                                     <div
-                                        *ngIf="editingCell === Receta.id + '_title_min'"
+                                        *ngIf="editingCell === Receta.id + '-title_min'"
                                         class="inline-edit-container"
                                     >
                                         <input
@@ -169,7 +169,7 @@
                             <div class="flex justify-center">
                                 <!-- Vista normal -->
                                 <div
-                                    *ngIf="editingCell !== Receta.id + '_url_mini'"
+                                    *ngIf="editingCell !== Receta.id + '-url_mini'"
                                     (click)="editInlineReceta(Receta, 'url_mini'); $event.stopPropagation()"
                                     class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                     title="Clic para editar"
@@ -184,7 +184,7 @@
 
                                 <!-- Vista de edición -->
                                 <div
-                                    *ngIf="editingCell === Receta.id + '_url_mini'"
+                                    *ngIf="editingCell === Receta.id + '-url_mini'"
                                     class="inline-edit-container"
                                 >
                                     <input
@@ -224,7 +224,7 @@
                         <td>
                             <!-- Vista normal -->
                             <span
-                                *ngIf="editingCell !== Receta.id + '_category'"
+                                *ngIf="editingCell !== Receta.id + '-category'"
                                 (click)="editInlineReceta(Receta, 'category'); $event.stopPropagation()"
                                 class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 title="Clic para editar"
@@ -234,7 +234,7 @@
 
                             <!-- Vista de edición -->
                             <div
-                                *ngIf="editingCell === Receta.id + '_category'"
+                                *ngIf="editingCell === Receta.id + '-category'"
                                 class="inline-edit-container"
                             >
                                 <input
@@ -273,7 +273,7 @@
                         <td>
                             <!-- Vista normal -->
                             <span
-                                *ngIf="editingCell !== Receta.id + '_difficulty'"
+                                *ngIf="editingCell !== Receta.id + '-difficulty'"
                                 (click)="editInlineReceta(Receta, 'difficulty'); $event.stopPropagation()"
                                 class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 title="Clic para editar"
@@ -286,7 +286,7 @@
 
                             <!-- Vista de edición -->
                             <div
-                                *ngIf="editingCell === Receta.id + '_difficulty'"
+                                *ngIf="editingCell === Receta.id + '-difficulty'"
                                 class="inline-edit-container"
                             >
                                 <select
@@ -336,7 +336,7 @@
                         <td>
                             <!-- Vista normal -->
                             <span
-                                *ngIf="editingCell !== Receta.id + '_id_coll'"
+                                *ngIf="editingCell !== Receta.id + '-id_coll'"
                                 (click)="editInlineReceta(Receta, 'id_coll'); $event.stopPropagation()"
                                 class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                 title="Clic para editar"
@@ -351,7 +351,7 @@
 
                             <!-- Vista de edición -->
                             <div
-                                *ngIf="editingCell === Receta.id + '_id_coll'"
+                                *ngIf="editingCell === Receta.id + '-id_coll'"
                                 class="inline-edit-container"
                             >
                                 <select
@@ -485,202 +485,202 @@
                         </div>
         </p-dialog>
 
-        <!-- FORMULARIO MODAL CON LABELS FLOTANTES -->
+        <!-- 📋 MODAL DE RECETA - ESTILO TABLOIDE (SIMPLE Y FUNCIONAL) -->
         <p-dialog
             [(visible)]="showRecetaModal"
             [header]="isEditingReceta ? 'Editar Receta' : 'Nueva Receta'"
             [modal]="true"
-            [style]="{width: '1000px', maxHeight: '90vh', maxWidth: '95vw'}"
+            [style]="{width: '700px', maxHeight: '80vh'}"
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
         >
             <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
-                <div class="grid grid-cols-1 gap-6 p-2" style="max-height: 75vh; overflow-y: auto; padding-right: 12px;">
-                    <!-- Información Básica -->
-                    <div class="form-section border-b border-gray-200 pb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-info-circle mr-2 text-blue-500"></i>
-                            Información Básica
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="title"
-                                       placeholder="Título completo de la receta"
-                                       class="w-full"
-                                       autofocus />
-                                <label>Título Principal *</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="title_min"
-                                       placeholder="Título corto/acortado"
-                                       class="w-full" />
-                                <label>Título Corto</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Colección</label>
-                            <p-select
-                                formControlName="id_coll"
-                                [options]="colecciones"
-                                optionLabel="nombre"
-                                optionValue="id_coll"
-                                [placeholder]="colecciones && colecciones.length > 0 ? 'Selecciona una colección RECET' : 'No hay colecciones RECET disponibles'"
-                                class="w-full"
-                                [showClear]="true"
-                                [disabled]="!colecciones || colecciones.length === 0">
-                            </p-select>
-                            <small class="text-gray-500 mt-1 block" *ngIf="!colecciones || colecciones.length === 0">
-                                No hay colecciones de tipo RECET disponibles.
-                                <button
-                                    type="button"
-                                    class="text-blue-500 hover:text-blue-700 underline ml-1"
-                                    (click)="openColeccionesPage()">
-                                    Crear colección RECET
-                                </button>
-                            </small>
-                        </div>
-                        </div>
-                    </div>
-
-                    <!-- Detalles Adicionales -->
-                    <div class="form-section border-b border-gray-200 pb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-cog mr-2 text-green-500"></i>
-                            Detalles Adicionales
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="category"
-                                       placeholder="Categoría de la receta"
-                                       class="w-full" />
-                                <label>Categoría</label>
-                            </p-floatLabel>
-                        </div>
-
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       type="url"
-                                       formControlName="url_mini"
-                                       placeholder="https://ejemplo.com/imagen.jpg"
-                                       class="w-full" />
-                                <label>URL Imagen Miniatura *</label>
-                            </p-floatLabel>
-                        </div>
-                        </div>
-                    </div>
-
-                    <!-- Contenido de la Receta -->
-                    <div class="form-section border-b border-gray-200 pb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-book mr-2 text-purple-500"></i>
-                            Contenido de la Receta
-                        </h3>
-
-                        <!-- Descripción -->
+                <div class="grid grid-cols-1 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+                    <!-- Título Principal -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <textarea
-                                pInputTextarea
-                                formControlName="description"
-                                placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
+                        <label class="block text-sm font-medium mb-1">Título Principal *</label>
+                        <input
+                            pInputText
+                            formControlName="title"
+                            placeholder="ej: Paella Valenciana Tradicional"
+                            class="w-full"
+                            autofocus
+                        />
+                        <small *ngIf="RecetaForm.get('title')?.invalid && RecetaForm.get('title')?.touched"
+                               class="text-red-500">
+                            El título es obligatorio
+                        </small>
+                    </div>
+
+                    <!-- Título Corto -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Título Corto</label>
+                        <input
+                            pInputText
+                            formControlName="title_min"
+                            placeholder="ej: Paella Valenciana"
+                            class="w-full"
+                        />
+                    </div>
+
+                    <!-- Colección -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Colección</label>
+                        <p-select
+                            formControlName="id_coll"
+                            [options]="colecciones"
+                            optionLabel="nombre"
+                            optionValue="id_coll"
+                            placeholder="Selecciona una colección RECET"
+                            class="w-full"
+                            [showClear]="true"
+                            [disabled]="!colecciones || colecciones.length === 0"
+                        >
+                            <ng-template pTemplate="empty">
+                                <div class="text-center py-4">
+                                    <i class="pi pi-folder-open text-gray-400 text-2xl mb-2"></i>
+                                    <p class="text-gray-500">No hay colecciones disponibles</p>
+                                    <button type="button"
+                                            class="text-blue-500 hover:text-blue-700 text-sm underline mt-1"
+                                            (click)="openColeccionesPage()">
+                                        Crear colección RECET
+                                    </button>
+                                </div>
+                            </ng-template>
+                        </p-select>
+                    </div>
+
+                    <!-- URL Imagen Miniatura -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">URL Imagen Miniatura *</label>
+                        <div class="flex gap-2">
+                            <input
+                                pInputText
+                                type="url"
+                                formControlName="url_mini"
+                                placeholder="https://ejemplo.com/imagen-receta.jpg"
                                 class="w-full"
-                                rows="3">
-                            </textarea>
-                            <label>Descripción</label>
-                        </p-floatLabel>
+                            />
+                            <button
+                                pButton
+                                icon="pi pi-image"
+                                type="button"
+                                (click)="testImageUrl()"
+                                class="p-button-sm p-button-outlined p-button-info"
+                                pTooltip="Probar imagen"
+                                [disabled]="!RecetaForm.get('url_mini')?.value"
+                            ></button>
+                        </div>
+                        <small *ngIf="RecetaForm.get('url_mini')?.invalid && RecetaForm.get('url_mini')?.touched"
+                               class="text-red-500">
+                            La URL de la imagen es obligatoria
+                        </small>
+
+                        <!-- Preview de la imagen -->
+                        <div *ngIf="RecetaForm.get('url_mini')?.value" class="mt-2">
+                            <img
+                                [src]="RecetaForm.get('url_mini')?.value"
+                                alt="Preview"
+                                class="w-32 h-32 object-cover rounded border"
+                                onerror="this.style.display='none'"
+                                onload="this.style.display='block'"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Descripción</label>
+                        <textarea
+                            pInputTextarea
+                            formControlName="description"
+                            placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
+                            class="w-full"
+                            rows="3"
+                        ></textarea>
                     </div>
 
                     <!-- Ingredientes -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <textarea
-                                pInputTextarea
-                                formControlName="ingredients"
-                                placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g, judías verdes 250g..."
-                                class="w-full"
-                                rows="4">
-                            </textarea>
-                            <label>Ingredientes</label>
-                        </p-floatLabel>
+                        <label class="block text-sm font-medium mb-1">Ingredientes</label>
+                        <textarea
+                            pInputTextarea
+                            formControlName="ingredients"
+                            placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g..."
+                            class="w-full"
+                            rows="4"
+                        ></textarea>
                     </div>
 
                     <!-- Instrucciones -->
                     <div>
-                        <p-floatLabel variant="on">
-                            <textarea
-                                pInputTextarea
-                                formControlName="instructions"
-                                placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
+                        <label class="block text-sm font-medium mb-1">Instrucciones</label>
+                        <textarea
+                            pInputTextarea
+                            formControlName="instructions"
+                            placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
+                            class="w-full"
+                            rows="5"
+                        ></textarea>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Categoría</label>
+                        <input
+                            pInputText
+                            formControlName="category"
+                            placeholder="ej: Principal, Entrante, Postre, Vegano..."
+                            class="w-full"
+                        />
+                    </div>
+
+                    <!-- Especificaciones en fila -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Tiempo -->
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tiempo</label>
+                            <input
+                                pInputText
+                                formControlName="time"
+                                placeholder="ej: 45 min"
                                 class="w-full"
-                                rows="5">
-                            </textarea>
-                            <label>Instrucciones</label>
-                        </p-floatLabel>
-                    </div>
-                    </div>
-
-                    <!-- Especificaciones -->
-                    <div class="form-section">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-clock mr-2 text-orange-500"></i>
-                            Especificaciones
-                        </h3>
-
-                        <!-- Campos numéricos -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                            <p-floatLabel variant="on">
-                                <input pInputText
-                                       formControlName="time"
-                                       placeholder="ej: 45 min"
-                                       class="w-full" />
-                                <label>Tiempo</label>
-                            </p-floatLabel>
+                            />
                         </div>
 
+                        <!-- Porciones -->
                         <div>
-                            <p-floatLabel variant="on">
-                                <p-inputNumber
-                                    formControlName="people"
-                                    [min]="1"
-                                    [max]="50"
-                                    placeholder="1"
-                                    class="w-full">
-                                </p-inputNumber>
-                                <label>Porciones</label>
-                            </p-floatLabel>
+                            <label class="block text-sm font-medium mb-1">Porciones</label>
+                            <p-inputNumber
+                                formControlName="people"
+                                [min]="1"
+                                [max]="50"
+                                placeholder="4"
+                                class="w-full"
+                            />
                         </div>
 
+                        <!-- Dificultad -->
                         <div>
-                            <p-floatLabel variant="on">
-                                <p-select
-                                    formControlName="difficulty"
-                                    [options]="[
-                                        { label: 'Fácil', value: 'facil' },
-                                        { label: 'Medio', value: 'medio' },
-                                        { label: 'Difícil', value: 'dificil' }
-                                    ]"
-                                    optionLabel="label"
-                                    optionValue="value"
-                                    placeholder="Seleccione dificultad"
-                                    class="w-full"
-                                    appendTo="body">
-                                </p-select>
-                                <label>Dificultad *</label>
-                            </p-floatLabel>
+                            <label class="block text-sm font-medium mb-1">Dificultad *</label>
+                            <p-select
+                                formControlName="difficulty"
+                                [options]="[
+                                    { label: 'Fácil', value: 'facil' },
+                                    { label: 'Medio', value: 'medio' },
+                                    { label: 'Difícil', value: 'dificil' }
+                                ]"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Seleccionar dificultad"
+                                class="w-full"
+                            />
+                            <small *ngIf="RecetaForm.get('difficulty')?.invalid && RecetaForm.get('difficulty')?.touched"
+                                   class="text-red-500">
+                                La dificultad es obligatoria
+                            </small>
                         </div>
-                    </div>
                     </div>
                 </div>
 

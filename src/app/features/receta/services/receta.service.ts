@@ -213,10 +213,22 @@ export class RecetaService {
      * PUT/UPDATE - Actualización Completa de Receta
      */
     actualizar(id: number, receta: RecetaFormItem): Observable<RecetaSingleResponse> {
+        // Mapeo correcto de campos según especificación del backend
         const payload = {
             action: 'UP',
-            id_entity: id,
-            ...receta,
+            id_receta: id,
+            titulo: receta.title || '',
+            titulo_min: receta.title_min || '',
+            descripcion: receta.description || '',
+            ingredientes: receta.ingredients || '',
+            instrucciones: receta.instructions || '',
+            categoria: receta.category || '',
+            tiempo: receta.time || '',
+            personas: receta.people || 1,
+            dificultad: receta.difficulty || 'medio',
+            url_mini: receta.url_mini || '',
+            url_banner: receta.url_banner || '',
+            id_coll: receta.id_coll || null,
             ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
         };
 

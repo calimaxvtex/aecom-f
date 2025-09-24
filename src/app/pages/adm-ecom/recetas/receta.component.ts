@@ -230,7 +230,6 @@ export class RecetaComponent implements OnInit, OnDestroy {
             next: (response) => {
                 this.recetas = response.data;
                 this.loadingRecetas = false;
-                console.log('✅ Recetas cargadas desde backend:', this.recetas);
             },
             error: (error: any) => {
                 console.error('❌ Error al cargar recetas:', error);
@@ -263,38 +262,7 @@ export class RecetaComponent implements OnInit, OnDestroy {
         // Hacer petición directa usando HttpClient
         this.http.post<any>(collUrl, body).pipe(
             map((response: any) => {
-                console.log('🔍 Respuesta cruda del backend para RECET:', response);
-
-                // Procesar respuesta similar al método getAllCollections del servicio
-                let responseData: any;
-
-                if (Array.isArray(response)) {
-                    responseData = response.length > 0 ? response[0] : null;
-                } else if (response && typeof response === 'object') {
-                    responseData = response;
-                } else {
-                    responseData = null;
-                }
-
-                // Si hay datos, procesar el string JSON si es necesario
-                if (responseData && responseData.data) {
-                    if (typeof responseData.data === 'string') {
-                        try {
-                            const parsedData = JSON.parse(responseData.data);
-                            responseData.data = parsedData;
-                        } catch (error) {
-                            console.error('❌ Error parseando datos RECET:', error);
-                            responseData.data = [];
-                        }
-                    } else if (Array.isArray(responseData.data)) {
-                        // Ya es array, verificar si necesita aplanamiento
-                        if (responseData.data.length > 0 && responseData.data[0] && typeof responseData.data[0] === 'object' && responseData.data[0].data) {
-                            responseData.data = responseData.data[0].data;
-                        }
-                    }
-                }
-
-                return responseData;
+                return response
             }),
             catchError((error: any) => {
                 console.error('Error en loadColecciones:', error);
@@ -306,16 +274,7 @@ export class RecetaComponent implements OnInit, OnDestroy {
             })
         ).subscribe({
             next: (response) => {
-                this.colecciones = response?.data || [];
-                console.log('✅ Colecciones RECET cargadas:', this.colecciones);
-                console.log('📊 Número de colecciones RECET:', this.colecciones?.length || 0);
-
-                if (this.colecciones && this.colecciones.length > 0) {
-                    console.log('🎯 Primera colección RECET de ejemplo:', this.colecciones[0]);
-                    console.log('📋 Nombres disponibles:', this.colecciones.map(c => c.nombre));
-                } else {
-                    console.warn('⚠️ No se encontraron colecciones de tipo RECET');
-                }
+                this.colecciones = response.data || [];
             },
             error: (error: any) => {
                 console.error('❌ Error al cargar colecciones RECET:', error);
@@ -968,9 +927,83 @@ export class RecetaComponent implements OnInit, OnDestroy {
         }, 500);
     }
 
-    onImageError(event: Event): void {
+    // Validar imagen de la tabla - función mejorada para preview
+    async validateTableImage(receta: RecetaItem): Promise<boolean> {
+        if (!receta.url_mini || !receta.url_mini.trim()) {
+            return false;
+        }
+
+        // Crear imagen temporal para validar sin mostrarla en DOM
+        const testImg = new Image();
+
+        // Usar Promise para validación asíncrona
+        return new Promise((resolve) => {
+            testImg.onload = () => resolve(true);
+            testImg.onerror = () => resolve(false);
+
+            // Timeout para evitar esperas infinitas
+            setTimeout(() => resolve(false), 3000);
+
+            testImg.src = receta.url_mini;
+        });
+    }
+
+    // Manejar errores de carga de imagen en tabla con mejor UX
+    onImageError(event: Event, imgElement?: HTMLImageElement): void {
+        const img = imgElement || (event.target as HTMLImageElement);
+
+        // Ocultar la imagen con error
+        img.style.display = 'none';
+        img.classList.remove('table-image'); // Remover estilos de tabla
+
+        console.log('🔴 Imagen no puede ser mostrada');
+        // Mostrar el texto alternativo
+        const container = img.parentElement;
+        if (container) {
+            const errorText = container.querySelector('.absolute') as HTMLElement;
+            if (errorText) {
+                errorText.classList.remove('hidden');
+                errorText.classList.add('block');
+            }
+        }
+
+        // Actualizar atributos de accesibilidad
+        img.alt = 'Imagen no puede ser mostrada';
+        img.title = 'La imagen no se pudo cargar';
+    }
+
+    // Función para mostrar indicador de carga en imágenes de tabla
+    showImageLoading(img: HTMLImageElement): void {
+        img.classList.add('image-loading');
+        img.style.opacity = '0.5';
+    }
+
+    // Función para ocultar indicador de carga
+    hideImageLoading(img: HTMLImageElement): void {
+        img.classList.remove('image-loading');
+        img.style.opacity = '1';
+    }
+
+    // Wrapper para manejar el evento load desde el template
+    onImageLoad(event: Event): void {
         const img = event.target as HTMLImageElement;
-        img.src = 'https://via.placeholder.com/150?text=Sin+Imagen';
+        if (img) {
+            this.hideImageLoading(img);
+
+            // Asegurar que el texto de error esté oculto cuando la imagen carga correctamente
+            const container = img.parentElement;
+            if (container) {
+                const errorText = container.querySelector('.absolute') as HTMLElement;
+                if (errorText) {
+                    errorText.classList.remove('block');
+                    errorText.classList.add('hidden');
+                }
+            }
+
+            // Asegurar que la imagen esté visible
+            img.style.display = 'block';
+            img.classList.add('table-image');
+        }
     }
 
     formatFecha(fecha: string | Date | null | undefined): string {

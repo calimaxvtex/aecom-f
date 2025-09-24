@@ -119,20 +119,33 @@
 
                         <!-- Imagen (preview) -->
                         <td class="text-center">
-                            <div class="flex justify-center">
+                            <div>
                                 <!-- Vista normal -->
                                 <div
                                     *ngIf="editingCell !== Receta.id + '-url_mini'"
                                     (click)="editInlineReceta(Receta, 'url_mini'); $event.stopPropagation()"
-                                    class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                                     title="Clic para editar"
+                                    class="relative"
                                 >
+                                    <!-- Imagen -->
                                     <img
+                                        #tableImg
                                         [src]="Receta.url_mini"
-                                        [alt]="Receta.title"
-                                        class="w-12 h-12 object-cover rounded border"
-                                        (error)="onImageError($event)"
+                                        [alt]="Receta.title || 'Imagen de receta'"
+                                        class="w-32 h-32 object-cover rounded border cursor-pointer table-image"
+                                        (load)="onImageLoad($event)"
+                                        (error)="onImageError($event, tableImg)"
+                                        [title]="Receta.url_mini ? 'Imagen de ' + Receta.title : 'Sin imagen disponible'"
                                     />
+
+                                    <!-- Texto alternativo cuando la imagen falla -->
+                                    <div
+                                        #errorText
+                                        class="absolute inset-0 flex image-loading items-center justify-center bg-gray-100 text-xs text-gray-600 font-medium hidden"
+                                        [title]="'Imagen no puede ser mostrada'"
+                                    >
+                                        Imagen no puede ser mostrada
+                                    </div>
                                 </div>
 
                                 <!-- Vista de edición -->

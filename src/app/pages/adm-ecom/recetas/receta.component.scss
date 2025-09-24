@@ -176,3 +176,41 @@ select.p-inputtext-sm:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 1px #3b82f6;
 }
+
+/* Estilos para imágenes en tabla */
+.table-image {
+    transition: opacity 0.3s ease-in-out;
+    min-height: 48px; /* w-48 en Tailwind */
+}
+
+.table-image.image-loading {
+    opacity: 0.6;
+    filter: blur(1px);
+}
+
+.table-image.image-error {
+    border: 2px solid #ef4444 !important; /* border-red-500 */
+    opacity: 0.8;
+}
+
+.table-image.image-error:hover {
+    transform: none;
+    opacity: 0.9;
+}
+
+/* Placeholder mejorado para imágenes */
+.image-placeholder {
+    background: linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+                linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+                linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    border: 1px solid #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 500;
+}

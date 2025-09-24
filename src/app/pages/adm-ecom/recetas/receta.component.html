@@ -113,53 +113,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Título Corto (si existe) -->
-                                <div *ngIf="Receta.title_min" class="text-gray-500">
-                                    <span
-                                        *ngIf="editingCell !== Receta.id + '-title_min'"
-                                        (click)="editInlineReceta(Receta, 'title_min'); $event.stopPropagation()"
-                                        class="editable-cell cursor-pointer hover:bg-blue-100 px-1 py-0.5 rounded transition-colors text-xs"
-                                        title="Clic para editar título corto"
-                                    >
-                                        ({{Receta.title_min}})
-                                    </span>
-
-                                    <!-- Vista de edición título corto -->
-                                    <div
-                                        *ngIf="editingCell === Receta.id + '-title_min'"
-                                        class="inline-edit-container"
-                                    >
-                                        <input
-                                           pInputText
-                                           type="text"
-                                           [(ngModel)]="Receta.title_min"
-                                           (input)="onInputChange(Receta, 'title_min')"
-                                           (blur)="cancelInlineEditByBlur()"
-                                            (keyup.enter)="saveInlineEditReceta(Receta, 'title_min')"
-                                            (keyup.escape)="cancelInlineEdit()"
-                                            class="p-inputtext-xs w-full"
-                                            #input
-                                            [attr.aria-label]="'title_min-' + Receta.id"
-                                            placeholder="Título corto"
-                                        />
-                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditReceta(Receta, 'title_min')"
-                                                class="inline-action-btn p-button-success p-button-text"
-                                                pTooltip="Guardar título corto"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEdit()"
-                                                class="inline-action-btn p-button-secondary p-button-text"
-                                                pTooltip="Cancelar"
-                                            ></button>
-                                        </div>
-                                    </div>
-                                </div>
 
                             </div>
                         </td>
@@ -494,9 +447,10 @@
             [draggable]="false"
             [resizable]="false"
             [closable]="true"
+            [closeOnEscape]="true"
         >
             <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
-                <div class="grid grid-cols-1 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+                <div class="grid grid-cols-1 gap-4">
                     <!-- Título Principal -->
                     <div>
                         <label class="block text-sm font-medium mb-1">Título Principal *</label>
@@ -515,7 +469,7 @@
 
                     <!-- Título Corto -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">Título Corto</label>
+                        <label class="block text-sm font-medium mb-1">Título Miniatura</label>
                         <input
                             pInputText
                             formControlName="title_min"
@@ -551,49 +505,65 @@
                         </p-select>
                     </div>
 
-                    <!-- URL Imagen Miniatura -->
+                    <!-- URL Imagen Banner -->
                     <div>
-                        <label class="block text-sm font-medium mb-1">URL Imagen Miniatura *</label>
-                        <div class="flex gap-2">
-                            <input
-                                pInputText
-                                type="url"
-                                formControlName="url_mini"
-                                placeholder="https://ejemplo.com/imagen-receta.jpg"
-                                class="w-full"
-                            />
-                            <button
-                                pButton
-                                icon="pi pi-image"
-                                type="button"
-                                (click)="testImageUrl()"
-                                class="p-button-sm p-button-outlined p-button-info"
-                                pTooltip="Probar imagen"
-                                [disabled]="!RecetaForm.get('url_mini')?.value"
-                            ></button>
-                        </div>
-                        <small *ngIf="RecetaForm.get('url_mini')?.invalid && RecetaForm.get('url_mini')?.touched"
-                               class="text-red-500">
-                            La URL de la imagen es obligatoria
-                        </small>
+                        <label class="block text-sm font-medium mb-1">URL Imagen Banner</label>
+                        <input
+                            pInputText
+                            type="url"
+                            formControlName="url_banner"
+                            placeholder="https://ejemplo.com/banner-receta.jpg"
+                            class="w-full"
+                            (input)="onBannerUrlInput($event)"
+                        />
 
-                        <!-- Preview de la imagen -->
-                        <div *ngIf="RecetaForm.get('url_mini')?.value" class="mt-2">
+                        <!-- Preview del banner -->
+                        <div *ngIf="bannerUrlValidated" class="mt-2">
                             <img
-                                [src]="RecetaForm.get('url_mini')?.value"
-                                alt="Preview"
-                                class="w-32 h-32 object-cover rounded border"
+                                [src]="RecetaForm.get('url_banner')?.value"
+                                alt="Banner Preview"
+                                class="w-80 object-cover rounded border"
                                 onerror="this.style.display='none'"
                                 onload="this.style.display='block'"
                             />
                         </div>
                     </div>
 
+                    
+                    <!-- URL Imagen Miniatura -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">URL Imagen Miniatura *</label>
+                        <input
+                            pInputText
+                            type="url"
+                            formControlName="url_mini"
+                            placeholder="https://ejemplo.com/imagen-receta.jpg"
+                            class="w-full"
+                            (input)="onImageUrlInput($event)"
+                        />
+                        <small *ngIf="RecetaForm.get('url_mini')?.invalid && RecetaForm.get('url_mini')?.touched"
+                               class="text-red-500">
+                            La URL de la imagen es obligatoria
+                        </small>
+
+                        <!-- Preview de la imagen -->
+                        <div *ngIf="imageUrlValidated" class="mt-2">
+                            <img
+                                [src]="RecetaForm.get('url_mini')?.value"
+                                alt="Preview"
+                                class="w-80 object-cover rounded border"
+                                onerror="this.style.display='none'"
+                                onload="this.style.display='block'"
+                            />
+                        </div>
+                    </div>
+
+
                     <!-- Descripción -->
                     <div>
                         <label class="block text-sm font-medium mb-1">Descripción</label>
                         <textarea
-                            pInputTextarea
+                            pTextarea
                             formControlName="description"
                             placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
                             class="w-full"
@@ -605,7 +575,7 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">Ingredientes</label>
                         <textarea
-                            pInputTextarea
+                            pTextarea
                             formControlName="ingredients"
                             placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g..."
                             class="w-full"
@@ -617,7 +587,7 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">Instrucciones</label>
                         <textarea
-                            pInputTextarea
+                            pTextarea
                             formControlName="instructions"
                             placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
                             class="w-full"
@@ -628,12 +598,17 @@
                     <!-- Categoría -->
                     <div>
                         <label class="block text-sm font-medium mb-1">Categoría</label>
-                        <input
-                            pInputText
+                        <p-select
                             formControlName="category"
-                            placeholder="ej: Principal, Entrante, Postre, Vegano..."
+                            [options]="categoriasDisponibles"
+                            placeholder="Selecciona o escribe una nueva categoría"
                             class="w-full"
+                            [editable]="true"
+                            [showClear]="true"
                         />
+                        <small class="text-gray-500 text-xs mt-1">
+                            Selecciona una categoría existente o escribe una nueva
+                        </small>
                     </div>
 
                     <!-- Especificaciones en fila -->

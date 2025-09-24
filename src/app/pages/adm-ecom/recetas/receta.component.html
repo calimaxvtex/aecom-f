@@ -44,16 +44,16 @@
 
                 <ng-template #header>
                     <tr>
-                        <th class="white-space-nowrap" style="width:6%">ID</th>
-                        <th class="white-space-nowrap" style="width:15%">Título</th>
-                        <th class="white-space-nowrap" style="width:10%">Imagen</th>
-                        <th class="white-space-nowrap" style="width:10%">Categoría</th>
-                        <th class="white-space-nowrap" style="width:8%">Dificultad</th>
-                        <th class="white-space-nowrap" style="width:8%">Tiempo</th>
-                        <th class="white-space-nowrap" style="width:6%">Porc.</th>
-                        <th class="white-space-nowrap" style="width:10%">Fecha</th>
-                        <th class="white-space-nowrap" style="width:12%">Colección</th>
-                        <th class="white-space-nowrap" style="width:8%">Acciones</th>
+                        <th class="white-space-nowrap" style="width:5%">ID</th>
+                        <th class="white-space-nowrap" style="width:17%">Título</th>
+                        <th class="white-space-nowrap" style="width:18%">Imagen</th>
+                        <th class="white-space-nowrap" style="width:8%">Categoría</th>
+                        <th class="white-space-nowrap" style="width:7%">Dificultad</th>
+                        <th class="white-space-nowrap" style="width:7%">Tiempo</th>
+                        <th class="white-space-nowrap" style="width:5%">Porc.</th>
+                        <th class="white-space-nowrap" style="width:8%">Fecha</th>
+                        <th class="white-space-nowrap" style="width:10%">Colección</th>
+                        <th class="white-space-nowrap" style="width:15%">Acciones</th>
                     </tr>
                 </ng-template>
 
@@ -63,14 +63,14 @@
                         <td>{{ Receta.id }}</td>
 
                         <!-- Título (edición inline) -->
-                        <td class="text-xs">
-                            <div class="flex flex-col gap-1">
+                        <td>
+                            <div class="flex flex-col gap-1 w-fit">
                                 <!-- Título Principal -->
                                 <div>
                                     <span
                                         *ngIf="editingCell !== Receta.id + '-title'"
                                         (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
-                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors font-medium"
+                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-1 rounded transition-colors font-medium"
                                         pTooltip="Clic para editar título principal"
                                     >
                                         {{Receta.title}}
@@ -132,7 +132,7 @@
                                         #tableImg
                                         [src]="Receta.url_mini"
                                         [alt]="Receta.title || 'Imagen de receta'"
-                                        class="w-32 h-32 object-cover rounded border cursor-pointer table-image"
+                                        class="w-full h-32 object-cover rounded border cursor-pointer table-image"
                                         (load)="onImageLoad($event)"
                                         (error)="onImageError($event, tableImg)"
                                         [title]="Receta.url_mini ? 'Imagen de ' + Receta.title : 'Sin imagen disponible'"

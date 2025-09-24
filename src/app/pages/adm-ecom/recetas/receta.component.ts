@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,7 @@ import { map, catchError, throwError, from } from 'rxjs';
 import { TableModule, Table } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
@@ -36,6 +37,7 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
         TableModule,
         ButtonModule,
         InputTextModule,
+        TextareaModule,
         InputNumberModule,
         DialogModule,
         ToastModule,
@@ -43,14 +45,15 @@ import { ApiConfigService } from '@/core/services/api/api-config.service';
         SelectModule,
         TooltipModule,
         FloatLabelModule,
-        TabsModule
+        TabsModule,
+        TextareaModule
     ],
     providers: [MessageService, ConfirmationService, DatePipe],
     templateUrl: './receta.component.html',
     styleUrls: ['./receta.component.scss']
 })
 
-export class RecetaComponent implements OnInit {
+export class RecetaComponent implements OnInit, OnDestroy {
     // Datos
     recetas: RecetaItem[] = [];
     colecciones: CollItem[] = []; // Lista de colecciones disponibles
@@ -84,6 +87,29 @@ export class RecetaComponent implements OnInit {
     // Confirmación de estado
     showConfirmDialog = false;
 
+    // Validación de imagen
+    imageUrlValidated = false;
+    bannerUrlValidated = false;
+
+    // Categorías disponibles
+    categoriasDisponibles = [
+        'Principal',
+        'Entrante',
+        'Postre',
+        'Bebida',
+        'Vegano',
+        'Vegetariano',
+        'Sin Gluten',
+        'Bajo en Calorías',
+        'Rápido y Fácil',
+        'Tradicional',
+        'Internacional'
+    ];
+
+    // Timers para debouncing
+    private imageUrlTimer: any;
+    private bannerUrlTimer: any;
+
     constructor(
         private fb: FormBuilder,
         private RecetaService: RecetaService,
@@ -104,6 +130,65 @@ export class RecetaComponent implements OnInit {
         this.loadColecciones();
     }
 
+    ngOnDestroy() {
+        // Limpiar timers para evitar memory leaks
+        if (this.imageUrlTimer) {
+            clearTimeout(this.imageUrlTimer);
+        }
+        if (this.bannerUrlTimer) {
+            clearTimeout(this.bannerUrlTimer);
+        }
+        // Limpiar event listener del modal
+        this.removeModalClickListener();
+    }
+
+    // Event listener para cerrar modal al hacer clic fuera
+    private modalClickListener: ((event: Event) => void) | null = null;
+    private modalElement: HTMLElement | null = null;
+
+    private addModalClickListener(): void {
+        // Remover listener anterior si existe
+        this.removeModalClickListener();
+
+        // Esperar a que el modal esté completamente renderizado
+        setTimeout(() => {
+            this.modalElement = document.querySelector('.p-dialog') as HTMLElement;
+
+            if (!this.modalElement) return;
+
+            // Agregar listener al documento
+            this.modalClickListener = (event: Event) => {
+                // Solo procesar si el modal está abierto
+                if (!this.showRecetaModal || !this.modalElement) return;
+
+                const target = event.target as HTMLElement;
+
+                // Si el clic fue fuera del modal completo, cerrar
+                if (!this.modalElement.contains(target)) {
+                    this.handleClickOutside();
+                }
+            };
+
+            document.addEventListener('click', this.modalClickListener);
+        }, 200); // Aumentar el delay para asegurar que el DOM esté listo
+    }
+
+    private handleClickOutside(): void {
+        // Remover listener inmediatamente
+        this.removeModalClickListener();
+        // Cerrar modal
+        this.closeRecetaForm();
+        // Resetear referencia
+        this.modalElement = null;
+    }
+
+    private removeModalClickListener(): void {
+        if (this.modalClickListener) {
+            document.removeEventListener('click', this.modalClickListener);
+            this.modalClickListener = null;
+        }
+    }
+
     // Inicialización
     initializeForms(): void {
         /**
@@ -115,6 +200,7 @@ export class RecetaComponent implements OnInit {
          * - instructions → instrucciones (Pasos de preparación)
          * - category → categoria (Categoría de la receta)
          * - url_mini (requerido) → url_mini (URL de imagen miniatura)
+         * - url_banner → url_banner (URL de imagen banner)
          * - time → tiempo (Tiempo de preparación)
          * - people → personas (Número de porciones)
          * - difficulty (requerido) → dificultad (Nivel de dificultad)
@@ -130,6 +216,7 @@ export class RecetaComponent implements OnInit {
             instructions: [''],                                                // → instrucciones
             category: [''],                                                    // → categoria
             url_mini: ['', [Validators.required]],                            // → url_mini
+            url_banner: [''],                                                  // → url_banner
             time: [''],                                                        // → tiempo
             people: [1, [Validators.min(1), Validators.max(50)]],             // → personas
             difficulty: ['medio', [Validators.required]],                     // → dificultad
@@ -547,6 +634,7 @@ export class RecetaComponent implements OnInit {
                 instructions: Receta.instructions || '',
                 category: Receta.category || '',
                 url_mini: Receta.url_mini || '',
+                url_banner: Receta.url_banner || '',
                 time: Receta.time || '',
                 people: Receta.people || 1,
                 difficulty: Receta.difficulty || 'medio',
@@ -559,6 +647,10 @@ export class RecetaComponent implements OnInit {
             this.RecetaForm.setValue(formData);
 
             console.log('✅ Formulario actualizado con datos de la receta');
+
+            // Si la receta tiene url_mini o url_banner, mostrar previews automáticamente
+            this.imageUrlValidated = !!(Receta.url_mini && Receta.url_mini.trim());
+            this.bannerUrlValidated = !!(Receta.url_banner && Receta.url_banner.trim());
         } else {
             this.isEditingReceta = false;
             console.log('➕ Creando nueva Receta');
@@ -573,6 +665,7 @@ export class RecetaComponent implements OnInit {
                 instructions: '',
                 category: '',
                 url_mini: '',
+                url_banner: '',
                 time: '',
                 people: 1,
                 difficulty: 'medio',
@@ -580,9 +673,16 @@ export class RecetaComponent implements OnInit {
             });
 
             console.log('✅ Formulario reseteado para nueva receta');
+
+            // Ocultar previews para nueva receta
+            this.imageUrlValidated = false;
+            this.bannerUrlValidated = false;
         }
 
         this.showRecetaModal = true;
+
+        // Agregar listener para cerrar modal al hacer clic fuera
+        this.addModalClickListener();
     }
 
     editReceta(Receta: RecetaItem) {
@@ -661,6 +761,10 @@ export class RecetaComponent implements OnInit {
         this.showRecetaModal = false;
         this.isEditingReceta = false;
         this.RecetaSeleccionado = null;
+
+        // Limpiar event listener y referencias del modal
+        this.removeModalClickListener();
+        this.modalElement = null;
     }
 
     // Abrir página de colecciones
@@ -788,6 +892,80 @@ export class RecetaComponent implements OnInit {
         setTimeout(() => {
             testImg.src = url;
         }, 100);
+    }
+
+    // Validar URL de imagen en tiempo real con debouncing
+    onImageUrlInput(event: any): void {
+        const url = event.target.value;
+
+        // Limpiar timer anterior
+        if (this.imageUrlTimer) {
+            clearTimeout(this.imageUrlTimer);
+        }
+
+        // Si la URL está vacía, ocultar preview inmediatamente
+        if (!url || !url.trim()) {
+            this.imageUrlValidated = false;
+            return;
+        }
+
+        // Esperar 500ms antes de validar (debouncing)
+        this.imageUrlTimer = setTimeout(() => {
+            // Crear una nueva imagen para probar la URL
+            const testImg = new Image();
+
+            testImg.onload = () => {
+                // URL válida - mostrar preview
+                this.imageUrlValidated = true;
+            };
+
+            testImg.onerror = () => {
+                // URL inválida - ocultar preview (sin mostrar mensaje para evitar spam)
+                this.imageUrlValidated = false;
+            };
+
+            // Establecer timeout para evitar que la petición quede colgada
+            setTimeout(() => {
+                testImg.src = url;
+            }, 100);
+        }, 500);
+    }
+
+    // Validar URL del banner en tiempo real con debouncing
+    onBannerUrlInput(event: any): void {
+        const url = event.target.value;
+
+        // Limpiar timer anterior
+        if (this.bannerUrlTimer) {
+            clearTimeout(this.bannerUrlTimer);
+        }
+
+        // Si la URL está vacía, ocultar preview inmediatamente
+        if (!url || !url.trim()) {
+            this.bannerUrlValidated = false;
+            return;
+        }
+
+        // Esperar 500ms antes de validar (debouncing)
+        this.bannerUrlTimer = setTimeout(() => {
+            // Crear una nueva imagen para probar la URL
+            const testImg = new Image();
+
+            testImg.onload = () => {
+                // URL válida - mostrar preview
+                this.bannerUrlValidated = true;
+            };
+
+            testImg.onerror = () => {
+                // URL inválida - ocultar preview (sin mostrar mensaje para evitar spam)
+                this.bannerUrlValidated = false;
+            };
+
+            // Establecer timeout para evitar que la petición quede colgada
+            setTimeout(() => {
+                testImg.src = url;
+            }, 100);
+        }, 500);
     }
 
     onImageError(event: Event): void {

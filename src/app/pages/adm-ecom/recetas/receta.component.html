@@ -462,6 +462,26 @@
             [closable]="true"
             [closeOnEscape]="true"
         >
+            <!-- Botones de acción arriba a la derecha -->
+            <div class="flex justify-end gap-2 mb-4">
+                <button
+                    pButton
+                    type="button"
+                    (click)="closeRecetaForm()"
+                    label="Cancelar"
+                    class="p-button-text p-button-sm"
+                ></button>
+                <button
+                    pButton
+                    type="button"
+                    (click)="saveReceta()"
+                    [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
+                    [disabled]="!RecetaForm.valid || savingReceta"
+                    [loading]="savingReceta"
+                    class="p-button-success p-button-sm"
+                ></button>
+            </div>
+
             <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
                 <div class="grid grid-cols-1 gap-4">
                     <!-- Título Principal -->
@@ -580,7 +600,7 @@
                             formControlName="description"
                             placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
                             class="w-full"
-                            rows="3"
+                            rows="2"
                         ></textarea>
                     </div>
 
@@ -592,7 +612,7 @@
                             formControlName="ingredients"
                             placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g..."
                             class="w-full"
-                            rows="4"
+                            rows="3"
                         ></textarea>
                     </div>
 
@@ -604,7 +624,7 @@
                             formControlName="instructions"
                             placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
                             class="w-full"
-                            rows="5"
+                            rows="4"
                         ></textarea>
                     </div>
 
@@ -617,7 +637,7 @@
                             placeholder="Selecciona o escribe una nueva categoría"
                             class="w-full"
                             [editable]="true"
-                            [showClear]="true"
+                            [showClear]="!!RecetaForm.get('category')?.value"
                         />
                         <small class="text-gray-500 text-xs mt-1">
                             Selecciona una categoría existente o escribe una nueva

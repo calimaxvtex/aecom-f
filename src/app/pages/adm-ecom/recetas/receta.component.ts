@@ -520,18 +520,18 @@ export class RecetaComponent implements OnInit, OnDestroy {
         if (this.editingCell && this.hasChanges) {
             const [recetaId, field] = this.editingCell.split('-');
 
-            const receta: any = this.recetas[parseInt(recetaId) - 1];
-            receta[field] = this.originalValue;
-            this.recetas[parseInt(recetaId) - 1] = receta;
+            const receta = this.recetas.find(r => r.id === parseInt(recetaId));
+            if (receta) {
+                (receta as any)[field] = this.originalValue;
 
-            if (field === 'id_coll' || field === 'difficulty') {
-                this.cdr.detectChanges();
-                setTimeout(() => this.cdr.detectChanges(), 0);
-                setTimeout(() => this.cdr.detectChanges(), 10);
-            } else {
-                this.cdr.detectChanges();
+                if (field === 'id_coll' || field === 'difficulty' || field === 'category') {
+                    this.cdr.detectChanges();
+                    setTimeout(() => this.cdr.detectChanges(), 0);
+                    setTimeout(() => this.cdr.detectChanges(), 10);
+                } else {
+                    this.cdr.detectChanges();
+                }
             }
-
         }
 
         this.editingCell = null;
@@ -588,6 +588,10 @@ export class RecetaComponent implements OnInit, OnDestroy {
                 // Posicionar el cursor al final del texto para inputs editables
                 if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
                     element.selectionStart = element.selectionEnd = element.value.length;
+                }
+                const containerTable = document.querySelector('.p-datatable-table-container');
+                if (containerTable) {
+                    containerTable.removeAttribute('style');
                 }
                 console.log('🎯 Elemento enfocado:', field, 'para receta:', Receta.id);
             } else {

@@ -409,6 +409,37 @@ import { ItemsComponent } from './items.component';
                                             label=""
                                         ></p-checkbox>
                                     </th> <!-- Columna para checkboxes o handle de arrastre -->
+                                    
+                                    <!-- Columna de reorden grupal (solo visible cuando hay items seleccionados) -->
+                                    <th *ngIf="selectedColldItems.length > 0" style="width: 200px">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex flex-col gap-1">
+                                                <label class="text-xs text-gray-600">Mover a posición:</label>
+                                                <div class="flex items-center gap-1">
+                                                    <input 
+                                                        pInputNumber 
+                                                        [(ngModel)]="nuevaPosicion"
+                                                        [min]="1" 
+                                                        [max]="filteredColldItems.length"
+                                                        placeholder="Pos"
+                                                        class="w-16 text-center"
+                                                        [disabled]="reordenandoGrupo"
+                                                    />
+                                                    <p-button 
+                                                        icon="pi pi-arrows-v"
+                                                        size="small"
+                                                        (onClick)="reordenarGrupo()"
+                                                        [disabled]="!validarPosicionReorden() || reordenandoGrupo"
+                                                        [loading]="reordenandoGrupo"
+                                                        pTooltip="Mover grupo seleccionado a posición"
+                                                        tooltipPosition="top"
+                                                        styleClass="p-button-primary p-button-raised"
+                                                    ></p-button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    
                                     <th pSortableColumn="refid" style="width: 100px">Ref ID <p-sortIcon field="refid"></p-sortIcon></th>
                                     <th pSortableColumn="url_img" style="width: 150px">Imagen</th>
                                     <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
@@ -437,6 +468,13 @@ import { ItemsComponent } from './items.component';
                                                 (mousedown)="onHandleMouseDown()"
                                                 (dragstart)="onDragStart()"
                                             ></span>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Columna de reorden grupal (solo visible cuando hay items seleccionados) -->
+                                    <td *ngIf="selectedColldItems.length > 0" class="text-center">
+                                        <div class="text-xs text-gray-500">
+                                            {{selectedColldItems.includes(colld) ? 'Seleccionado' : ''}}
                                         </div>
                                     </td>
                                     
@@ -1573,6 +1611,10 @@ export class CollectionsComponent implements OnInit {
     selectedColldItems: ColldItem[] = [];
     selectedColldItemsMap: { [key: number]: boolean } = {};
     selectAllColld = false;
+
+    // Reorden grupal
+    nuevaPosicion = 1;
+    reordenandoGrupo = false;
 
     // Estados de modales COLLD
     showColldModal = false;
@@ -3088,5 +3130,155 @@ export class CollectionsComponent implements OnInit {
                 });
             }
         });
+    }
+
+    // ========== REORDEN GRUPAL ==========
+
+    /**
+     * Valida si la posición de destino es válida para el reorden grupal
+     */
+    validarPosicionReorden(): boolean {
+        if (!this.nuevaPosicion || this.selectedColldItems.length === 0) {
+            return false;
+        }
+        
+        return this.nuevaPosicion >= 1 && 
+               this.nuevaPosicion <= this.filteredColldItems.length &&
+               Number.isInteger(this.nuevaPosicion);
+    }
+
+    /**
+     * Calcula los nuevos órdenes para el reorden grupal
+     */
+    private calcularNuevosOrdenes(): {id_colld: number, orden: number}[] {
+        if (this.selectedColldItems.length === 0) {
+            return [];
+        }
+
+        // 1. Obtener items no seleccionados
+        const itemsNoSeleccionados = this.filteredColldItems.filter(
+            item => !this.selectedColldItems.includes(item)
+        );
+
+        // 2. Reorganizar: insertar seleccionados en posición destino
+        const posicionDestino = this.nuevaPosicion - 1; // Convertir a índice base 0
+        
+        const nuevoOrden = [
+            ...itemsNoSeleccionados.slice(0, posicionDestino),
+            ...this.selectedColldItems,
+            ...itemsNoSeleccionados.slice(posicionDestino)
+        ];
+
+        // 3. Recalcular órdenes secuenciales (base 1)
+        return nuevoOrden.map((item, index) => ({
+            id_colld: item.id_colld,
+            orden: index + 1
+        }));
+    }
+
+    /**
+     * Ejecuta el reorden grupal de los items seleccionados
+     */
+    reordenarGrupo(): void {
+        if (!this.validarPosicionReorden() || this.selectedColldItems.length === 0) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Posición inválida',
+                detail: 'La posición de destino debe ser válida y debe haber items seleccionados',
+                life: 3000
+            });
+            return;
+        }
+
+        if (!this.collectionSeleccionada) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No hay colección seleccionada',
+                life: 3000
+            });
+            return;
+        }
+
+        // Activar estado de loading
+        this.reordenandoGrupo = true;
+
+        // Calcular nuevos órdenes
+        const payload = this.calcularNuevosOrdenes();
+
+        console.log('🔄 Reordenando grupo:', {
+            itemsSeleccionados: this.selectedColldItems.length,
+            posicionDestino: this.nuevaPosicion,
+            payload: payload
+        });
+
+        // Usar el mismo servicio que el drag & drop
+        this.colldService.updateItemsOrder(this.collectionSeleccionada.id_coll, payload).subscribe({
+            next: (response) => {
+                console.log('✅ Reorden grupal exitoso:', response);
+                
+                // Actualizar la lista local con los nuevos órdenes
+                this.actualizarOrdenesLocales(payload);
+                
+                // Limpiar selección
+                this.limpiarSeleccionReorden();
+                
+                this.reordenandoGrupo = false;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Reorden exitoso',
+                    detail: `${this.selectedColldItems.length} item(s) movido(s) a la posición ${this.nuevaPosicion}`,
+                    life: 3000
+                });
+            },
+            error: (error) => {
+                console.error('❌ Error en reorden grupal:', error);
+                this.reordenandoGrupo = false;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error en reorden',
+                    detail: 'No se pudo reordenar el grupo de items',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    /**
+     * Actualiza los órdenes locales después del reorden exitoso
+     */
+    private actualizarOrdenesLocales(payload: {id_colld: number, orden: number}[]): void {
+        // Crear mapa de nuevos órdenes
+        const ordenesMap = new Map(payload.map(item => [item.id_colld, item.orden]));
+
+        // Actualizar filteredColldItems
+        this.filteredColldItems.forEach(item => {
+            if (ordenesMap.has(item.id_colld)) {
+                item.orden = ordenesMap.get(item.id_colld)!;
+            }
+        });
+
+        // Actualizar colldItems
+        this.colldItems.forEach(item => {
+            if (ordenesMap.has(item.id_colld)) {
+                item.orden = ordenesMap.get(item.id_colld)!;
+            }
+        });
+
+        // Reordenar arrays localmente
+        this.filteredColldItems.sort((a, b) => a.orden - b.orden);
+        this.colldItems.sort((a, b) => a.orden - b.orden);
+    }
+
+    /**
+     * Limpia la selección después del reorden
+     */
+    private limpiarSeleccionReorden(): void {
+        this.selectedColldItems = [];
+        this.selectedColldItemsMap = {};
+        this.selectAllColld = false;
+        this.nuevaPosicion = 1;
     }
 }

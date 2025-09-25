@@ -419,6 +419,7 @@ import { ItemsComponent } from './items.component';
                                                     <input 
                                                         pInputNumber 
                                                         [(ngModel)]="nuevaPosicion"
+                                                        (onInput)="onPosicionChange()"
                                                         [min]="1" 
                                                         [max]="filteredColldItems.length"
                                                         placeholder="Pos"
@@ -3144,6 +3145,17 @@ export class CollectionsComponent implements OnInit {
     // ========== REORDEN GRUPAL ==========
 
     /**
+     * Maneja el cambio en el input de posición
+     */
+    onPosicionChange(): void {
+        // Convertir a número y asegurar que sea entero
+        const posicion = Number(this.nuevaPosicion);
+        if (!isNaN(posicion) && posicion > 0) {
+            this.nuevaPosicion = Math.floor(posicion);
+        }
+    }
+
+    /**
      * Valida si la posición de destino es válida para el reorden grupal
      */
     validarPosicionReorden(): boolean {
@@ -3152,18 +3164,26 @@ export class CollectionsComponent implements OnInit {
             return false;
         }
         
-        // Verificar que la posición es válida
-        if (!this.nuevaPosicion || this.nuevaPosicion < 1) {
+        // Si no hay valor, no es válido
+        if (!this.nuevaPosicion) {
+            return false;
+        }
+        
+        // Convertir a número si es necesario
+        const posicion = Number(this.nuevaPosicion);
+        
+        // Verificar que la posición es un número válido
+        if (isNaN(posicion) || posicion < 1) {
             return false;
         }
         
         // Verificar que la posición no excede el total de items
-        if (this.nuevaPosicion > this.filteredColldItems.length) {
+        if (posicion > this.filteredColldItems.length) {
             return false;
         }
         
         // Verificar que es un número entero
-        if (!Number.isInteger(this.nuevaPosicion)) {
+        if (!Number.isInteger(posicion)) {
             return false;
         }
         

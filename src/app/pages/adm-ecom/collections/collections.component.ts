@@ -3037,6 +3037,7 @@ export class CollectionsComponent implements OnInit {
             this.selectedColldItems = [];
             this.selectedColldItemsMap = {};
             this.selectAllColld = false;
+            this.nuevaPosicion = 1; // Reset posición
         } else {
             // Inicializar el mapa de selecciones
             this.filteredColldItems.forEach(item => {
@@ -3044,6 +3045,7 @@ export class CollectionsComponent implements OnInit {
                     this.selectedColldItemsMap[item.id_colld] = false;
                 }
             });
+            this.nuevaPosicion = 1; // Reset posición al activar
         }
     }
 
@@ -3054,6 +3056,8 @@ export class CollectionsComponent implements OnInit {
             this.filteredColldItems.forEach(item => {
                 this.selectedColldItemsMap[item.id_colld] = true;
             });
+            // Reset posición al seleccionar todos
+            this.nuevaPosicion = 1;
         } else {
             // Deseleccionar todos
             this.selectedColldItems = [];
@@ -3076,6 +3080,11 @@ export class CollectionsComponent implements OnInit {
 
         // Actualizar el estado del "seleccionar todos"
         this.selectAllColld = this.selectedColldItems.length === this.filteredColldItems.length && this.filteredColldItems.length > 0;
+        
+        // Reset posición cuando se hace una nueva selección
+        if (this.selectedColldItems.length > 0) {
+            this.nuevaPosicion = 1;
+        }
     }
 
     deleteSelectedColldItems(): void {
@@ -3138,13 +3147,27 @@ export class CollectionsComponent implements OnInit {
      * Valida si la posición de destino es válida para el reorden grupal
      */
     validarPosicionReorden(): boolean {
-        if (!this.nuevaPosicion || this.selectedColldItems.length === 0) {
+        // Verificar que hay items seleccionados
+        if (this.selectedColldItems.length === 0) {
             return false;
         }
         
-        return this.nuevaPosicion >= 1 && 
-               this.nuevaPosicion <= this.filteredColldItems.length &&
-               Number.isInteger(this.nuevaPosicion);
+        // Verificar que la posición es válida
+        if (!this.nuevaPosicion || this.nuevaPosicion < 1) {
+            return false;
+        }
+        
+        // Verificar que la posición no excede el total de items
+        if (this.nuevaPosicion > this.filteredColldItems.length) {
+            return false;
+        }
+        
+        // Verificar que es un número entero
+        if (!Number.isInteger(this.nuevaPosicion)) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**

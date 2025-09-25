@@ -45,15 +45,15 @@
                 <ng-template #header>
                     <tr>
                         <th class="white-space-nowrap" style="width:5%">ID</th>
-                        <th class="white-space-nowrap" style="width:17%">Título</th>
+                        <th class="white-space-nowrap" style="width:12%">Título</th>
                         <th class="white-space-nowrap" style="width:18%">Imagen</th>
-                        <th class="white-space-nowrap" style="width:8%">Categoría</th>
+                        <th class="white-space-nowrap" style="width:18%">Categoría</th>
                         <th class="white-space-nowrap" style="width:7%">Dificultad</th>
                         <th class="white-space-nowrap" style="width:7%">Tiempo</th>
                         <th class="white-space-nowrap" style="width:5%">Porc.</th>
-                        <th class="white-space-nowrap" style="width:8%">Fecha</th>
+                        <th class="white-space-nowrap" style="width:5%">Fecha</th>
                         <th class="white-space-nowrap" style="width:10%">Colección</th>
-                        <th class="white-space-nowrap" style="width:15%">Acciones</th>
+                        <th class="white-space-nowrap" style="width:11%">Acciones</th>
                     </tr>
                 </ng-template>
 
@@ -203,19 +203,18 @@
                                 *ngIf="editingCell === Receta.id + '-category'"
                                 class="inline-edit-container"
                             >
-                                <input
-                                   pInputText
-                                   type="text"
-                                   [(ngModel)]="Receta.category"
-                                   (input)="onInputChange(Receta, 'category')"
-                                   (blur)="cancelInlineEditByBlur()"
+                                <p-select
+                                    [(ngModel)]="Receta.category"
+                                    [options]="categoriasDisponibles"
+                                    (ngModelChange)="onInputChange(Receta, 'category')"
                                     (keyup.enter)="saveInlineEditReceta(Receta, 'category')"
                                     (keyup.escape)="cancelInlineEdit()"
+                                    [editable]="true"
+                                    placeholder="Selecciona o escribe una categoría"
                                     class="p-inputtext-sm flex-1"
                                     #input
                                     [attr.aria-label]="'category-' + Receta.id"
-                                    placeholder="Categoría de la receta"
-                                />
+                                ></p-select>
                                 <button
                                     *ngIf="hasChanges"
                                     pButton
@@ -462,27 +461,25 @@
             [closable]="true"
             [closeOnEscape]="true"
         >
-            <!-- Botones de acción arriba a la derecha -->
-            <div class="flex justify-end gap-2 mb-4">
-                <button
-                    pButton
-                    type="button"
-                    (click)="closeRecetaForm()"
-                    label="Cancelar"
-                    class="p-button-text p-button-sm"
-                ></button>
-                <button
-                    pButton
-                    type="button"
-                    (click)="saveReceta()"
-                    [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
-                    [disabled]="!RecetaForm.valid || savingReceta"
-                    [loading]="savingReceta"
-                    class="p-button-success p-button-sm"
-                ></button>
-            </div>
-
             <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+                    <button
+                        pButton
+                        type="button"
+                        (click)="closeRecetaForm()"
+                        label="Cancelar"
+                        class="p-button-text"
+                    ></button>
+                    <button
+                        pButton
+                        type="button"
+                        (click)="saveReceta()"
+                        [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
+                        [disabled]="!RecetaForm.valid || savingReceta"
+                        [loading]="savingReceta"
+                        class="p-button-success"
+                    ></button>
+                </div>
                 <div class="grid grid-cols-1 gap-4">
                     <!-- Título Principal -->
                     <div>
@@ -624,7 +621,7 @@
                             formControlName="instructions"
                             placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
                             class="w-full"
-                            rows="4"
+                            rows="3"
                         ></textarea>
                     </div>
 
@@ -637,7 +634,6 @@
                             placeholder="Selecciona o escribe una nueva categoría"
                             class="w-full"
                             [editable]="true"
-                            [showClear]="!!RecetaForm.get('category')?.value"
                         />
                         <small class="text-gray-500 text-xs mt-1">
                             Selecciona una categoría existente o escribe una nueva

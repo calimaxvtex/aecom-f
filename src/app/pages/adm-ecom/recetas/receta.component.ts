@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -91,20 +91,33 @@ export class RecetaComponent implements OnInit, OnDestroy {
     imageUrlValidated = false;
     bannerUrlValidated = false;
 
-    // Categorías disponibles
-    categoriasDisponibles = [
-        'Principal',
-        'Entrante',
-        'Postre',
-        'Bebida',
-        'Vegano',
-        'Vegetariano',
-        'Sin Gluten',
-        'Bajo en Calorías',
-        'Rápido y Fácil',
-        'Tradicional',
-        'Internacional'
-    ];
+    // Getter que agrupa las categorías únicas de las recetas existentes
+    get categoriasDisponibles() {
+        const categoriasUnicas = new Set<string>();
+
+        this.recetas.forEach(receta => {
+            if (receta.category && receta.category.trim()) {
+                categoriasUnicas.add(receta.category.trim());
+            }
+        });
+
+        return Array.from(categoriasUnicas).sort();
+    }
+
+    // Método para manejar clics fuera del select de categoría
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: Event): void {
+        // Solo procesar si estamos editando una categoría
+        if (this.editingCell && this.editingCell.includes('-category')) {
+            const target = event.target as HTMLElement;
+            const categorySelect = target.closest('.inline-edit-container');
+
+            // Si el clic no fue dentro del contenedor de edición, cancelar edición
+            if (!categorySelect) {
+                this.cancelInlineEdit();
+            }
+        }
+    }
 
     // Timers para debouncing
     private imageUrlTimer: any;
@@ -552,15 +565,28 @@ export class RecetaComponent implements OnInit, OnDestroy {
         });
 
         // Programáticamente enfocamos y posicionamos el cursor al final del texto
+        // Usar setTimeout con mayor delay para asegurar que PrimeNG renderice completamente
         setTimeout(() => {
-            const inputElement = document.querySelector(`input[aria-label="${field}-${Receta.id}"]`) as HTMLInputElement;
-            const textareaElement = document.querySelector(`textarea[aria-label="${field}-${Receta.id}"]`) as HTMLTextAreaElement;
+            let element: HTMLElement | null = null;
 
-            const element = inputElement || textareaElement;
+            if (field === 'category') {
+                // Para p-select de categoría, buscar el input dentro del contenedor de edición
+                const editContainer = document.querySelector(`[aria-label="category-${Receta.id}"]`);
+                if (editContainer) {
+                    // Buscar el input dentro del p-select (estructura de PrimeNG)
+                    element = editContainer.querySelector('input') as HTMLInputElement;
+                }
+            } else {
+                // Para otros campos (input/textarea normales)
+                const inputElement = document.querySelector(`input[aria-label="${field}-${Receta.id}"]`) as HTMLInputElement;
+                const textareaElement = document.querySelector(`textarea[aria-label="${field}-${Receta.id}"]`) as HTMLTextAreaElement;
+                element = inputElement || textareaElement;
+            }
+
             if (element) {
                 element.focus();
-                // Posicionar el cursor al final del texto
-                if ((element as HTMLElement) instanceof HTMLInputElement || (element as HTMLElement) instanceof HTMLTextAreaElement) {
+                // Posicionar el cursor al final del texto para inputs editables
+                if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
                     element.selectionStart = element.selectionEnd = element.value.length;
                 }
                 console.log('🎯 Elemento enfocado:', field, 'para receta:', Receta.id);

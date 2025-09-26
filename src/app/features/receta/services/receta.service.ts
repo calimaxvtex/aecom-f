@@ -66,6 +66,12 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta de API para recetas:', response);
                 console.log('url >> ', url);
+
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
+                }
+
                 // La respuesta viene directamente en el formato esperado
                 return {
                     statuscode: response.statuscode || 200,
@@ -97,13 +103,9 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta receta específica:', response);
 
-                if (Array.isArray(response) && response.length > 0) {
-                    const firstItem = response[0];
-                    return {
-                        statuscode: firstItem.statuscode || 200,
-                        mensaje: firstItem.mensaje || 'OK',
-                        data: firstItem.data && firstItem.data.length > 0 ? firstItem.data[0] : null
-                    } as RecetaSingleResponse;
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
                 }
 
                 return {
@@ -187,6 +189,11 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta PUT actualizar receta:', JSON.stringify(response, null, 2));
 
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
+                }
+
                 // La respuesta viene directamente en el formato esperado
                 return {
                     statuscode: response.statuscode || 200,
@@ -239,24 +246,9 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta update receta:', response);
 
-                if (Array.isArray(response) && response.length > 0) {
-                    const firstItem = response[0];
-
-                    // Verificar errores del backend
-                    if (firstItem.statuscode && firstItem.statuscode !== 200) {
-                        throw new Error(firstItem.mensaje || 'Error del servidor');
-                    }
-
-                    return {
-                        statuscode: firstItem.statuscode || 200,
-                        mensaje: firstItem.mensaje || 'Receta actualizada exitosamente',
-                        data: firstItem.data && firstItem.data.length > 0 ? firstItem.data[0] : receta as RecetaItem
-                    } as RecetaSingleResponse;
-                }
-
                 // Verificar error en respuesta directa
                 if (response.statuscode && response.statuscode !== 200) {
-                    throw new Error(response.mensaje || 'Error del servidor');
+                    throw new Error(response.mensaje || 'Informacion incompleta');
                 }
 
                 return {
@@ -295,24 +287,9 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta patch receta:', response);
 
-                if (Array.isArray(response) && response.length > 0) {
-                    const firstItem = response[0];
-
-                    // Verificar errores del backend
-                    if (firstItem.statuscode && firstItem.statuscode !== 200) {
-                        throw new Error(firstItem.mensaje || 'Error del servidor');
-                    }
-
-                    return {
-                        statuscode: firstItem.statuscode || 200,
-                        mensaje: firstItem.mensaje || 'Receta actualizada exitosamente',
-                        data: firstItem.data && firstItem.data.length > 0 ? firstItem.data[0] : {} as RecetaItem
-                    } as RecetaSingleResponse;
-                }
-
                 // Verificar error en respuesta directa
                 if (response.statuscode && response.statuscode !== 200) {
-                    throw new Error(response.mensaje || 'Error del servidor');
+                    throw new Error(response.mensaje || 'Informacion incompleta');
                 }
 
                 return {
@@ -350,6 +327,11 @@ export class RecetaService {
         return this.http.delete<any>(url, { body: payload }).pipe(
             map((response: any) => {
                 console.log('🌐 Respuesta DELETE eliminar receta:', response);
+
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
+                }
 
                 return {
                     statuscode: response.statuscode || 200,
@@ -425,6 +407,11 @@ export class RecetaService {
             map((response: any) => {
                 console.log('🌐 Respuesta POST crear receta:', response);
 
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
+                }
+
                 return {
                     statuscode: response.statuscode || 200,
                     mensaje: response.mensaje || 'Receta creada exitosamente',
@@ -492,6 +479,11 @@ export class RecetaService {
             map((response: any) => {
                 console.log(`🌐 Respuesta PUT actualización campo ${field}:`, response);
 
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta');
+                }
+
                 // La respuesta viene directamente en el formato esperado
                 return {
                     statuscode: response.statuscode || 200,
@@ -525,8 +517,9 @@ export class RecetaService {
             map((response: any) => {
                 console.log(`🌐 Respuesta acción ${action}:`, response);
 
-                if (Array.isArray(response) && response.length > 0) {
-                    return response[0];
+                // Verificar error en respuesta directa
+                if (response.statuscode && response.statuscode !== 200) {
+                    throw new Error(response.mensaje || 'Informacion incompleta'); ``
                 }
 
                 return response;

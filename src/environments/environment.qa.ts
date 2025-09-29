@@ -3,9 +3,8 @@ export const environment = {
   mode: 'qa',
   
   // URLs de API
-  apiUrl: 'http://localhost:3000',
-  // apiUrl: 'https://qa-api.calimax.digital',
-  apiUrlImg: 'https://qa-images.calimax.digital',
+  apiUrl: 'http://10.10.250.168:3012',
+  apiUrlImg: 'http://10.10.254.127:3013',
   
   // Configuración de autenticación
   bypassAuth: false,

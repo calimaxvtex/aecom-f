@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -12,6 +12,7 @@ import { AppConfigurator } from '@/layout/components/app.configurator';
 import { InputGroup } from 'primeng/inputgroup';
 import { InputGroupAddon } from 'primeng/inputgroupaddon';
 import { UsuarioService } from '@/features/usuarios/services/usuario.service';
+import { SessionService } from '@/core/services/session.service';
 
 @Component({
     selector: 'app-login-2',
@@ -84,7 +85,7 @@ import { UsuarioService } from '@/features/usuarios/services/usuario.service';
         <app-configurator simple />
         <p-toast position="top-right"></p-toast>`
 })
-export class Login2 {
+export class Login2 implements OnInit {
     loginForm: FormGroup;
     isLoading = false;
 
@@ -92,6 +93,7 @@ export class Login2 {
     private router = inject(Router);
     private messageService = inject(MessageService);
     private usuarioService = inject(UsuarioService);
+    private sessionService = inject(SessionService);
 
     constructor() {
         this.loginForm = this.fb.group({
@@ -101,6 +103,14 @@ export class Login2 {
 
         // Suscribirse al estado de carga del servicio de usuario
         // Nota: UsuarioService no tiene estado de carga, se maneja localmente
+    }
+
+    ngOnInit(): void {
+        // Verificar si el usuario ya está autenticado
+        if (this.sessionService.isLoggedIn()) {
+            console.log('🔄 Usuario ya autenticado, redirigiendo al dashboard');
+            this.router.navigate(['/dashboards']);
+        }
     }
 
     onLogin(): void {

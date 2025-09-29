@@ -1,714 +1,721 @@
-        <div class="card">
-            <p-table
-                #dt
-                [value]="recetas"
-                [paginator]="true"
-                paginatorDropdownAppendTo="body"
-                [rows]="10"
-                [showCurrentPageReport]="true"
-                responsiveLayout="scroll"
-                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} recetas"
-                [rowsPerPageOptions]="[5, 10, 25]"
-                [globalFilterFields]="['title']"
-                [loading]="loadingRecetas"
-            >
-                <ng-template #caption>
-                    <div class="flex flex-wrap gap-2 items-center justify-between">
-                        <input
-                            pInputText
-                            type="text"
-                            (input)="onGlobalFilter(dt, $event)"
-                            placeholder="Buscar recetas..."
-                            class="w-full sm:w-80 order-1 sm:order-0"
-                        />
-                            <div class="flex gap-2 order-0 sm:order-1">
-                                <!-- ✅ PATRÓN CRÍTICO: Botones solo con íconos, raised, sin clases de ancho -->
-                                <button
-                                    (click)="loadRecetas()"
-                                    pButton
-                                    raised
-                                    icon="pi pi-refresh"
-                                    [loading]="loadingRecetas"
-                                    pTooltip="Actualizar"
-                                ></button>
-                                <button
-                                    (click)="openRecetaForm()"
-                                    pButton
-                                    raised
-                                    icon="pi pi-plus"
-                                    pTooltip="Agregar Receta"
-                                ></button>
-                        </div>
+    <div class="card">
+      <p-table
+        #dt
+        [value]="recetas"
+        [paginator]="true"
+        paginatorDropdownAppendTo="body"
+        [rows]="10"
+        [showCurrentPageReport]="true"
+        responsiveLayout="scroll"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} recetas"
+        [rowsPerPageOptions]="[5, 10, 25]"
+        [globalFilterFields]="['title']"
+        [loading]="loadingRecetas"
+      >
+        <ng-template #caption>
+          <div class="flex flex-wrap gap-2 items-center justify-between">
+            <input
+              pInputText
+              type="text"
+              (input)="onGlobalFilter(dt, $event)"
+              placeholder="Buscar recetas..."
+              class="w-full sm:w-80 order-1 sm:order-0"
+            />
+              <div class="flex gap-2 order-0 sm:order-1">
+                <!-- ✅ PATRÓN CRÍTICO: Botones solo con íconos, raised, sin clases de ancho -->
+                <button
+                  (click)="loadRecetas()"
+                  pButton
+                  raised
+                  icon="pi pi-refresh"
+                  [loading]="loadingRecetas"
+                  pTooltip="Actualizar"
+                ></button>
+                <button
+                  (click)="openRecetaForm()"
+                  pButton
+                  raised
+                  icon="pi pi-plus"
+                  pTooltip="Agregar Receta"
+                ></button>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #header>
+          <tr>
+            <th class="white-space-nowrap" style="width:5%">ID</th>
+            <th class="white-space-nowrap" style="width:14%">Título</th>
+            <th class="white-space-nowrap" style="width:18%">Imagen</th>
+            <th class="white-space-nowrap" style="width:17%">Categoría</th>
+            <th class="white-space-nowrap" style="width:7%">Dificultad</th>
+            <th class="white-space-nowrap" style="width:7%">Tiempo</th>
+            <th class="white-space-nowrap" style="width:5%">Porc.</th>
+            <th class="white-space-nowrap" style="width:5%">Fecha</th>
+            <th class="white-space-nowrap" style="width:10%">Colección</th>
+            <th class="white-space-nowrap" style="width:11%">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-Receta let-editing="editing" let-ri="rowIndex">
+          <tr>
+            <!-- ID (solo vista) -->
+            <td>{{ Receta.id }}</td>
+
+            <!-- Título (edición inline) -->
+            <td>
+              <div class="flex flex-col gap-1 w-fit">
+                <!-- Título Principal -->
+                <div>
+                  <span
+                    *ngIf="editingCell !== Receta.id + '-title'"
+                    (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
+                    class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-1 rounded transition-colors font-medium"
+                    pTooltip="Clic para editar título principal"
+                  >
+                    {{Receta.title}}
+                  </span>
+
+                  <!-- Vista de edición título principal -->
+                  <div
+                    *ngIf="editingCell === Receta.id + '-title'"
+                    class="inline-edit-container mb-1"
+                  >
+                    <input
+                      pInputText
+                      type="text"
+                      [(ngModel)]="Receta.title"
+                      (input)="onInputChange(Receta, 'title')"
+                      (blur)="cancelInlineEditByBlur()"
+                      (keyup.enter)="saveInlineEditReceta(Receta, 'title')"
+                      (keyup.escape)="cancelInlineEdit()"
+                      class="p-inputtext-xs w-full"
+                      #input
+                      [attr.aria-label]="'title-' + Receta.id"
+                      placeholder="Título principal"
+                    />
+                    <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+                      <button
+                        pButton
+                        icon="pi pi-check"
+                        (click)="saveInlineEditReceta(Receta, 'title')"
+                        class="inline-action-btn p-button-success p-button-text"
+                        pTooltip="Guardar título"
+                      ></button>
+                      <button
+                        pButton
+                        icon="pi pi-undo"
+                        (click)="cancelInlineEdit()"
+                        class="inline-action-btn p-button-secondary p-button-text"
+                        pTooltip="Cancelar"
+                      ></button>
                     </div>
+                  </div>
+                </div>
+
+
+              </div>
+            </td>
+
+            <!-- Imagen (preview) -->
+            <td class="text-center">
+              <div>
+                <!-- Vista normal -->
+                <div
+                  *ngIf="editingCell !== Receta.id + '-url_mini'"
+                  (click)="editInlineReceta(Receta, 'url_mini'); $event.stopPropagation()"
+                  title="Clic para editar"
+                  class="relative"
+                >
+                  <!-- Imagen -->
+                  <img
+                    #tableImg
+                    [src]="Receta.url_mini"
+                    [alt]="Receta.title || 'Imagen de receta'"
+                    class="w-full h-32 object-cover rounded border cursor-pointer table-image"
+                    (load)="onImageLoad($event)"
+                    (error)="onImageError($event, tableImg)"
+                    [title]="Receta.url_mini ? 'Imagen de ' + Receta.title : 'Sin imagen disponible'"
+                  />
+
+                  <!-- Texto alternativo cuando la imagen falla -->
+                  <div
+                    #errorText
+                    class="absolute inset-0 flex image-loading items-center justify-center bg-gray-100 text-xs text-gray-600 font-medium hidden"
+                    [title]="'Imagen no puede ser mostrada'"
+                  >
+                    Imagen no puede ser mostrada
+                  </div>
+                </div>
+
+                <!-- Vista de edición -->
+                <div
+                  *ngIf="editingCell === Receta.id + '-url_mini'"
+                  class="inline-edit-container"
+                >
+                  <input
+                    pInputText
+                      type="url"
+                      [(ngModel)]="Receta.url_mini"
+                      (input)="onInputChange(Receta, 'url_mini')"
+                      (blur)="cancelInlineEditByBlur()"
+                    (keyup.enter)="saveInlineEditReceta(Receta, 'url_mini')"
+                    (keyup.escape)="cancelInlineEdit()"
+                    class="p-input flex-1"
+                    #input
+                    [attr.aria-label]="'url_mini-' + Receta.id"
+                    placeholder="URL de la imagen"
+                  />
+                  <button
+                    *ngIf="hasChanges"
+                    pButton
+                    icon="pi pi-check"
+                    (click)="saveInlineEditReceta(Receta, 'url_mini')"
+                    class="p-button-sm p-button-success p-button-text inline-action-btn"
+                    pTooltip="Guardar (Enter)"
+                  ></button>
+                  <button
+                    *ngIf="hasChanges"
+                    pButton
+                    icon="pi pi-undo"
+                    (click)="cancelInlineEdit()"
+                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                    pTooltip="Deshacer (Escape)"
+                  ></button>
+                </div>
+              </div>
+            </td>
+
+            <!-- Categoría -->
+            <td>
+              <!-- Vista normal -->
+              <span
+                *ngIf="editingCell !== Receta.id + '-category'"
+                (click)="editInlineReceta(Receta, 'category'); $event.stopPropagation()"
+                class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                title="Clic para editar"
+              >
+                {{Receta.category || '-'}}
+              </span>
+
+              <!-- Vista de edición -->
+              <div
+                *ngIf="editingCell === Receta.id + '-category'"
+                class="inline-edit-container"
+              >
+                <p-select
+                  [(ngModel)]="Receta.category"
+                  [options]="categoriasDisponibles"
+                  (ngModelChange)="onInputChange(Receta, 'category')"
+                  (keyup.enter)="saveInlineEditReceta(Receta, 'category')"
+                  (keyup.escape)="cancelInlineEdit()"
+                  [editable]="true"
+                  placeholder="Selecciona o escribe una categoría"
+                  class="p-input flex-1"
+                  #input
+                  [attr.aria-label]="'category-' + Receta.id"
+                ></p-select>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-check"
+                  (click)="saveInlineEditReceta(Receta, 'category')"
+                  class="p-button-sm p-button-success p-button-text inline-action-btn"
+                  pTooltip="Guardar (Enter)"
+                ></button>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-undo"
+                  (click)="cancelInlineEdit()"
+                  class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                  pTooltip="Deshacer (Escape)"
+                ></button>
+              </div>
+            </td>
+
+            <!-- Dificultad -->
+            <td>
+              <!-- Vista normal -->
+              <span
+                *ngIf="editingCell !== Receta.id + '-difficulty'"
+                (click)="editInlineReceta(Receta, 'difficulty'); $event.stopPropagation()"
+                class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
+                title="Clic para editar"
+              >
+                <p-tag
+                  class="w-14 h-10"
+                  [value]="getDifficultyLabel(Receta.difficulty)"
+                  [severity]="getDifficultySeverity(Receta.difficulty)"
+                ></p-tag>
+              </span>
+
+              <!-- Vista de edición -->
+              <div
+                *ngIf="editingCell === Receta.id + '-difficulty'"
+                class="inline-edit-container"
+              >
+                <p-select
+                  [(ngModel)]="Receta.difficulty"
+                  [options]="dificultadesDisponibles"
+                  (ngModelChange)="onInputChange(Receta, 'difficulty')"
+                  (keyup.enter)="saveInlineEditReceta(Receta, 'difficulty')"
+                  (keyup.escape)="cancelInlineEdit()"
+                  placeholder="Selecciona dificultad"
+                  class="p-input flex-1"
+                  #input
+                  [attr.aria-label]="'difficulty-' + Receta.id"
+                ></p-select>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-check"
+                  (click)="saveInlineEditReceta(Receta, 'difficulty')"
+                  class="p-button-sm p-button-success p-button-text inline-action-btn"
+                  pTooltip="Guardar (Enter)"
+                ></button>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-undo"
+                  (click)="cancelInlineEdit()"
+                  class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                  pTooltip="Deshacer (Escape)"
+                ></button>
+              </div>
+            </td>
+
+            <!-- Tiempo -->
+            <td class="text-center">
+              <span>{{ Receta.time || '-' }}</span>
+            </td>
+
+            <!-- Porciones -->
+            <td class="text-center">
+              <span>{{ Receta.people || Receta.servings || '-' }}</span>
+            </td>
+
+            <!-- Fecha -->
+            <td class="text-center">
+              <span>{{ formatFecha(Receta.date || Receta.fecha_cre || Receta.createdAt) }}</span>
+            </td>
+
+            <!-- Colección -->
+            <td>
+              <!-- Vista normal -->
+              <span
+                *ngIf="editingCell !== Receta.id + '-id_coll'"
+                (click)="editInlineReceta(Receta, 'id_coll'); $event.stopPropagation()"
+                class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
+                title="Clic para editar"
+              >
+                <span *ngIf="getCollectionName(Receta.id_coll); else noCollection">
+                  {{ getCollectionName(Receta.id_coll) }}
+                </span>
+                <ng-template #noCollection>
+                  <span class="text-gray-400 italic">Sin colección</span>
                 </ng-template>
+              </span>
 
-                <ng-template #header>
-                    <tr>
-                        <th class="white-space-nowrap" style="width:5%">ID</th>
-                        <th class="white-space-nowrap" style="width:14%">Título</th>
-                        <th class="white-space-nowrap" style="width:18%">Imagen</th>
-                        <th class="white-space-nowrap" style="width:17%">Categoría</th>
-                        <th class="white-space-nowrap" style="width:7%">Dificultad</th>
-                        <th class="white-space-nowrap" style="width:7%">Tiempo</th>
-                        <th class="white-space-nowrap" style="width:5%">Porc.</th>
-                        <th class="white-space-nowrap" style="width:5%">Fecha</th>
-                        <th class="white-space-nowrap" style="width:10%">Colección</th>
-                        <th class="white-space-nowrap" style="width:11%">Acciones</th>
-                    </tr>
-                </ng-template>
+              <!-- Vista de edición -->
+              <div
+                *ngIf="editingCell === Receta.id + '-id_coll'"
+                class="inline-edit-container"
+              >
+                <p-select
+                  [(ngModel)]="Receta.id_coll"
+                  [options]="colecciones"
+                  optionLabel="nombre"
+                  optionValue="id_coll"
+                  (ngModelChange)="onInputChange(Receta, 'id_coll')"
+                  (keyup.enter)="saveInlineEditReceta(Receta, 'id_coll')"
+                  (keyup.escape)="cancelInlineEdit()"
+                  placeholder="Seleccionar colección"
+                  class="p-input flex-1"
+                  #input
+                  [attr.aria-label]="'id_coll-' + Receta.id"
+                ></p-select>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-check"
+                  (click)="saveInlineEditReceta(Receta, 'id_coll')"
+                  class="p-button-sm p-button-success p-button-text inline-action-btn"
+                  pTooltip="Guardar (Enter)"
+                ></button>
+                <button
+                  *ngIf="hasChanges"
+                  pButton
+                  icon="pi pi-undo"
+                  (click)="cancelInlineEdit()"
+                  class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                  pTooltip="Deshacer (Escape)"
+                ></button>
+              </div>
+            </td>
 
-                <ng-template #body let-Receta let-editing="editing" let-ri="rowIndex">
-                    <tr>
-                        <!-- ID (solo vista) -->
-                        <td>{{ Receta.id }}</td>
+            <!-- Acciones -->
+            <td>
+              <div class="flex gap-2">
+                <button
+                  pButton
+                  icon="pi pi-pencil"
+                  (click)="editReceta(Receta)"
+                  class="p-button-sm p-button-text p-button-warning"
+                  pTooltip="Editar Receta"
+                ></button>
+                <button
+                  pButton
+                  icon="pi pi-trash"
+                  (click)="eliminarReceta(Receta)"
+                  class="p-button-sm p-button-text p-button-danger"
+                  pTooltip="Eliminar Receta"
+                ></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
 
-                        <!-- Título (edición inline) -->
-                        <td>
-                            <div class="flex flex-col gap-1 w-fit">
-                                <!-- Título Principal -->
-                                <div>
-                                    <span
-                                        *ngIf="editingCell !== Receta.id + '-title'"
-                                        (click)="editInlineReceta(Receta, 'title'); $event.stopPropagation()"
-                                        class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-1 rounded transition-colors font-medium"
-                                        pTooltip="Clic para editar título principal"
-                                    >
-                                        {{Receta.title}}
-                                    </span>
+    <!-- ⚠️ MODAL DE ELIMINACIÓN CON ÍCONO EMOJI -->
+    <p-dialog
+      [(visible)]="showConfirmDeleteReceta"
+      header="Confirmar Eliminación"
+      [modal]="true"
+      [style]="{width: '400px', minHeight: '200px'}"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="true"
+      [maximizable]="false"
+    >
+      <div class="flex items-center gap-4 mb-4">
+        <span class="text-8xl animate-bounce">⚠️</span>
+        <div>
+          <h4 class="font-semibold text-xl mb-1">¿Eliminar Receta?</h4>
+          <p class="text-gray-700 text-lg">
+            ¿Estás seguro de que deseas eliminar
+            <strong>"{{RecetaToDelete?.title}}"</strong>?
+          </p>
+          <p class="text-red-600 mt-2 font-medium">
+            ⚠️ Esta acción no se puede deshacer.
+          </p>
+        </div>
+      </div>
 
-                                    <!-- Vista de edición título principal -->
-                                    <div
-                                        *ngIf="editingCell === Receta.id + '-title'"
-                                        class="inline-edit-container mb-1"
-                                    >
-                                        <input
-                                           pInputText
-                                           type="text"
-                                           [(ngModel)]="Receta.title"
-                                           (input)="onInputChange(Receta, 'title')"
-                                           (blur)="cancelInlineEditByBlur()"
-                                            (keyup.enter)="saveInlineEditReceta(Receta, 'title')"
-                                            (keyup.escape)="cancelInlineEdit()"
-                                            class="p-inputtext-xs w-full"
-                                            #input
-                                            [attr.aria-label]="'title-' + Receta.id"
-                                            placeholder="Título principal"
-                                        />
-                                        <div class="flex gap-1 mt-1" *ngIf="hasChanges">
-                                            <button
-                                                pButton
-                                                icon="pi pi-check"
-                                                (click)="saveInlineEditReceta(Receta, 'title')"
-                                                class="inline-action-btn p-button-success p-button-text"
-                                                pTooltip="Guardar título"
-                                            ></button>
-                                            <button
-                                                pButton
-                                                icon="pi pi-undo"
-                                                (click)="cancelInlineEdit()"
-                                                class="inline-action-btn p-button-secondary p-button-text"
-                                                pTooltip="Cancelar"
-                                            ></button>
-                                        </div>
-                                    </div>
-                                </div>
+      <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+        <button
+          pButton
+          type="button"
+          (click)="cancelDeleteReceta()"
+          label="Cancelar"
+          class="p-button-text"
+        ></button>
+        <button
+          pButton
+          type="button"
+          (click)="confirmDeleteReceta()"
+          label="Eliminar"
+          class="p-button-danger"
+          [loading]="deletingReceta"
+        ></button>
+      </div>
+    </p-dialog>
+
+    <!-- ⚠️ MODAL DE CONFIRMACIÓN GENÉRICO -->
+    <p-dialog
+      [(visible)]="showConfirmDialog"
+      [header]="confirmHeader"
+      [modal]="true"
+      [style]="{width: '400px'}"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="true"
+    >
+      <div class="flex items-center gap-4 mb-4">
+        <span class="text-4xl">⚠️</span>
+        <div>
+          <p class="text-gray-700">{{ confirmMessage }}</p>
+        </div>
+            </div>
+
+      <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+        <button
+          pButton
+          type="button"
+          (click)="cancelarConfirmacion()"
+          label="Cancelar"
+          class="p-button-text"
+        ></button>
+        <button
+          pButton
+          type="button"
+          (click)="confirmarAccion()"
+          label="Confirmar"
+          class="p-button-danger"
+        ></button>
+            </div>
+    </p-dialog>
+
+    <!-- 📋 MODAL DE RECETA - ESTILO TABLOIDE (SIMPLE Y FUNCIONAL) -->
+    <p-dialog
+      [(visible)]="showRecetaModal"
+      [header]="isEditingReceta ? 'Editar Receta' : 'Nueva Receta'"
+      [modal]="true"
+      [style]="{width: '700px', maxHeight: '80vh'}"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="true"
+      [closeOnEscape]="true"
+    >
+      <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
+        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+          <button
+            pButton
+            type="button"
+            (click)="closeRecetaForm()"
+            label="Cancelar"
+            class="p-button-text"
+          ></button>
+          <button
+            pButton
+            type="button"
+            (click)="saveReceta()"
+            [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
+            [disabled]="!RecetaForm.valid || savingReceta"
+            [loading]="savingReceta"
+            class="p-button-success"
+          ></button>
+        </div>
+        <div class="grid grid-cols-1 gap-4">
+          <!-- Título Principal -->
+          <div>
+            <label class="block font-medium mb-1">Título Principal *</label>
+            <input
+              pInputText
+              formControlName="title"
+              placeholder="ej: Paella Valenciana Tradicional"
+              class="w-full"
+              autofocus
+            />
+            <small *ngIf="RecetaForm.get('title')?.invalid && RecetaForm.get('title')?.touched"
+                class="text-red-500">
+              El título es obligatorio
+            </small>
+          </div>
+
+          <!-- Título Corto -->
+          <div>
+            <label class="block font-medium mb-1">Título Miniatura</label>
+            <input
+              pInputText
+              formControlName="title_min"
+              placeholder="ej: Paella Valenciana"
+              class="w-full"
+            />
+          </div>
+
+          <!-- Colección -->
+          <div>
+            <label class="block font-medium mb-1">Colección</label>
+            <p-select
+              formControlName="id_coll"
+              [options]="colecciones"
+              optionLabel="nombre"
+              optionValue="id_coll"
+              placeholder="Selecciona una colección RECET"
+              class="w-full"
+              [showClear]="true"
+              [disabled]="!colecciones || colecciones.length === 0"
+            >
+              <ng-template pTemplate="empty">
+                <div class="text-center py-4">
+                  <i class="pi pi-folder-open text-gray-400 text-2xl mb-2"></i>
+                  <p class="text-gray-500">No hay colecciones disponibles</p>
+                  <button type="button"
+                      class="text-blue-500 hover:text-blue-700 underline mt-1"
+                      (click)="openColeccionesPage()">
+                    Crear colección RECET
+                  </button>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+
+          <!-- URL Imagen Banner -->
+          <div>
+            <label class="block font-medium mb-1">URL Imagen Banner</label>
+            <input
+              pInputText
+              type="url"
+              formControlName="url_banner"
+              placeholder="https://ejemplo.com/banner-receta.jpg"
+              class="w-full"
+              (input)="onBannerUrlInput($event)"
+            />
+
+            <!-- Preview del banner -->
+            <div *ngIf="bannerUrlValidated" class="mt-2">
+              <img
+                [src]="RecetaForm.get('url_banner')?.value"
+                alt="Banner Preview"
+                class="w-64 object-cover rounded border"
+                onerror="this.style.display='none'"
+                onload="this.style.display='block'"
+              />
+            </div>
+          </div>
+
+          
+          <!-- URL Imagen Miniatura -->
+          <div>
+            <label class="block font-medium mb-1">URL Imagen Miniatura *</label>
+            <input
+              pInputText
+              type="url"
+              formControlName="url_mini"
+              placeholder="https://ejemplo.com/imagen-receta.jpg"
+              class="w-full"
+              (input)="onImageUrlInput($event)"
+            />
+            <small *ngIf="RecetaForm.get('url_mini')?.invalid && RecetaForm.get('url_mini')?.touched"
+                class="text-red-500">
+              La URL de la imagen es obligatoria
+            </small>
+
+            <!-- Preview de la imagen -->
+            <div *ngIf="imageUrlValidated" class="mt-2">
+              <img
+                [src]="RecetaForm.get('url_mini')?.value"
+                alt="Preview"
+                class="w-64 object-cover rounded border"
+                onerror="this.style.display='none'"
+                onload="this.style.display='block'"
+              />
+            </div>
+          </div>
 
 
-                            </div>
-                        </td>
+          <!-- Descripción -->
+          <div>
+            <label class="block font-medium mb-1">Descripción</label>
+            <textarea
+              pTextarea
+              formControlName="description"
+              placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
+              class="w-full"
+              rows="2"
+            ></textarea>
+          </div>
 
-                        <!-- Imagen (preview) -->
-                        <td class="text-center">
-                            <div>
-                                <!-- Vista normal -->
-                                <div
-                                    *ngIf="editingCell !== Receta.id + '-url_mini'"
-                                    (click)="editInlineReceta(Receta, 'url_mini'); $event.stopPropagation()"
-                                    title="Clic para editar"
-                                    class="relative"
-                                >
-                                    <!-- Imagen -->
-                                    <img
-                                        #tableImg
-                                        [src]="Receta.url_mini"
-                                        [alt]="Receta.title || 'Imagen de receta'"
-                                        class="w-full h-32 object-cover rounded border cursor-pointer table-image"
-                                        (load)="onImageLoad($event)"
-                                        (error)="onImageError($event, tableImg)"
-                                        [title]="Receta.url_mini ? 'Imagen de ' + Receta.title : 'Sin imagen disponible'"
-                                    />
+          <!-- Ingredientes -->
+          <div>
+            <label class="block font-medium mb-1">Ingredientes</label>
+            <textarea
+              pTextarea
+              formControlName="ingredients"
+              placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g..."
+              class="w-full"
+              rows="3"
+            ></textarea>
+          </div>
 
-                                    <!-- Texto alternativo cuando la imagen falla -->
-                                    <div
-                                        #errorText
-                                        class="absolute inset-0 flex image-loading items-center justify-center bg-gray-100 text-xs text-gray-600 font-medium hidden"
-                                        [title]="'Imagen no puede ser mostrada'"
-                                    >
-                                        Imagen no puede ser mostrada
-                                    </div>
-                                </div>
+          <!-- Instrucciones -->
+          <div>
+            <label class="block font-medium mb-1">Instrucciones</label>
+            <textarea
+              pTextarea
+              formControlName="instructions"
+              placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
+              class="w-full"
+              rows="3"
+            ></textarea>
+          </div>
 
-                                <!-- Vista de edición -->
-                                <div
-                                    *ngIf="editingCell === Receta.id + '-url_mini'"
-                                    class="inline-edit-container"
-                                >
-                                    <input
-                                        pInputText
-                                           type="url"
-                                           [(ngModel)]="Receta.url_mini"
-                                           (input)="onInputChange(Receta, 'url_mini')"
-                                           (blur)="cancelInlineEditByBlur()"
-                                        (keyup.enter)="saveInlineEditReceta(Receta, 'url_mini')"
-                                        (keyup.escape)="cancelInlineEdit()"
-                                        class="p-inputtext-sm flex-1"
-                                        #input
-                                        [attr.aria-label]="'url_mini-' + Receta.id"
-                                        placeholder="URL de la imagen"
-                                    />
-                                    <button
-                                        *ngIf="hasChanges"
-                                        pButton
-                                        icon="pi pi-check"
-                                        (click)="saveInlineEditReceta(Receta, 'url_mini')"
-                                        class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                        pTooltip="Guardar (Enter)"
-                                    ></button>
-                                    <button
-                                        *ngIf="hasChanges"
-                                        pButton
-                                        icon="pi pi-undo"
-                                        (click)="cancelInlineEdit()"
-                                        class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                        pTooltip="Deshacer (Escape)"
-                                    ></button>
-                                </div>
-                            </div>
-                        </td>
+          <!-- Categoría -->
+          <div>
+            <label class="block font-medium mb-1">Categoría</label>
+            <p-select
+              formControlName="category"
+              [options]="categoriasDisponibles"
+              placeholder="Selecciona o escribe una nueva categoría"
+              class="w-full"
+              [editable]="true"
+            />
+            <small class="text-gray-500 text-xs mt-1">
+              Selecciona una categoría existente o escribe una nueva
+            </small>
+          </div>
 
-                        <!-- Categoría -->
-                        <td>
-                            <!-- Vista normal -->
-                            <span
-                                *ngIf="editingCell !== Receta.id + '-category'"
-                                (click)="editInlineReceta(Receta, 'category'); $event.stopPropagation()"
-                                class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                title="Clic para editar"
-                            >
-                                {{Receta.category || '-'}}
-                            </span>
+          <!-- Especificaciones en fila -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Tiempo -->
+            <div>
+              <label class="block font-medium mb-1">Tiempo</label>
+              <input
+                pInputText
+                formControlName="time"
+                placeholder="ej: 45 min"
+                class="w-full"
+              />
+            </div>
 
-                            <!-- Vista de edición -->
-                            <div
-                                *ngIf="editingCell === Receta.id + '-category'"
-                                class="inline-edit-container"
-                            >
-                                <p-select
-                                    [(ngModel)]="Receta.category"
-                                    [options]="categoriasDisponibles"
-                                    (ngModelChange)="onInputChange(Receta, 'category')"
-                                    (keyup.enter)="saveInlineEditReceta(Receta, 'category')"
-                                    (keyup.escape)="cancelInlineEdit()"
-                                    [editable]="true"
-                                    placeholder="Selecciona o escribe una categoría"
-                                    class="p-inputtext-sm flex-1"
-                                    #input
-                                    [attr.aria-label]="'category-' + Receta.id"
-                                ></p-select>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-check"
-                                    (click)="saveInlineEditReceta(Receta, 'category')"
-                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                    pTooltip="Guardar (Enter)"
-                                ></button>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-undo"
-                                    (click)="cancelInlineEdit()"
-                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                    pTooltip="Deshacer (Escape)"
-                                ></button>
-                            </div>
-                        </td>
+            <!-- Porciones -->
+            <div>
+              <label class="block font-medium mb-1">Porciones</label>
+              <p-inputNumber
+                formControlName="people"
+                [min]="1"
+                [max]="50"
+                placeholder="4"
+                class="w-full"
+              />
+            </div>
 
-                        <!-- Dificultad -->
-                        <td>
-                            <!-- Vista normal -->
-                            <span
-                                *ngIf="editingCell !== Receta.id + '-difficulty'"
-                                (click)="editInlineReceta(Receta, 'difficulty'); $event.stopPropagation()"
-                                class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                title="Clic para editar"
-                            >
-                                <p-tag
-                                    [value]="getDifficultyLabel(Receta.difficulty)"
-                                    [severity]="getDifficultySeverity(Receta.difficulty)"
-                                ></p-tag>
-                            </span>
-
-                            <!-- Vista de edición -->
-                            <div
-                                *ngIf="editingCell === Receta.id + '-difficulty'"
-                                class="inline-edit-container"
-                            >
-                                <select
-                                    [(ngModel)]="Receta.difficulty"
-                                    (change)="onInputChange(Receta, 'difficulty')"
-                                    class="p-inputtext-sm flex-1 border rounded px-2 py-1"
-                                >
-                                <option value="facil">Fácil</option>
-                                <option value="medio">Medio</option>
-                                <option value="dificil">Difícil</option>
-                            </select>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-check"
-                                    (click)="saveInlineEditReceta(Receta, 'difficulty')"
-                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                    pTooltip="Guardar (Enter)"
-                                ></button>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-undo"
-                                    (click)="cancelInlineEdit()"
-                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                    pTooltip="Deshacer (Escape)"
-                                ></button>
-                            </div>
-                        </td>
-
-                        <!-- Tiempo -->
-                        <td class="text-center">
-                            <span class="text-sm">{{ Receta.time || '-' }}</span>
-                        </td>
-
-                        <!-- Porciones -->
-                        <td class="text-center">
-                            <span class="text-sm">{{ Receta.people || Receta.servings || '-' }}</span>
-                        </td>
-
-                        <!-- Fecha -->
-                        <td class="text-center">
-                            <span class="text-sm">{{ formatFecha(Receta.date || Receta.fecha_cre || Receta.createdAt) }}</span>
-                        </td>
-
-                        <!-- Colección -->
-                        <td>
-                            <!-- Vista normal -->
-                            <span
-                                *ngIf="editingCell !== Receta.id + '-id_coll'"
-                                (click)="editInlineReceta(Receta, 'id_coll'); $event.stopPropagation()"
-                                class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
-                                title="Clic para editar"
-                            >
-                                <span *ngIf="getCollectionName(Receta.id_coll); else noCollection" class="text-sm">
-                                    {{ getCollectionName(Receta.id_coll) }}
-                                </span>
-                                <ng-template #noCollection>
-                                    <span class="text-gray-400 italic text-sm">Sin colección</span>
-                                </ng-template>
-                            </span>
-
-                            <!-- Vista de edición -->
-                            <div
-                                *ngIf="editingCell === Receta.id + '-id_coll'"
-                                class="inline-edit-container"
-                            >
-                                <select
-                                    [(ngModel)]="Receta.id_coll"
-                                    (change)="onInputChange(Receta, 'id_coll')"
-                                    class="p-inputtext-sm flex-1 border rounded px-2 py-1"
-                                >
-                                    <option *ngFor="let coll of colecciones" [attr.value]="coll.id_coll">
-                                        {{ coll.nombre }}
-                                    </option>
-                                </select>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-check"
-                                    (click)="saveInlineEditReceta(Receta, 'id_coll')"
-                                    class="p-button-sm p-button-success p-button-text inline-action-btn"
-                                    pTooltip="Guardar (Enter)"
-                                ></button>
-                                <button
-                                    *ngIf="hasChanges"
-                                    pButton
-                                    icon="pi pi-undo"
-                                    (click)="cancelInlineEdit()"
-                                    class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-                                    pTooltip="Deshacer (Escape)"
-                                ></button>
-                            </div>
-                        </td>
-
-                        <!-- Acciones -->
-                        <td>
-                            <div class="flex gap-2">
-                                <button
-                                    pButton
-                                    icon="pi pi-pencil"
-                                    (click)="editReceta(Receta)"
-                                    class="p-button-sm p-button-text p-button-warning"
-                                    pTooltip="Editar Receta"
-                                ></button>
-                                <button
-                                    pButton
-                                    icon="pi pi-trash"
-                                    (click)="eliminarReceta(Receta)"
-                                    class="p-button-sm p-button-text p-button-danger"
-                                    pTooltip="Eliminar Receta"
-                                ></button>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
+            <!-- Dificultad -->
+            <div>
+              <label class="block font-medium mb-1">Dificultad *</label>
+              <p-select
+                formControlName="difficulty"
+                [options]="[
+                  { label: 'Fácil', value: 'facil' },
+                  { label: 'Medio', value: 'medio' },
+                  { label: 'Difícil', value: 'dificil' }
+                ]"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Seleccionar dificultad"
+                class="w-full"
+              />
+              <small *ngIf="RecetaForm.get('difficulty')?.invalid && RecetaForm.get('difficulty')?.touched"
+                  class="text-red-500">
+                La dificultad es obligatoria
+              </small>
+            </div>
+          </div>
         </div>
 
-        <!-- ⚠️ MODAL DE ELIMINACIÓN CON ÍCONO EMOJI -->
-        <p-dialog
-            [(visible)]="showConfirmDeleteReceta"
-            header="Confirmar Eliminación"
-            [modal]="true"
-            [style]="{width: '400px', minHeight: '200px'}"
-            [draggable]="false"
-            [resizable]="false"
-            [closable]="true"
-            [maximizable]="false"
-        >
-            <div class="flex items-center gap-4 mb-4">
-                <span class="text-8xl animate-bounce">⚠️</span>
-                <div>
-                    <h4 class="font-semibold text-xl mb-1">¿Eliminar Receta?</h4>
-                    <p class="text-gray-700 text-lg">
-                        ¿Estás seguro de que deseas eliminar
-                        <strong>"{{RecetaToDelete?.title}}"</strong>?
-                    </p>
-                    <p class="text-sm text-red-600 mt-2 font-medium">
-                        ⚠️ Esta acción no se puede deshacer.
-                    </p>
-                </div>
-            </div>
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+          <button
+            pButton
+            type="button"
+            (click)="closeRecetaForm()"
+            label="Cancelar"
+            class="p-button-text"
+          ></button>
+          <button
+            pButton
+            type="button"
+            (click)="saveReceta()"
+            [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
+            [disabled]="!RecetaForm.valid || savingReceta"
+            [loading]="savingReceta"
+            class="p-button-success"
+          ></button>
+        </div>
+      </form>
+    </p-dialog>
 
-            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
-                <button
-                    pButton
-                    type="button"
-                    (click)="cancelDeleteReceta()"
-                    label="Cancelar"
-                    class="p-button-text"
-                ></button>
-                <button
-                    pButton
-                    type="button"
-                    (click)="confirmDeleteReceta()"
-                    label="Eliminar"
-                    class="p-button-danger"
-                    [loading]="deletingReceta"
-                ></button>
-            </div>
-        </p-dialog>
-
-        <!-- ⚠️ MODAL DE CONFIRMACIÓN GENÉRICO -->
-        <p-dialog
-            [(visible)]="showConfirmDialog"
-            [header]="confirmHeader"
-            [modal]="true"
-            [style]="{width: '400px'}"
-            [draggable]="false"
-            [resizable]="false"
-            [closable]="true"
-        >
-            <div class="flex items-center gap-4 mb-4">
-                <span class="text-4xl">⚠️</span>
-                <div>
-                    <p class="text-gray-700">{{ confirmMessage }}</p>
-                </div>
-                        </div>
-
-            <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
-                <button
-                    pButton
-                    type="button"
-                    (click)="cancelarConfirmacion()"
-                    label="Cancelar"
-                    class="p-button-text"
-                ></button>
-                <button
-                    pButton
-                    type="button"
-                    (click)="confirmarAccion()"
-                    label="Confirmar"
-                    class="p-button-danger"
-                ></button>
-                        </div>
-        </p-dialog>
-
-        <!-- 📋 MODAL DE RECETA - ESTILO TABLOIDE (SIMPLE Y FUNCIONAL) -->
-        <p-dialog
-            [(visible)]="showRecetaModal"
-            [header]="isEditingReceta ? 'Editar Receta' : 'Nueva Receta'"
-            [modal]="true"
-            [style]="{width: '700px', maxHeight: '80vh'}"
-            [draggable]="false"
-            [resizable]="false"
-            [closable]="true"
-            [closeOnEscape]="true"
-        >
-            <form [formGroup]="RecetaForm" (ngSubmit)="saveReceta()">
-                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
-                    <button
-                        pButton
-                        type="button"
-                        (click)="closeRecetaForm()"
-                        label="Cancelar"
-                        class="p-button-text"
-                    ></button>
-                    <button
-                        pButton
-                        type="button"
-                        (click)="saveReceta()"
-                        [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
-                        [disabled]="!RecetaForm.valid || savingReceta"
-                        [loading]="savingReceta"
-                        class="p-button-success"
-                    ></button>
-                </div>
-                <div class="grid grid-cols-1 gap-4">
-                    <!-- Título Principal -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Título Principal *</label>
-                        <input
-                            pInputText
-                            formControlName="title"
-                            placeholder="ej: Paella Valenciana Tradicional"
-                            class="w-full"
-                            autofocus
-                        />
-                        <small *ngIf="RecetaForm.get('title')?.invalid && RecetaForm.get('title')?.touched"
-                               class="text-red-500">
-                            El título es obligatorio
-                        </small>
-                    </div>
-
-                    <!-- Título Corto -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Título Miniatura</label>
-                        <input
-                            pInputText
-                            formControlName="title_min"
-                            placeholder="ej: Paella Valenciana"
-                            class="w-full"
-                        />
-                    </div>
-
-                    <!-- Colección -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Colección</label>
-                        <p-select
-                            formControlName="id_coll"
-                            [options]="colecciones"
-                            optionLabel="nombre"
-                            optionValue="id_coll"
-                            placeholder="Selecciona una colección RECET"
-                            class="w-full"
-                            [showClear]="true"
-                            [disabled]="!colecciones || colecciones.length === 0"
-                        >
-                            <ng-template pTemplate="empty">
-                                <div class="text-center py-4">
-                                    <i class="pi pi-folder-open text-gray-400 text-2xl mb-2"></i>
-                                    <p class="text-gray-500">No hay colecciones disponibles</p>
-                                    <button type="button"
-                                            class="text-blue-500 hover:text-blue-700 text-sm underline mt-1"
-                                            (click)="openColeccionesPage()">
-                                        Crear colección RECET
-                                    </button>
-                                </div>
-                            </ng-template>
-                        </p-select>
-                    </div>
-
-                    <!-- URL Imagen Banner -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">URL Imagen Banner</label>
-                        <input
-                            pInputText
-                            type="url"
-                            formControlName="url_banner"
-                            placeholder="https://ejemplo.com/banner-receta.jpg"
-                            class="w-full"
-                            (input)="onBannerUrlInput($event)"
-                        />
-
-                        <!-- Preview del banner -->
-                        <div *ngIf="bannerUrlValidated" class="mt-2">
-                            <img
-                                [src]="RecetaForm.get('url_banner')?.value"
-                                alt="Banner Preview"
-                                class="w-64 object-cover rounded border"
-                                onerror="this.style.display='none'"
-                                onload="this.style.display='block'"
-                            />
-                        </div>
-                    </div>
-
-                    
-                    <!-- URL Imagen Miniatura -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">URL Imagen Miniatura *</label>
-                        <input
-                            pInputText
-                            type="url"
-                            formControlName="url_mini"
-                            placeholder="https://ejemplo.com/imagen-receta.jpg"
-                            class="w-full"
-                            (input)="onImageUrlInput($event)"
-                        />
-                        <small *ngIf="RecetaForm.get('url_mini')?.invalid && RecetaForm.get('url_mini')?.touched"
-                               class="text-red-500">
-                            La URL de la imagen es obligatoria
-                        </small>
-
-                        <!-- Preview de la imagen -->
-                        <div *ngIf="imageUrlValidated" class="mt-2">
-                            <img
-                                [src]="RecetaForm.get('url_mini')?.value"
-                                alt="Preview"
-                                class="w-64 object-cover rounded border"
-                                onerror="this.style.display='none'"
-                                onload="this.style.display='block'"
-                            />
-                        </div>
-                    </div>
-
-
-                    <!-- Descripción -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Descripción</label>
-                        <textarea
-                            pTextarea
-                            formControlName="description"
-                            placeholder="Describe brevemente la receta, sus características principales y por qué es especial..."
-                            class="w-full"
-                            rows="2"
-                        ></textarea>
-                    </div>
-
-                    <!-- Ingredientes -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Ingredientes</label>
-                        <textarea
-                            pTextarea
-                            formControlName="ingredients"
-                            placeholder="Lista todos los ingredientes separados por comas: Arroz bomba 600g, pollo 400g, conejo 300g..."
-                            class="w-full"
-                            rows="3"
-                        ></textarea>
-                    </div>
-
-                    <!-- Instrucciones -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Instrucciones</label>
-                        <textarea
-                            pTextarea
-                            formControlName="instructions"
-                            placeholder="Describe paso a paso cómo preparar la receta: 1. Preparar el sofrito lentamente... 2. Añadir las carnes marinadas..."
-                            class="w-full"
-                            rows="3"
-                        ></textarea>
-                    </div>
-
-                    <!-- Categoría -->
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Categoría</label>
-                        <p-select
-                            formControlName="category"
-                            [options]="categoriasDisponibles"
-                            placeholder="Selecciona o escribe una nueva categoría"
-                            class="w-full"
-                            [editable]="true"
-                        />
-                        <small class="text-gray-500 text-xs mt-1">
-                            Selecciona una categoría existente o escribe una nueva
-                        </small>
-                    </div>
-
-                    <!-- Especificaciones en fila -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Tiempo -->
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tiempo</label>
-                            <input
-                                pInputText
-                                formControlName="time"
-                                placeholder="ej: 45 min"
-                                class="w-full"
-                            />
-                        </div>
-
-                        <!-- Porciones -->
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Porciones</label>
-                            <p-inputNumber
-                                formControlName="people"
-                                [min]="1"
-                                [max]="50"
-                                placeholder="4"
-                                class="w-full"
-                            />
-                        </div>
-
-                        <!-- Dificultad -->
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Dificultad *</label>
-                            <p-select
-                                formControlName="difficulty"
-                                [options]="[
-                                    { label: 'Fácil', value: 'facil' },
-                                    { label: 'Medio', value: 'medio' },
-                                    { label: 'Difícil', value: 'dificil' }
-                                ]"
-                                optionLabel="label"
-                                optionValue="value"
-                                placeholder="Seleccionar dificultad"
-                                class="w-full"
-                            />
-                            <small *ngIf="RecetaForm.get('difficulty')?.invalid && RecetaForm.get('difficulty')?.touched"
-                                   class="text-red-500">
-                                La dificultad es obligatoria
-                            </small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Botones -->
-                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
-                    <button
-                        pButton
-                        type="button"
-                        (click)="closeRecetaForm()"
-                        label="Cancelar"
-                        class="p-button-text"
-                    ></button>
-                    <button
-                        pButton
-                        type="button"
-                        (click)="saveReceta()"
-                        [label]="isEditingReceta ? 'Actualizar' : 'Crear'"
-                        [disabled]="!RecetaForm.valid || savingReceta"
-                        [loading]="savingReceta"
-                        class="p-button-success"
-                    ></button>
-                </div>
-            </form>
-        </p-dialog>
-
-        <!-- Toast para mensajes -->
-        <p-toast></p-toast>
+    <!-- Toast para mensajes -->
+    <p-toast></p-toast>

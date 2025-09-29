@@ -104,17 +104,25 @@ export class RecetaComponent implements OnInit, OnDestroy {
         return Array.from(categoriasUnicas).sort();
     }
 
-    // Método para manejar clics fuera del select de categoría
+    // Opciones para el select de dificultad
+    dificultadesDisponibles = [
+        { label: 'Fácil', value: 'facil' },
+        { label: 'Medio', value: 'medio' },
+        { label: 'Difícil', value: 'dificil' }
+    ];
+
+    // Método para manejar clics fuera de los campos editables inline
     @HostListener('document:click', ['$event'])
     onDocumentClick(event: Event): void {
-        // Solo procesar si estamos editando una categoría
-        if (this.editingCell && this.editingCell.includes('-category')) {
+        // Solo procesar si estamos editando algún campo inline
+        if (this.editingCell && (this.editingCell.includes('-category') || this.editingCell.includes('-difficulty') || this.editingCell.includes('-id_coll'))) {
             const target = event.target as HTMLElement;
-            const categorySelect = target.closest('.inline-edit-container');
+            const editContainer = target.closest('.inline-edit-container');
 
             // Si el clic no fue dentro del contenedor de edición, cancelar edición
-            if (!categorySelect) {
-                this.cancelInlineEdit();
+            if (!editContainer) {
+                console.log('🔄 Clic fuera del contenedor de edición - cancelando edición');
+                this.cancelInlineEditByBlur();
             }
         }
     }

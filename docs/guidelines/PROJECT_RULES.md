@@ -109,10 +109,33 @@ export class ItemsTestComponent {
         FormsModule,
         ReactiveFormsModule
     ],
-    template: `...`,
+    templateUrl: './[component-name].component.html',
+    styleUrl: './[component-name].component.css',
     providers: [MessageService]
 })
 ```
+
+#### **⚠️ REGLA CRÍTICA: Separación de Archivos de Componentes**
+
+**Cuando se cree un componente, SE DEBE separar obligatoriamente en archivos independientes:**
+- ✅ **Archivo TypeScript**: `[component-name].component.ts`
+- ✅ **Archivo Template**: `[component-name].component.html`
+- ✅ **Archivo Estilos**: `[component-name].component.css`
+
+**Patrón obligatorio:**
+```typescript
+@Component({
+    selector: 'app-[component-name]',
+    standalone: true,
+    templateUrl: './[component-name].component.html',  // ✅ Separado
+    styleUrl: './[component-name].component.css'       // ✅ Separado
+})
+```
+
+#### **Patrones Prohibidos:**
+- ❌ **Template inline**: `template: '...'` (NO PERMITIDO)
+- ❌ **Estilos inline**: `styles: ['...']` (NO PERMITIDO)
+- ❌ **Todo en un archivo**: Mezclar TS + HTML + CSS (NO PERMITIDO)
 
 ### **2.2 Patrón de Servicios**
 ```typescript

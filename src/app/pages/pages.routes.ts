@@ -79,6 +79,11 @@ export default [
         data: { breadcrumb: 'Configuración del Sistema', proy: 1 },
         loadComponent: () => import('./system/proy/proy.component').then(c => c.ProyComponent)
     },
+    {
+        path: 'adm-ecom/recetas',
+        data: { breadcrumb: 'Recetas', proy: 1 },
+        loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
+    },
     /*{
         path: 'adm-ecom/ecat-catalogo',
         data: { breadcrumb: 'Catálogo de Artículos', proy: 1 },

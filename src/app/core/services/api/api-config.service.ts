@@ -33,7 +33,7 @@ export class ApiConfigService {
                 if (response.controllers && response.controllers.length > 0) {
                     // Limpiar el arreglo actual
                     this.endpoints = [];
-                    
+
                     // Mapear y guardar solo los campos que nos interesan
                     response.controllers.forEach((controller: SpConfigController) => {
                         // 🔑 REGLA PRINCIPAL: URL final = URL base + fullRoute (siempre)
@@ -109,11 +109,11 @@ export class ApiConfigService {
             }
         });
     }
-    
+
     getBaseUrl(): string {
         return this.baseUrl;
     }
-    
+
     getMenuCrudUrl(): string {
         return `${this.baseUrl}${API_CONFIG.ENDPOINTS.MENU.CRUD}`;
     }
@@ -132,6 +132,12 @@ export class ApiConfigService {
 
     getProyectoCrudUrl(): string {
         return API_URLS.PROYECTO_CRUD;
+    }
+
+
+
+    getRecetaCrudUrl(): string {
+        return API_URLS.RECETA_CRUD;
     }
 
     // Método para cambiar URL en tiempo de ejecución

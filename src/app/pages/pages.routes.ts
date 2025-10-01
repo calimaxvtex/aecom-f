@@ -77,7 +77,13 @@ export default [
     {
         path: 'system/proy',
         data: { breadcrumb: 'Configuración del Sistema', proy: 1 },
-        loadComponent: () => import('./proy/proy.component').then(c => c.ProyComponent)
-    }
+        loadComponent: () => import('./system/proy/proy.component').then(c => c.ProyComponent)
+    },
+    /*{
+        path: 'adm-ecom/ecat-catalogo',
+        data: { breadcrumb: 'Catálogo de Artículos', proy: 1 },
+        loadComponent: () => import('./adm-ecom/ecat-catalogo/ecat-catalogo.component').then(c => c.EcatCatalogoComponent)
+        
+    }*/
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

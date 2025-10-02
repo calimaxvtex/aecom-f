@@ -80,6 +80,11 @@ export default [
         loadComponent: () => import('./proy/proy.component').then(c => c.ProyComponent)
     },
     {
+        path: 'adm-ecom/recetas',
+        data: { breadcrumb: 'Recetas', proy: 1 },
+        loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
+    },
+    {
         path: 'system/tipogateway',
         data: { breadcrumb: 'Tipos de Gateway', proy: 1 },
         loadComponent: () => import('./system/tipogateway/tipogateway.component').then(c => c.TipoGatewayComponent)

@@ -83,6 +83,11 @@ export default [
         path: 'system/proy',
         data: { breadcrumb: 'Configuración del Sistema', proy: 1 },
         loadComponent: () => import('./proy/proy.component').then(c => c.ProyComponent)
+    },
+    {
+        path: 'system/tipogateway',
+        data: { breadcrumb: 'Tipos de Gateway', proy: 1 },
+        loadComponent: () => import('./system/tipogateway/tipogateway.component').then(c => c.TipoGatewayComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

@@ -21,7 +21,21 @@
           placeholder="Buscar páginas..."
           class="w-full sm:w-80 order-1 sm:order-0"
         />
-          <div class="flex gap-2 order-0 sm:order-1">
+          <div class="flex gap-2 order-0 sm:order-1 items-end">
+            <!-- Botones de filtro por canal -->
+            <button
+              *ngFor="let canal of canalesOptions"
+              (click)="onCanalFiltroClick(canal.value)"
+              pButton
+              raised
+              [class]="canalFiltroSeleccionado === canal.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+              [label]="canal.label"
+              pTooltip="Filtrar por {{ canal.label }}"
+            ></button>
+
+            <!-- Separador visual -->
+            <div class="w-px bg-gray-300 mx-1"></div>
+
             <!-- ✅ PATRÓN CRÍTICO: Botones solo con íconos, raised, sin clases de ancho -->
             <button
               (click)="cargarPaginas()"
@@ -114,54 +128,17 @@
 
 
         <!-- Estado -->
-        <td>
-          <!-- Vista normal -->
-          <span
-            *ngIf="editingCell !== pagina.id_pag + '-estado'"
-            (click)="editarInline(pagina, 'estado'); $event.stopPropagation()"
-            class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
-            title="Clic para editar"
-          >
-            <p-tag
-              class="w-16 h-10"
-              [value]="getEstadoLabel(pagina.estado)"
-              [severity]="getEstadoSeverity(pagina.estado)"
-            ></p-tag>
-          </span>
-
-          <!-- Vista de edición -->
-          <div
-            *ngIf="editingCell === pagina.id_pag + '-estado'"
-            class="inline-edit-container"
-          >
-            <p-select
-              [(ngModel)]="pagina.estado"
-              [options]="estados"
-              (ngModelChange)="onInputChange(pagina, 'estado')"
-              (keyup.enter)="saveInlineEdit(pagina, 'estado')"
-              (keyup.escape)="cancelInlineEdit()"
-              placeholder="Selecciona estado"
-              class="p-input flex-1"
-              #input
-              [attr.aria-label]="'estado-' + pagina.id_pag"
-            ></p-select>
-            <button
-              *ngIf="hasChanges"
-              pButton
-              icon="pi pi-check"
-              (click)="saveInlineEdit(pagina, 'estado')"
-              class="p-button-sm p-button-success p-button-text inline-action-btn"
-              pTooltip="Guardar (Enter)"
-            ></button>
-            <button
-              *ngIf="hasChanges"
-              pButton
-              icon="pi pi-undo"
-              (click)="cancelInlineEdit()"
-              class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-              pTooltip="Deshacer (Escape)"
-            ></button>
-          </div>
+        <td class="text-center">
+          <p-toggleSwitch
+            [ngModel]="getPaginaToggleState(pagina)"
+            [ngModelOptions]="{standalone: true}"
+            onLabel="ACTIVO"
+            offLabel="DESACTIVADO"
+            inputId="{{pagina.id_pag}}_estado"
+            (ngModelChange)="onToggleSwitchChange($event, pagina)"
+            class="status-toggle"
+            pTooltip="Cambiar estado de la página"
+          ></p-toggleSwitch>
         </td>
 
         <!-- Componentes -->
@@ -311,6 +288,9 @@
     </div>
   </form>
 </p-dialog>
+
+<!-- Modal de confirmación usando ConfirmationService -->
+<p-confirmDialog [style]="{width: '400px'}" appendTo="body"></p-confirmDialog>
 
 <!-- Toast para mensajes -->
 <p-toast></p-toast>

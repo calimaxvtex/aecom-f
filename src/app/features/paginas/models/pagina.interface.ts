@@ -32,6 +32,7 @@ export interface CreatePaginaRequest {
  */
 export interface UpdatePaginaRequest extends Partial<CreatePaginaRequest> {
     id_pag: number;                   // ID de la página a actualizar (requerido)
+    estado?: number;                  // Estado de la página: 1 (activo) | 0 (inactivo)
 }
 
 /**

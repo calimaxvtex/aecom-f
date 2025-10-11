@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -23,6 +23,7 @@ import { PaginaService, Pagina, CreatePaginaRequest, UpdatePaginaRequest } from 
 @Component({
     selector: 'app-paginas',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.Default,
     imports: [
         CommonModule,
         FormsModule,
@@ -51,6 +52,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
+    private cdr = inject(ChangeDetectorRef);
 
     // Datos
     paginas: Pagina[] = [];
@@ -77,6 +79,16 @@ export class PaginasComponent implements OnInit, OnDestroy {
     editingCell: string = '';
     hasChanges: boolean = false;
     originalValue: any = null;
+
+    // Control de estado temporal del ToggleSwitch
+    toggleStates: { [key: string]: boolean } = {};
+
+    // Filtro por canal (estilo banners)
+    canalFiltroSeleccionado: string = '';
+    canalesOptions: { label: string; value: string }[] = [
+        { label: 'Web', value: 'WEB' },
+        { label: 'App', value: 'APP' }
+    ];
 
 
     estados = [
@@ -107,10 +119,16 @@ export class PaginasComponent implements OnInit, OnDestroy {
         console.log('📋 Cargando páginas...');
         this.loadingPaginas = true;
 
-        this.paginaService.getAllPaginas().subscribe({
+        // Preparar filtros
+        const filtros: any = {};
+        if (this.canalFiltroSeleccionado) {
+            filtros.canal = this.canalFiltroSeleccionado;
+        }
+
+        this.paginaService.getAllPaginas(filtros).subscribe({
             next: (response) => {
                 console.log('✅ Páginas cargadas:', response.data.length);
-                this.paginas = response.data;
+                this.paginas = [...response.data]; // Crear nueva referencia
                 this.loadingPaginas = false;
             },
             error: (error) => {
@@ -360,8 +378,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
         // Agregar el campo modificado
         if (campo === 'nombre') {
             updateData.nombre = pagina.nombre;
-        } else if (campo === 'estado') {
-            updateData.estado = pagina.estado;
         }
 
         this.paginaService.updatePagina(updateData).subscribe({
@@ -420,6 +436,145 @@ export class PaginasComponent implements OnInit, OnDestroy {
         this.paginaSeleccionada = null;
     }
 
+    // ========== FILTRO POR CANAL (ESTILO BANNERS) ==========
+
+    /**
+     * Maneja el click en los botones de filtro de canal
+     */
+    onCanalFiltroClick(canalValue: string): void {
+        console.log('🔄 Filtro de canal cambió:', canalValue);
+        // Si ya está seleccionado, deseleccionar (mostrar todos)
+        if (this.canalFiltroSeleccionado === canalValue) {
+            this.canalFiltroSeleccionado = '';
+        } else {
+            this.canalFiltroSeleccionado = canalValue;
+        }
+        this.cargarPaginas();
+    }
+
+    // ========== TOGGLE SWITCH PARA ESTADO ==========
+
+    /**
+     * Obtiene el estado del ToggleSwitch considerando estados temporales
+     */
+    getPaginaToggleState(pagina: Pagina): boolean {
+        // Usar el estado temporal si existe, sino usar el estado real
+        const tempState = this.toggleStates[pagina.id_pag];
+
+        // Convertir estado a número si viene como string, y verificar si es 1
+        const estadoNumerico = typeof pagina.estado === 'string' ? parseInt(pagina.estado) : pagina.estado;
+        return tempState !== undefined ? tempState : estadoNumerico === 1;
+    }
+
+    /**
+     * Maneja el cambio del ToggleSwitch
+     */
+    onToggleSwitchChange(isChecked: boolean, pagina: Pagina): void {
+        console.log('🔄 onToggleSwitchChange - Página:', pagina);
+        console.log('🔄 onToggleSwitchChange - isChecked:', isChecked);
+        console.log('🔄 onToggleSwitchChange - Estado actual:', pagina.estado);
+
+        // Convertir estado a número si viene como string
+        const valorActual = typeof pagina.estado === 'string' ? parseInt(pagina.estado) : pagina.estado;
+        const nuevoValor = isChecked ? 1 : 0;
+
+        // Si el valor no cambió, no hacer nada
+        if (nuevoValor === valorActual) {
+            return;
+        }
+
+        // Para activación (pasar de 0 a 1), hacer el cambio directamente
+        if (nuevoValor === 1) {
+            this.procesarCambioEstadoDirecto(pagina, 1);
+            return;
+        }
+
+        // Para desactivación (pasar de 1 a 0), mostrar confirmación
+        // Establecer estado temporal para mostrar el cambio visual
+        this.toggleStates[pagina.id_pag] = false;
+        // Forzar detección de cambios
+        this.cdr.detectChanges();
+
+        this.confirmationService.confirm({
+            message: `¿Está seguro de que desea desactivar la página "${pagina.nombre}"?`,
+            header: 'Confirmar Desactivación',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Desactivar',
+            rejectLabel: 'Cancelar',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-text',
+            accept: () => {
+                // Limpiar estado temporal y procesar el cambio
+                delete this.toggleStates[pagina.id_pag];
+                // Forzar detección de cambios
+                this.cdr.detectChanges();
+                this.procesarCambioEstadoDirecto(pagina, 0);
+            },
+            reject: () => {
+                // Revertir el estado temporal al estado original
+                delete this.toggleStates[pagina.id_pag];
+                // Forzar detección de cambios
+                this.cdr.detectChanges();
+                console.log('❌ Usuario canceló la desactivación');
+            }
+        });
+    }
+
+    /**
+     * Procesa el cambio de estado directamente
+     */
+    private procesarCambioEstadoDirecto(pagina: Pagina, nuevoValor: number): void {
+        const valorAnterior = pagina.estado;
+
+        // Aplicar el cambio optimista
+        pagina.estado = nuevoValor;
+
+        // Mostrar loading state
+        this.guardando = true;
+
+        const updateData: UpdatePaginaRequest = {
+            id_pag: pagina.id_pag,
+            estado: nuevoValor
+        };
+
+        this.paginaService.updatePagina(updateData).subscribe({
+            next: (response) => {
+                this.guardando = false;
+                console.log('✅ Estado actualizado exitosamente:', response);
+
+                const estadoTexto = nuevoValor === 1 ? 'ACTIVADA' : 'DESACTIVADA';
+                const icono = nuevoValor === 1 ? '✅' : '🚫';
+
+                this.messageService.add({
+                    severity: nuevoValor === 1 ? 'success' : 'warn',
+                    summary: `Página ${estadoTexto}`,
+                    detail: `${icono} La página "${pagina.nombre}" ha sido ${estadoTexto.toLowerCase()} correctamente`,
+                    life: 4000
+                });
+
+                // Forzar detección de cambios para actualizar el ToggleSwitch
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                this.guardando = false;
+                console.error('❌ Error al cambiar estado:', error);
+
+                // Revertir cambio local en caso de error
+                pagina.estado = valorAnterior;
+
+                // Forzar detección de cambios para actualizar el ToggleSwitch
+                this.cdr.detectChanges();
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al cambiar estado',
+                    detail: `No se pudo cambiar el estado de la página "${pagina.nombre}". Se revirtió el cambio.`,
+                    life: 6000
+                });
+            }
+        });
+    }
+
     // ========== MÉTODOS DE UTILIDAD ==========
 
     /**
@@ -427,6 +582,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     aplicarFiltros(): void {
         console.log('🔍 Aplicando filtros:', {
+            canal: this.canalFiltroSeleccionado,
             estado: this.filtroEstado,
             busqueda: this.filtroBusqueda
         });

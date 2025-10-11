@@ -293,26 +293,53 @@ export class PaginasComponent implements OnInit, OnDestroy {
         }).add(() => this.guardando = false);
     }
 
-    /**
-     * Confirma eliminación de página
-     */
-    confirmarEliminar(pagina: Pagina): void {
-        console.log('⚠️ Confirmando eliminación de página:', pagina.nombre);
-        this.paginaSeleccionada = pagina;
+    confirmDeletePagina(): void {
+        if (!this.paginaSeleccionada) return;
 
-        this.confirmationService.confirm({
-            message: `¿Está seguro de eliminar la página "${pagina.nombre}"?`,
-            header: 'Confirmar Eliminación',
-            acceptLabel: 'Eliminar',
-            rejectLabel: 'Cancelar',
-            accept: () => this.eliminarPagina(pagina)
+        this.eliminando = true;
+        console.log('🗑️ Eliminando página:', this.paginaSeleccionada.nombre);
+
+        this.paginaService.deletePagina(this.paginaSeleccionada.id_pag).subscribe({
+            next: (response: any) => {
+                console.log('✅ Página eliminada:', response);
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Eliminado',
+                    detail: 'Página eliminada correctamente'
+                });
+
+                this.cargarPaginas();
+                this.paginaSeleccionada = null;
+                this.mostrarConfirmDelete = false;
+            },
+            error: (error: any) => {
+                console.error('❌ Error al eliminar página:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al eliminar la página'
+                });
+            },
+            complete: () => {
+                this.eliminando = false;
+            }
         });
     }
 
     /**
-     * Elimina una página
+     * Muestra el modal de confirmación de eliminación
      */
     eliminarPagina(pagina: Pagina): void {
+        console.log('⚠️ Mostrando modal de eliminación para página:', pagina.nombre);
+        this.paginaSeleccionada = pagina;
+        this.mostrarConfirmDelete = true;
+    }
+
+    /**
+     * Elimina una página (método legacy - no usar)
+     */
+    eliminarPaginaLegacy(pagina: Pagina): void {
         console.log('🗑️ Eliminando página:', pagina.nombre);
         this.eliminando = true;
 

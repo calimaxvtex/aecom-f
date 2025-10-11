@@ -1,0 +1,381 @@
+<div class="card">
+  <p-table
+    #dt
+    [value]="paginas"
+    [paginator]="true"
+    paginatorDropdownAppendTo="body"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    responsiveLayout="scroll"
+    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} páginas"
+    [rowsPerPageOptions]="[5, 10, 25]"
+    [globalFilterFields]="['nombre']"
+    [loading]="loadingPaginas"
+  >
+    <ng-template #caption>
+      <div class="flex flex-wrap gap-2 items-center justify-between">
+        <input
+          pInputText
+          type="text"
+          (input)="aplicarFiltros(); dt.filterGlobal($event.target.value, 'contains')"
+          placeholder="Buscar páginas..."
+          class="w-full sm:w-80 order-1 sm:order-0"
+        />
+          <div class="flex gap-2 order-0 sm:order-1">
+            <!-- ✅ PATRÓN CRÍTICO: Botones solo con íconos, raised, sin clases de ancho -->
+            <button
+              (click)="cargarPaginas()"
+              pButton
+              raised
+              icon="pi pi-refresh"
+              [loading]="loadingPaginas"
+              pTooltip="Actualizar"
+            ></button>
+            <button
+              (click)="abrirModalCrear()"
+              pButton
+              raised
+              icon="pi pi-plus"
+              pTooltip="Nueva Página"
+            ></button>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th class="white-space-nowrap" style="width:5%">ID</th>
+        <th class="white-space-nowrap" style="width:25%">Nombre</th>
+        <th class="white-space-nowrap" style="width:10%">Canal</th>
+        <th class="white-space-nowrap" style="width:10%">Estado</th>
+        <th class="white-space-nowrap" style="width:10%">Componentes</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Creación</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Modificación</th>
+        <th class="white-space-nowrap" style="width:10%">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-pagina let-editing="editing" let-ri="rowIndex">
+      <tr>
+        <!-- ID (solo vista) -->
+        <td>{{ pagina.id_pag }}</td>
+
+        <!-- Nombre (edición inline) -->
+        <td>
+          <div class="flex flex-col gap-1 w-fit">
+            <!-- Nombre Principal -->
+            <div>
+              <span
+                *ngIf="editingCell !== pagina.id_pag + '-nombre'"
+                (click)="editarInline(pagina, 'nombre'); $event.stopPropagation()"
+                class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-1 rounded transition-colors font-medium"
+                pTooltip="Clic para editar nombre"
+              >
+                {{pagina.nombre}}
+              </span>
+
+              <!-- Vista de edición nombre principal -->
+              <div
+                *ngIf="editingCell === pagina.id_pag + '-nombre'"
+                class="inline-edit-container mb-1"
+              >
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="pagina.nombre"
+                  (input)="onInputChange(pagina, 'nombre')"
+                  (blur)="cancelInlineEditByBlur()"
+                  (keyup.enter)="saveInlineEdit(pagina, 'nombre')"
+                  (keyup.escape)="cancelInlineEdit()"
+                  class="p-inputtext-xs w-full"
+                  #input
+                  [attr.aria-label]="'nombre-' + pagina.id_pag"
+                  placeholder="Nombre de la página"
+                />
+                <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+                  <button
+                    pButton
+                    icon="pi pi-check"
+                    (click)="saveInlineEdit(pagina, 'nombre')"
+                    class="inline-action-btn p-button-success p-button-text"
+                    pTooltip="Guardar nombre"
+                  ></button>
+                  <button
+                    pButton
+                    icon="pi pi-undo"
+                    (click)="cancelInlineEdit()"
+                    class="inline-action-btn p-button-secondary p-button-text"
+                    pTooltip="Cancelar"
+                  ></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <!-- Canal -->
+        <td>
+          <!-- Vista normal -->
+          <span
+            *ngIf="editingCell !== pagina.id_pag + '-canal'"
+            (click)="editarInline(pagina, 'canal'); $event.stopPropagation()"
+            class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
+            title="Clic para editar"
+          >
+            <p-tag
+              class="w-14 h-10"
+              [value]="pagina.canal"
+              [severity]="getCanalSeverity(pagina.canal)"
+            ></p-tag>
+          </span>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === pagina.id_pag + '-canal'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [(ngModel)]="pagina.canal"
+              [options]="canales"
+              (ngModelChange)="onInputChange(pagina, 'canal')"
+              (keyup.enter)="saveInlineEdit(pagina, 'canal')"
+              (keyup.escape)="cancelInlineEdit()"
+              placeholder="Selecciona canal"
+              class="p-input flex-1"
+              #input
+              [attr.aria-label]="'canal-' + pagina.id_pag"
+            ></p-select>
+            <button
+              *ngIf="hasChanges"
+              pButton
+              icon="pi pi-check"
+              (click)="saveInlineEdit(pagina, 'canal')"
+              class="p-button-sm p-button-success p-button-text inline-action-btn"
+              pTooltip="Guardar (Enter)"
+            ></button>
+            <button
+              *ngIf="hasChanges"
+              pButton
+              icon="pi pi-undo"
+              (click)="cancelInlineEdit()"
+              class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+              pTooltip="Deshacer (Escape)"
+            ></button>
+          </div>
+        </td>
+
+        <!-- Estado -->
+        <td>
+          <!-- Vista normal -->
+          <span
+            *ngIf="editingCell !== pagina.id_pag + '-estado'"
+            (click)="editarInline(pagina, 'estado'); $event.stopPropagation()"
+            class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
+            title="Clic para editar"
+          >
+            <p-tag
+              class="w-16 h-10"
+              [value]="getEstadoLabel(pagina.estado)"
+              [severity]="getEstadoSeverity(pagina.estado)"
+            ></p-tag>
+          </span>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === pagina.id_pag + '-estado'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [(ngModel)]="pagina.estado"
+              [options]="estados"
+              (ngModelChange)="onInputChange(pagina, 'estado')"
+              (keyup.enter)="saveInlineEdit(pagina, 'estado')"
+              (keyup.escape)="cancelInlineEdit()"
+              placeholder="Selecciona estado"
+              class="p-input flex-1"
+              #input
+              [attr.aria-label]="'estado-' + pagina.id_pag"
+            ></p-select>
+            <button
+              *ngIf="hasChanges"
+              pButton
+              icon="pi pi-check"
+              (click)="saveInlineEdit(pagina, 'estado')"
+              class="p-button-sm p-button-success p-button-text inline-action-btn"
+              pTooltip="Guardar (Enter)"
+            ></button>
+            <button
+              *ngIf="hasChanges"
+              pButton
+              icon="pi pi-undo"
+              (click)="cancelInlineEdit()"
+              class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+              pTooltip="Deshacer (Escape)"
+            ></button>
+          </div>
+        </td>
+
+        <!-- Componentes -->
+        <td class="text-center">
+          <span class="px-2 py-1 bg-gray-100 rounded-full text-sm font-medium">
+            {{ pagina.componentes || 0 }}
+          </span>
+        </td>
+
+        <!-- Fecha Creación -->
+        <td class="text-center">
+          <span>{{ formatDate(pagina.fecha_a) }}</span>
+        </td>
+
+        <!-- Fecha Modificación -->
+        <td class="text-center">
+          <span>{{ formatDate(pagina.fecha_m) }}</span>
+        </td>
+
+        <!-- Acciones -->
+        <td>
+          <div class="flex gap-2">
+            <button
+              pButton
+              icon="pi pi-pencil"
+              (click)="editarPagina(pagina)"
+              class="p-button-sm p-button-text p-button-warning"
+              pTooltip="Editar Página"
+            ></button>
+            <button
+              pButton
+              icon="pi pi-trash"
+              (click)="confirmarEliminar(pagina)"
+              class="p-button-sm p-button-text p-button-danger"
+              pTooltip="Eliminar Página"
+            ></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- ⚠️ MODAL DE ELIMINACIÓN -->
+<p-dialog
+  [(visible)]="mostrarConfirmDelete"
+  header="Confirmar Eliminación"
+  [modal]="true"
+  [style]="{width: '400px', minHeight: '200px'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [maximizable]="false"
+>
+  <div class="flex items-center gap-4 mb-4">
+    <span class="text-8xl animate-bounce">⚠️</span>
+    <div>
+      <h4 class="font-semibold text-xl mb-1">¿Eliminar Página?</h4>
+      <p class="text-gray-700 text-lg">
+        ¿Estás seguro de que deseas eliminar la página
+        <strong>"{{paginaSeleccionada?.nombre}}"</strong>?
+      </p>
+      <p class="text-red-600 mt-2 font-medium">
+        ⚠️ Esta acción no se puede deshacer.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+    <button
+      pButton
+      type="button"
+      (click)="onCancelDelete()"
+      label="Cancelar"
+      class="p-button-text"
+    ></button>
+    <button
+      pButton
+      type="button"
+      (click)="eliminarPagina(paginaSeleccionada!)"
+      label="Eliminar"
+      class="p-button-danger"
+      [loading]="eliminando"
+    ></button>
+  </div>
+</p-dialog>
+
+<!-- 📋 MODAL DE PÁGINA - FORMULARIO SIMPLE -->
+<p-dialog
+  [(visible)]="mostrarModal"
+  [header]="esEdicion ? 'Editar Página' : 'Nueva Página'"
+  [modal]="true"
+  [style]="{width: '600px', maxHeight: '80vh'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [closeOnEscape]="true"
+>
+  <form [formGroup]="paginaForm" (ngSubmit)="guardar()">
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Nombre -->
+      <div>
+        <label class="block font-medium mb-1">Nombre de la Página *</label>
+        <input
+          pInputText
+          formControlName="nombre"
+          placeholder="ej: Página de Productos, Página de Contacto"
+          class="w-full"
+          autofocus
+        />
+        <small *ngIf="paginaForm.get('nombre')?.invalid && paginaForm.get('nombre')?.touched"
+            class="text-red-500">
+          El nombre es obligatorio (3-100 caracteres)
+        </small>
+      </div>
+
+      <!-- Canal -->
+      <div>
+        <label class="block font-medium mb-1">Canal *</label>
+        <p-select
+          formControlName="canal"
+          [options]="canales"
+          placeholder="Selecciona el canal"
+          class="w-full"
+        />
+        <small *ngIf="paginaForm.get('canal')?.invalid && paginaForm.get('canal')?.touched"
+            class="text-red-500">
+          El canal es obligatorio
+        </small>
+      </div>
+
+      <!-- Estado (solo en edición) -->
+      <div *ngIf="esEdicion">
+        <label class="block font-medium mb-1">Estado</label>
+        <p-select
+          formControlName="estado"
+          [options]="estados"
+          placeholder="Selecciona el estado"
+          class="w-full"
+        />
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+      <button
+        pButton
+        type="button"
+        (click)="cerrarModal()"
+        label="Cancelar"
+        class="p-button-text"
+      ></button>
+      <button
+        pButton
+        type="submit"
+        [label]="esEdicion ? 'Actualizar' : 'Crear'"
+        [disabled]="paginaForm.invalid || guardando"
+        [loading]="guardando"
+        class="p-button-success"
+      ></button>
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Toast para mensajes -->
+<p-toast></p-toast>

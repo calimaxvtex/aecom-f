@@ -83,6 +83,11 @@ export default [
         path: 'adm-ecom/recetas',
         data: { breadcrumb: 'Recetas', proy: 1 },
         loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
+    },
+    {
+        path: 'adm-ecom/paginas',
+        data: { breadcrumb: 'Páginas', proy: 1 },
+        loadComponent: () => import('./adm-ecom/paginas/paginas.component').then(c => c.PaginasComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

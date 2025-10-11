@@ -140,6 +140,10 @@ export class ApiConfigService {
         return API_URLS.RECETA_CRUD;
     }
 
+    getPaginasCrudUrl(): string {
+        return API_URLS.PAGINAS_CRUD;
+    }
+
     // Método para cambiar URL en tiempo de ejecución
     setBaseUrl(url: string): void {
         this.baseUrl = url;

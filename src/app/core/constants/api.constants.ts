@@ -13,7 +13,8 @@ export const API_CONFIG = {
         BANNER: { UPLOAD: '/upload_banner' },
         SUCURSAL: { CRUD: '/api/admsucursal/v1' },
         PROYECTO: { CRUD: '/api/admproy/v1' },
-        RECETA: { CRUD: '/api/admrcta/v1' }
+        RECETA: { CRUD: '/api/admrcta/v1' },
+        PAGINAS: { CRUD: '/api/acatpag/v1' }
     }
 };
 
@@ -28,7 +29,8 @@ export const API_URLS = {
     BANNER_UPLOAD: `${API_CONFIG.BASE_URL_IMG}${API_CONFIG.ENDPOINTS.BANNER.UPLOAD}`,  // ✅ Usa BASE_URL_IMG
     SUCURSAL_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUCURSAL.CRUD}`,
     PROYECTO_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROYECTO.CRUD}`,
-    RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`
+    RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`,
+    PAGINAS_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS.CRUD}`
 };
 
 

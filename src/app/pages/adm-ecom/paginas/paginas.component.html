@@ -45,12 +45,11 @@
     <ng-template #header>
       <tr>
         <th class="white-space-nowrap" style="width:5%">ID</th>
-        <th class="white-space-nowrap" style="width:25%">Nombre</th>
-        <th class="white-space-nowrap" style="width:10%">Canal</th>
+        <th class="white-space-nowrap" style="width:30%">Nombre</th>
         <th class="white-space-nowrap" style="width:10%">Estado</th>
         <th class="white-space-nowrap" style="width:10%">Componentes</th>
-        <th class="white-space-nowrap" style="width:15%">Fecha Creación</th>
-        <th class="white-space-nowrap" style="width:15%">Fecha Modificación</th>
+        <th class="white-space-nowrap" style="width:17%">Fecha Creación</th>
+        <th class="white-space-nowrap" style="width:18%">Fecha Modificación</th>
         <th class="white-space-nowrap" style="width:10%">Acciones</th>
       </tr>
     </ng-template>
@@ -113,56 +112,6 @@
           </div>
         </td>
 
-        <!-- Canal -->
-        <td>
-          <!-- Vista normal -->
-          <span
-            *ngIf="editingCell !== pagina.id_pag + '-canal'"
-            (click)="editarInline(pagina, 'canal'); $event.stopPropagation()"
-            class="cursor-pointer hover:bg-blue-50 rounded transition-colors"
-            title="Clic para editar"
-          >
-            <p-tag
-              class="w-14 h-10"
-              [value]="pagina.canal"
-              [severity]="getCanalSeverity(pagina.canal)"
-            ></p-tag>
-          </span>
-
-          <!-- Vista de edición -->
-          <div
-            *ngIf="editingCell === pagina.id_pag + '-canal'"
-            class="inline-edit-container"
-          >
-            <p-select
-              [(ngModel)]="pagina.canal"
-              [options]="canales"
-              (ngModelChange)="onInputChange(pagina, 'canal')"
-              (keyup.enter)="saveInlineEdit(pagina, 'canal')"
-              (keyup.escape)="cancelInlineEdit()"
-              placeholder="Selecciona canal"
-              class="p-input flex-1"
-              #input
-              [attr.aria-label]="'canal-' + pagina.id_pag"
-            ></p-select>
-            <button
-              *ngIf="hasChanges"
-              pButton
-              icon="pi pi-check"
-              (click)="saveInlineEdit(pagina, 'canal')"
-              class="p-button-sm p-button-success p-button-text inline-action-btn"
-              pTooltip="Guardar (Enter)"
-            ></button>
-            <button
-              *ngIf="hasChanges"
-              pButton
-              icon="pi pi-undo"
-              (click)="cancelInlineEdit()"
-              class="p-button-sm p-button-secondary p-button-text inline-action-btn"
-              pTooltip="Deshacer (Escape)"
-            ></button>
-          </div>
-        </td>
 
         <!-- Estado -->
         <td>
@@ -329,20 +278,6 @@
         </small>
       </div>
 
-      <!-- Canal -->
-      <div>
-        <label class="block font-medium mb-1">Canal *</label>
-        <p-select
-          formControlName="canal"
-          [options]="canales"
-          placeholder="Selecciona el canal"
-          class="w-full"
-        />
-        <small *ngIf="paginaForm.get('canal')?.invalid && paginaForm.get('canal')?.touched"
-            class="text-red-500">
-          El canal es obligatorio
-        </small>
-      </div>
 
       <!-- Estado (solo en edición) -->
       <div *ngIf="esEdicion">

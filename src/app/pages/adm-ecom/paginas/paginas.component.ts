@@ -70,7 +70,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
     esEdicion = false;
 
     // Filtros
-    filtroCanal: string = '';
     filtroEstado: number | null = null;
     filtroBusqueda: string = '';
 
@@ -79,11 +78,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
     hasChanges: boolean = false;
     originalValue: any = null;
 
-    // Opciones para selects
-    canales = [
-        { label: 'Web', value: 'WEB' },
-        { label: 'App', value: 'APP' }
-    ];
 
     estados = [
         { label: 'Activo', value: 1 },
@@ -139,7 +133,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private inicializarFormulario(): void {
         this.paginaForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-            canal: ['WEB', Validators.required],
             estado: [true] // ToggleSwitch usa boolean, luego se convierte
         });
     }
@@ -154,7 +147,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
         this.paginaForm.reset({
             nombre: '',
-            canal: 'WEB',
             estado: true
         });
 
@@ -171,7 +163,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
         this.paginaForm.patchValue({
             nombre: pagina.nombre,
-            canal: pagina.canal,
             estado: pagina.estado === 1 // Convertir number a boolean para toggle
         });
 
@@ -224,8 +215,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     private crearPagina(formValue: any): void {
         const paginaData: CreatePaginaRequest = {
-            nombre: formValue.nombre,
-            canal: formValue.canal
+            nombre: formValue.nombre
         };
 
         console.log('📝 Creando nueva página:', paginaData);
@@ -258,8 +248,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private actualizarPagina(idPag: number, formValue: any): void {
         const paginaData: UpdatePaginaRequest = {
             id_pag: idPag,
-            nombre: formValue.nombre,
-            canal: formValue.canal
+            nombre: formValue.nombre
         };
 
         console.log('🔄 Actualizando página:', paginaData);
@@ -371,8 +360,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
         // Agregar el campo modificado
         if (campo === 'nombre') {
             updateData.nombre = pagina.nombre;
-        } else if (campo === 'canal') {
-            updateData.canal = pagina.canal;
         } else if (campo === 'estado') {
             updateData.estado = pagina.estado;
         }
@@ -440,7 +427,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     aplicarFiltros(): void {
         console.log('🔍 Aplicando filtros:', {
-            canal: this.filtroCanal,
             estado: this.filtroEstado,
             busqueda: this.filtroBusqueda
         });
@@ -462,13 +448,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     getEstadoSeverity(estado: number): string {
         return estado === 1 ? 'success' : 'danger';
-    }
-
-    /**
-     * Obtiene la severidad del tag según el canal
-     */
-    getCanalSeverity(canal: string): string {
-        return canal === 'WEB' ? 'success' : 'info';
     }
 
     /**

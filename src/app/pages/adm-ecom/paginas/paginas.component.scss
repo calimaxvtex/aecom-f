@@ -183,3 +183,7 @@ select.p-inputtext-sm:focus {
     background-color: #fef2f2;
     color: #dc2626;
 }
+
+p-dialog ::ng-deep .p-dialog-content {
+    overflow: visible !important;
+}

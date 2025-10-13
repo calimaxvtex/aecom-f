@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -78,6 +78,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     editingCell: string = '';
     hasChanges: boolean = false;
     originalValue: any = null;
+    isTransitioningFields = false;
 
     // Control de estado temporal del ToggleSwitch
     toggleStates: { [key: string]: boolean } = {};
@@ -94,6 +95,26 @@ export class PaginasComponent implements OnInit, OnDestroy {
         { label: 'Activo', value: 1 },
         { label: 'Inactivo', value: 0 }
     ];
+
+    // Método para manejar clics fuera de los campos editables inline
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: Event): void {
+        // Solo procesar si estamos editando algún campo inline
+        if (this.editingCell && (this.editingCell.includes('-nombre') || this.editingCell.includes('-canal'))) {
+            const target = event.target as HTMLElement;
+
+            // Verificar si el clic fue dentro del contenedor de edición o elementos relacionados con p-select
+            const editContainer = target.closest('.inline-edit-container');
+            const pSelectPanel = target.closest('.p-select-panel'); // Panel del dropdown de p-select
+            const pSelect = target.closest('.p-select'); // El propio p-select
+
+            // Si el clic no fue dentro del contenedor de edición, ni en el p-select, ni en su panel, cancelar edición
+            if (!editContainer && !pSelect && !pSelectPanel) {
+                console.log('🔄 Clic fuera del contenedor de edición - cancelando edición');
+                this.cancelInlineEdit();
+            }
+        }
+    }
 
     constructor() {
         console.log('📄 PaginasComponent inicializado');
@@ -330,10 +351,58 @@ export class PaginasComponent implements OnInit, OnDestroy {
      * Inicia edición inline en el campo nombre
      */
     editarInline(pagina: Pagina, campo: string): void {
-        console.log('✏️ Iniciando edición inline:', campo, 'para página:', pagina.nombre);
-        this.editingCell = pagina.id_pag + '-' + campo;
+        const newEditingCell = pagina.id_pag + '-' + campo;
+
+        // Si ya estamos editando otro campo y hay cambios pendientes
+        if (this.editingCell && this.hasChanges && this.editingCell !== newEditingCell) {
+            console.warn('⚠️ Cambiando de campo con cambios pendientes - cancelando edición anterior');
+            this.cancelInlineEdit(); // Cancelar la edición anterior
+        }
+
+        // Marcar que estamos cambiando de campo
+        this.isTransitioningFields = true;
+
+        // Iniciar nueva edición
+        this.editingCell = newEditingCell;
         this.originalValue = pagina[campo as keyof Pagina];
         this.hasChanges = false;
+        console.log(`✏️ Iniciando edición ${campo}:`, {
+            originalValue: this.originalValue,
+            originalType: typeof this.originalValue,
+            paginaValue: pagina[campo as keyof Pagina]
+        });
+
+        // Programáticamente enfocamos y posicionamos el cursor al final del texto
+        // Usar setTimeout con mayor delay para asegurar que PrimeNG renderice completamente
+        setTimeout(() => {
+            let element: HTMLElement | null = null;
+
+            if (campo === 'canal') {
+                // Para p-select de canal, buscar el input dentro del contenedor de edición
+                const editContainer = document.querySelector(`[aria-label="canal-${pagina.id_pag}"]`);
+                if (editContainer) {
+                    // Buscar el input dentro del p-select (estructura de PrimeNG)
+                    element = editContainer.querySelector('input') as HTMLInputElement;
+                }
+            } else {
+                // Para otros campos (input normales)
+                const inputElement = document.querySelector(`input[aria-label="${campo}-${pagina.id_pag}"]`) as HTMLInputElement;
+                element = inputElement;
+            }
+
+            if (element) {
+                element.focus();
+                console.log('🎯 Elemento enfocado:', campo, 'para página:', pagina.id_pag);
+            } else {
+                console.warn('⚠️ No se encontró elemento para enfocar:', campo, 'página:', pagina.id_pag);
+            }
+
+            // Resetear el flag de transición después de un breve delay
+            setTimeout(() => {
+                this.isTransitioningFields = false;
+                console.log('🔄 Flag de transición reseteado');
+            }, 100);
+        }, 50);
     }
 
     /**
@@ -399,21 +468,85 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     cancelInlineEdit(): void {
         console.log('❌ Cancelando edición inline');
+        if (this.editingCell && this.hasChanges) {
+            const [paginaId, field] = this.editingCell.split('-');
+
+            const pagina = this.paginas.find(p => p.id_pag === parseInt(paginaId));
+            if (pagina) {
+                (pagina as any)[field] = this.originalValue;
+
+                // Para campos que usan select, forzar actualización visual
+                if (field === 'canal') {
+                    this.cdr.detectChanges();
+                    setTimeout(() => this.cdr.detectChanges(), 0);
+                    setTimeout(() => this.cdr.detectChanges(), 10);
+                } else {
+                    this.cdr.detectChanges();
+                }
+            }
+        }
+
         this.editingCell = '';
         this.hasChanges = false;
         this.originalValue = null;
+        this.isTransitioningFields = false;
     }
 
     /**
      * Cancela edición inline al perder foco (blur)
      */
     cancelInlineEditByBlur(): void {
-        // Solo cancelar si no hay cambios pendientes
-        if (!this.hasChanges) {
-            setTimeout(() => {
-                this.cancelInlineEdit();
-            }, 150); // Pequeño delay para permitir clicks en botones
-        }
+        console.log('editing >', this.editingCell, ' hasChanges >', this.hasChanges, ' transitioning >', this.isTransitioningFields);
+
+        // Usar setTimeout para permitir que los eventos de click se ejecuten primero
+        setTimeout(() => {
+            // Si estamos en transición entre campos, no cancelar
+            if (this.isTransitioningFields) {
+                console.log('🔄 Blur durante transición - ignorando');
+                return;
+            }
+
+            // Verificar si aún estamos en modo edición (puede haber sido cancelado por un click)
+            if (this.editingCell) {
+                console.log('🔄 Ejecutando blur - restaurando valor original');
+
+                // Siempre restaurar el valor original cuando se pierde el foco
+                const [paginaId, field] = this.editingCell.split('-');
+                const pagina = this.paginas.find(p => p.id_pag === parseInt(paginaId));
+                if (pagina) {
+                    const valorAntes = (pagina as any)[field];
+                    console.log(`🔄 Blur: Restaurando ${field} - Antes: ${valorAntes}, Original: ${this.originalValue}`);
+
+                    // Restaurar el valor original
+                    (pagina as any)[field] = this.originalValue;
+
+                    // Para campos que usan select HTML, necesitamos forzar la actualización visual
+                    if (field === 'canal') {
+                        console.log('🎯 Blur: Campo select detectado - forzando actualización visual');
+
+                        // Crear una nueva referencia del objeto para forzar la actualización del binding
+                        const index = this.paginas.findIndex(p => p.id_pag === pagina.id_pag);
+                        if (index !== -1) {
+                            this.paginas[index] = { ...this.paginas[index] };
+                        }
+
+                        // Múltiples detecciones de cambios para asegurar la actualización
+                        this.cdr.detectChanges();
+                        setTimeout(() => this.cdr.detectChanges(), 0);
+                        setTimeout(() => this.cdr.detectChanges(), 10);
+                    } else {
+                        this.cdr.detectChanges();
+                    }
+
+                    console.log('🔄 Valor restaurado por blur:', field, 'Valor final:', (pagina as any)[field]);
+                }
+
+                this.editingCell = '';
+                this.originalValue = null;
+                this.hasChanges = false;
+                this.isTransitioningFields = false; // Resetear flag de transición
+            }
+        }, 150); // Pequeño delay para permitir que los clicks se ejecuten primero
     }
 
     // ========== FILTRO POR CANAL (ESTILO BANNERS) ==========

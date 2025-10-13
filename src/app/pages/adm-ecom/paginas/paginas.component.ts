@@ -314,6 +314,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     }
 
 
+
     /**
      * Cancela eliminación de página
      */
@@ -364,6 +365,8 @@ export class PaginasComponent implements OnInit, OnDestroy {
         // Agregar el campo modificado
         if (campo === 'nombre') {
             updateData.nombre = pagina.nombre;
+        } else if (campo === 'canal') {
+            updateData.canal = pagina.canal;
         }
 
         this.paginaService.updatePagina(updateData).subscribe({

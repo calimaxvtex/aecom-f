@@ -59,12 +59,13 @@
     <ng-template #header>
       <tr>
         <th class="white-space-nowrap" style="width:5%">ID</th>
-        <th class="white-space-nowrap" style="width:30%">Nombre</th>
+        <th class="white-space-nowrap" style="width:25%">Nombre</th>
+        <th class="white-space-nowrap" style="width:10%">Canal</th>
         <th class="white-space-nowrap" style="width:10%">Estado</th>
-        <th class="white-space-nowrap" style="width:10%">Componentes</th>
-        <th class="white-space-nowrap" style="width:17%">Fecha Creación</th>
-        <th class="white-space-nowrap" style="width:18%">Fecha Modificación</th>
-        <th class="white-space-nowrap" style="width:10%">Acciones</th>
+        <th class="white-space-nowrap" style="width:8%">Componentes</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Creación</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Modificación</th>
+        <th class="white-space-nowrap" style="width:8%">Acciones</th>
       </tr>
     </ng-template>
 
@@ -126,6 +127,55 @@
           </div>
         </td>
 
+        <!-- Canal (edición inline) -->
+        <td>
+          <!-- Vista normal -->
+          <span
+            *ngIf="editingCell !== pagina.id_pag + '-canal'"
+            (click)="editarInline(pagina, 'canal'); $event.stopPropagation()"
+            class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+            pTooltip="Clic para editar canal"
+          >
+            <span [ngClass]="{
+              'bg-blue-100 text-blue-800': pagina.canal === 'WEB',
+              'bg-purple-100 text-purple-800': pagina.canal === 'APP'
+            }" class="px-2 py-1 rounded text-xs">
+              {{pagina.canal}}
+            </span>
+          </span>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === pagina.id_pag + '-canal'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [options]="canalesOptions"
+              [(ngModel)]="pagina.canal"
+              (ngModelChange)="onInputChange(pagina, 'canal')"
+              [ngModelOptions]="{standalone: true}"
+              placeholder="Seleccionar canal"
+              class="w-full"
+              [attr.aria-label]="'canal-' + pagina.id_pag"
+            ></p-select>
+            <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+              <button
+                pButton
+                icon="pi pi-check"
+                (click)="saveInlineEdit(pagina, 'canal')"
+                class="inline-action-btn p-button-success p-button-text"
+                pTooltip="Guardar canal"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-undo"
+                (click)="cancelInlineEdit()"
+                class="inline-action-btn p-button-secondary p-button-text"
+                pTooltip="Cancelar"
+              ></button>
+            </div>
+          </div>
+        </td>
 
         <!-- Estado -->
         <td class="text-center">

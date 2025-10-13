@@ -187,3 +187,7 @@ select.p-inputtext-sm:focus {
 p-dialog ::ng-deep .p-dialog-content {
     overflow: visible !important;
 }
+
+p-table ::ng-deep .p-datatable-table-container {
+    overflow: visible !important;
+}

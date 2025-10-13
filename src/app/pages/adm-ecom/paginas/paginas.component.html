@@ -163,13 +163,6 @@
           <div class="flex gap-2">
             <button
               pButton
-              icon="pi pi-pencil"
-              (click)="editarPagina(pagina)"
-              class="p-button-sm p-button-text p-button-warning"
-              pTooltip="Editar Página"
-            ></button>
-            <button
-              pButton
               icon="pi pi-trash"
               (click)="eliminarPagina(pagina)"
               class="p-button-sm p-button-text p-button-danger"
@@ -199,7 +192,7 @@
       <h4 class="font-semibold text-xl mb-1">¿Eliminar Página?</h4>
       <p class="text-gray-700 text-lg">
         ¿Estás seguro de que deseas eliminar la página
-        <strong>"{{paginaSeleccionada?.nombre}}"</strong>?
+        <strong>"{{paginaParaEliminar?.nombre}}"</strong>?
       </p>
       <p class="text-red-600 mt-2 font-medium">
         ⚠️ Esta acción no se puede deshacer.
@@ -229,7 +222,7 @@
 <!-- 📋 MODAL DE PÁGINA - FORMULARIO SIMPLE -->
 <p-dialog
   [(visible)]="mostrarModal"
-  [header]="esEdicion ? 'Editar Página' : 'Nueva Página'"
+  header="Nueva Página"
   [modal]="true"
   [style]="{width: '600px', maxHeight: '80vh'}"
   [draggable]="false"
@@ -270,16 +263,6 @@
         </small>
       </div>
 
-      <!-- Estado (solo en edición) -->
-      <div *ngIf="esEdicion">
-        <label class="block font-medium mb-1">Estado</label>
-        <p-select
-          formControlName="estado"
-          [options]="estados"
-          placeholder="Selecciona el estado"
-          class="w-full"
-        />
-      </div>
     </div>
 
     <!-- Botones -->
@@ -294,7 +277,7 @@
       <button
         pButton
         type="submit"
-        [label]="esEdicion ? 'Actualizar' : 'Crear'"
+        label="Crear"
         [disabled]="paginaForm.invalid || guardando"
         [loading]="guardando"
         class="p-button-success"

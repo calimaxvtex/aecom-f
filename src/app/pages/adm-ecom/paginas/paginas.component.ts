@@ -56,7 +56,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
     // Datos
     paginas: Pagina[] = [];
-    paginaSeleccionada: Pagina | null = null;
+    paginaParaEliminar: Pagina | null = null;
 
     // Estados de carga
     loadingPaginas = false;
@@ -69,7 +69,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
     // Formularios
     paginaForm!: FormGroup;
-    esEdicion = false;
 
     // Filtros
     filtroEstado: number | null = null;
@@ -151,8 +150,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private inicializarFormulario(): void {
         this.paginaForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-            canal: ['WEB', [Validators.required]], // Canal requerido con valor por defecto WEB
-            estado: [true] // ToggleSwitch usa boolean, luego se convierte
+            canal: ['WEB', [Validators.required]] // Canal requerido con valor por defecto WEB
         });
     }
 
@@ -161,34 +159,15 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     abrirModalCrear(): void {
         console.log('➕ Abriendo modal para crear página');
-        this.esEdicion = false;
-        this.paginaSeleccionada = null;
 
         this.paginaForm.reset({
             nombre: '',
-            canal: 'WEB', // Valor por defecto para canal
-            estado: true
+            canal: 'WEB' // Valor por defecto para canal
         });
 
         this.mostrarModal = true;
     }
 
-    /**
-     * Abre modal para editar página existente
-     */
-    editarPagina(pagina: Pagina): void {
-        console.log('✏️ Abriendo modal para editar página:', pagina.nombre);
-        this.esEdicion = true;
-        this.paginaSeleccionada = pagina;
-
-        this.paginaForm.patchValue({
-            nombre: pagina.nombre,
-            canal: pagina.canal || 'WEB', // Canal con valor por defecto
-            estado: pagina.estado === 1 // Convertir number a boolean para toggle
-        });
-
-        this.mostrarModal = true;
-    }
 
     /**
      * Cierra el modal y resetea el formulario
@@ -197,14 +176,12 @@ export class PaginasComponent implements OnInit, OnDestroy {
         console.log('❌ Cerrando modal');
         this.mostrarModal = false;
         this.paginaForm.reset();
-        this.paginaSeleccionada = null;
-        this.esEdicion = false;
     }
 
     // ========== MÉTODOS CRUD ==========
 
     /**
-     * Guarda la página (crear o actualizar)
+     * Crea una nueva página
      */
     guardar(): void {
         if (this.paginaForm.invalid) {
@@ -220,15 +197,10 @@ export class PaginasComponent implements OnInit, OnDestroy {
         this.guardando = true;
         const formValue = this.paginaForm.value;
 
-        console.log('💾 Guardando página:', formValue);
+        console.log('💾 Creando página:', formValue);
 
-        if (this.esEdicion && this.paginaSeleccionada) {
-            // Actualizar página existente
-            this.actualizarPagina(this.paginaSeleccionada.id_pag, formValue);
-        } else {
-            // Crear nueva página
-            this.crearPagina(formValue);
-        }
+        // Crear nueva página
+        this.crearPagina(formValue);
     }
 
     /**
@@ -299,12 +271,12 @@ export class PaginasComponent implements OnInit, OnDestroy {
     }
 
     confirmDeletePagina(): void {
-        if (!this.paginaSeleccionada) return;
+        if (!this.paginaParaEliminar) return;
 
         this.eliminando = true;
-        console.log('🗑️ Eliminando página:', this.paginaSeleccionada.nombre);
+        console.log('🗑️ Eliminando página:', this.paginaParaEliminar.nombre);
 
-        this.paginaService.deletePagina(this.paginaSeleccionada.id_pag).subscribe({
+        this.paginaService.deletePagina(this.paginaParaEliminar.id_pag).subscribe({
             next: (response: any) => {
                 console.log('✅ Página eliminada:', response);
 
@@ -315,7 +287,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
                 });
 
                 this.cargarPaginas();
-                this.paginaSeleccionada = null;
+                this.paginaParaEliminar = null;
                 this.mostrarConfirmDelete = false;
             },
             error: (error: any) => {
@@ -337,42 +309,24 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     eliminarPagina(pagina: Pagina): void {
         console.log('⚠️ Mostrando modal de eliminación para página:', pagina.nombre);
-        this.paginaSeleccionada = pagina;
+        this.paginaParaEliminar = pagina;
         this.mostrarConfirmDelete = true;
     }
 
-    /**
-     * Elimina una página (método legacy - no usar)
-     */
-    eliminarPaginaLegacy(pagina: Pagina): void {
-        console.log('🗑️ Eliminando página:', pagina.nombre);
-        this.eliminando = true;
 
-        this.paginaService.deletePagina(pagina.id_pag).subscribe({
-            next: (response) => {
-                console.log('✅ Página eliminada:', response.data);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Éxito',
-                    detail: 'Página eliminada correctamente'
-                });
-                this.cargarPaginas();
-            },
-            error: (error) => {
-                console.error('❌ Error al eliminar página:', error);
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Error al eliminar la página'
-                });
-            }
-        }).add(() => this.eliminando = false);
+    /**
+     * Cancela eliminación de página
+     */
+    onCancelDelete(): void {
+        console.log('❌ Cancelando eliminación de página');
+        this.mostrarConfirmDelete = false;
+        this.paginaParaEliminar = null;
     }
 
     // ========== MÉTODOS DE EDICIÓN INLINE ==========
 
     /**
-     * Inicia edición inline en una celda específica
+     * Inicia edición inline en el campo nombre
      */
     editarInline(pagina: Pagina, campo: string): void {
         console.log('✏️ Iniciando edición inline:', campo, 'para página:', pagina.nombre);
@@ -457,15 +411,6 @@ export class PaginasComponent implements OnInit, OnDestroy {
                 this.cancelInlineEdit();
             }, 150); // Pequeño delay para permitir clicks en botones
         }
-    }
-
-    /**
-     * Cancela eliminación de página
-     */
-    onCancelDelete(): void {
-        console.log('❌ Cancelando eliminación de página');
-        this.mostrarConfirmDelete = false;
-        this.paginaSeleccionada = null;
     }
 
     // ========== FILTRO POR CANAL (ESTILO BANNERS) ==========

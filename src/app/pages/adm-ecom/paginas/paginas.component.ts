@@ -151,6 +151,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private inicializarFormulario(): void {
         this.paginaForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+            canal: ['WEB', [Validators.required]], // Canal requerido con valor por defecto WEB
             estado: [true] // ToggleSwitch usa boolean, luego se convierte
         });
     }
@@ -165,6 +166,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
         this.paginaForm.reset({
             nombre: '',
+            canal: 'WEB', // Valor por defecto para canal
             estado: true
         });
 
@@ -181,6 +183,7 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
         this.paginaForm.patchValue({
             nombre: pagina.nombre,
+            canal: pagina.canal || 'WEB', // Canal con valor por defecto
             estado: pagina.estado === 1 // Convertir number a boolean para toggle
         });
 
@@ -233,7 +236,8 @@ export class PaginasComponent implements OnInit, OnDestroy {
      */
     private crearPagina(formValue: any): void {
         const paginaData: CreatePaginaRequest = {
-            nombre: formValue.nombre
+            nombre: formValue.nombre,
+            canal: formValue.canal
         };
 
         console.log('📝 Creando nueva página:', paginaData);
@@ -266,7 +270,8 @@ export class PaginasComponent implements OnInit, OnDestroy {
     private actualizarPagina(idPag: number, formValue: any): void {
         const paginaData: UpdatePaginaRequest = {
             id_pag: idPag,
-            nombre: formValue.nombre
+            nombre: formValue.nombre,
+            canal: formValue.canal
         };
 
         console.log('🔄 Actualizando página:', paginaData);

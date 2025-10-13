@@ -25,6 +25,7 @@ export interface Pagina {
  */
 export interface CreatePaginaRequest {
     nombre: string;                   // Nombre de la página (requerido)
+    canal: string;                    // Canal: 'WEB' | 'APP' (requerido)
 }
 
 /**

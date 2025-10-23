@@ -7,7 +7,8 @@ export const environment = {
   mode: 'qa',  // Identificador del modo
 
   // URLs de la API
-  apiUrl: 'https://qa-ec.calimax.digital',
+  // apiUrl: 'https://qa-ec.calimax.digital',
+  apiUrl: 'http://localhost:3000',
   apiUrlImg: 'http://10.10.254.127:3013',
 
   // Configuración de autenticación

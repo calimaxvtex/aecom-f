@@ -130,6 +130,10 @@ export class ApiConfigService {
         return API_URLS.SUCURSAL_CRUD;
     }
 
+    getCategoriaCrudUrl(): string {
+        return API_URLS.CATEGORIA_CRUD;
+    }
+
     getProyectoCrudUrl(): string {
         return API_URLS.PROYECTO_CRUD;
     }

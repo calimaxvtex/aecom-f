@@ -45,6 +45,11 @@ export default [
         loadComponent: () => import('./adm-ecom/sucursal/sucursal.component').then(c => c.SucursalComponent)
     },
     {
+        path: 'adm-ecom/categoria',
+        data: { breadcrumb: 'Administración de Categorías', proy: 1 },
+        loadComponent: () => import('./adm-ecom/categoria/categoria.component').then(c => c.CategoriaComponent)
+    },
+    {
         path: 'system/usuarios',
         data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
         loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)

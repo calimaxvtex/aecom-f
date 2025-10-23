@@ -1,0 +1,63 @@
+/* Estilos específicos para el componente de categorías */
+
+.p-tabs .p-tablist {
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.p-tabview .p-tabview-panels {
+    padding: 0;
+}
+
+/* Estilos para edición inline */
+.editable-cell {
+    transition: background-color 0.2s ease;
+}
+
+.editable-cell:hover {
+    background-color: #f3f4f6;
+}
+
+.inline-edit-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.inline-action-btn {
+    padding: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Estilos para botones de filtro compactos */
+.compact-filter-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-width: auto;
+}
+
+/* Estilos para el modal */
+.categoria-form-dialog .p-dialog-header {
+    padding: 1rem 1.5rem;
+}
+
+.categoria-form-dialog .p-dialog-content {
+    padding: 0;
+}
+
+.categoria-form-dialog .p-dialog-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .grid.grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-edit-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

@@ -12,6 +12,7 @@ export const API_CONFIG = {
         SUC: {CRUD: '/api/admsuc/v1'},
         BANNER: {UPLOAD: '/upload_banner'},
         SUCURSAL: {CRUD: '/api/admsucursal/v1'},
+        CATEGORIA: {CRUD: '/api/admcat/v1'},
         PROYECTO: {CRUD: '/api/admproy/v1'}
     }
 };
@@ -26,6 +27,7 @@ export const API_URLS = {
     SUC_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUC.CRUD}`,
     BANNER_UPLOAD: `${API_CONFIG.BASE_URL_IMG}${API_CONFIG.ENDPOINTS.BANNER.UPLOAD}`,  // ✅ Usa BASE_URL_IMG
     SUCURSAL_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUCURSAL.CRUD}`,
+    CATEGORIA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CATEGORIA.CRUD}`,
     PROYECTO_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROYECTO.CRUD}`
 };
 

@@ -526,8 +526,9 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                                     optionLabel="label"
                                     optionValue="value"
                                     (onChange)="onTipoCallChange($event)"
-                                 
                                     class="w-full"
+                                    appendTo="body"
+                                    [style]="{'z-index': '9999'}"
                                 ></p-select>
                                 <label>Tipo Redireccionamiento *</label>
                             </p-floatLabel>
@@ -592,6 +593,8 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                                 optionValue="value"
                                 placeholder="Seleccionar colección"
                                 class="w-full"
+                                appendTo="body"
+                                [style]="{'z-index': '9999'}"
                             ></p-select>
                             <label>Colección</label>
                         </p-floatLabel>
@@ -1582,10 +1585,31 @@ export class BannersTabComponent implements OnInit, OnChanges {
         this.bannerForm.patchValue({ [fieldName]: newValue });
     }
 
-    private formatDate(date: Date): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+    private formatDate(date: Date | string | null | undefined): string {
+        if (!date) {
+            return '';
+        }
+
+        let dateObj: Date;
+
+        if (typeof date === 'string') {
+            // Si es un string, intentar convertirlo a Date
+            dateObj = new Date(date);
+            // Verificar si la conversión fue exitosa
+            if (isNaN(dateObj.getTime())) {
+                console.error('❌ Fecha inválida recibida en formatDate:', date);
+                return '';
+            }
+        } else if (date instanceof Date) {
+            dateObj = date;
+        } else {
+            console.error('❌ Tipo de dato inválido recibido en formatDate:', typeof date, date);
+            return '';
+        }
+
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
 

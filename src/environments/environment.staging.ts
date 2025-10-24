@@ -1,42 +1,52 @@
-/**
- * Configuración de entorno para STAGING/PRUEBAS
- * Este archivo se usa para ambiente de pruebas
- */
 export const environment = {
   production: false,
+  mode: 'staging',
   
-  // URLs de la API
-  apiUrl: 'https://staging-ec.calimax.digital',
-  apiUrlImg: 'http://10.10.254.127:3013',
+  // URLs de API
+  apiUrl: 'https://staging-api.calimax.digital',
+  apiUrlImg: 'https://staging-images.calimax.digital',
   
   // Configuración de autenticación
-  bypassAuth: false,  // Autenticación requerida en staging
+  bypassAuth: false,
+  mockDataEnabled: false,
   
   // Configuración de debug
   debugMode: true,
   enableLogs: true,
-  
-  // Configuración de cache
-  cacheEnabled: true,
-  cacheExpiryMinutes: 30,
-  
-  // Configuración de interceptors
   enableApiMonitor: true,
   enableHttpLogging: true,
   
-  // Configuración de desarrollo
-  mockDataEnabled: false,
+  // Herramientas de desarrollo
   devToolsEnabled: true,
+  errorReportingEnabled: true,
+  performanceMonitoring: true,
+  
+  // Configuración específica de Staging
+  stagingMode: true,
+  allowTestData: true,
+  enableExtraLogging: true,
+  
+  // Configuración de caché
+  cacheEnabled: true,
+  cacheTimeout: 600000, // 10 minutos
   
   // Configuración de timeouts
-  apiTimeout: 20000, // 20 segundos
-  uploadTimeout: 45000, // 45 segundos para uploads
+  apiTimeout: 30000,
+  requestTimeout: 15000,
   
   // Configuración de paginación
-  defaultPageSize: 15,
-  maxPageSize: 150,
+  defaultPageSize: 20,
+  maxPageSize: 100,
   
   // Configuración de validación
   enableFormValidation: true,
-  enableRealTimeValidation: true
+  enableRealTimeValidation: true,
+  
+  // Configuración de notificaciones
+  enableNotifications: true,
+  notificationTimeout: 5000,
+  
+  // Configuración de analytics
+  enableAnalytics: true,
+  analyticsId: 'STAGING-ANALYTICS-ID'
 };

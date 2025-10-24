@@ -1,230 +1,161 @@
-# 💳 Servicio de Tipo Gateway
+# 💳 TipoGateway Service
+
+Servicio CRUD completo para la gestión de tipos de gateways de pagos.
 
 ## 📋 Descripción
 
-Servicio CRUD completo para la gestión del catálogo de gateways de pagos (tipos de gateway). Implementa todas las operaciones CRUD siguiendo el patrón estándar del proyecto.
-
-## 🎯 Endpoint Utilizado
-
-- **ID**: 23
-- **Descripción**: Catálogo de Gateways de Pagos
-- **URL**: Se obtiene dinámicamente desde `ApiConfigService`
+El `TipoGatewayService` proporciona operaciones CRUD para gestionar los diferentes tipos de gateways de pago disponibles en el sistema.
 
 ## 🏗️ Modelo de Datos
 
+### TipoGatewayItem
 ```typescript
 interface TipoGatewayItem {
-    id: number;
-    nombre: string;           // Nombre del gateway (ej: "OpenPay")
-    clave: string;           // Clave identificadora (ej: "VT")
-    tipo_deposito: number;   // Tipo de depósito (ej: 30)
-    estado: string;          // Estado (ej: "A" = Activo)
-    fecha_mov: string;       // Fecha de movimiento
-    swActivo: number;        // Switch activo (0/1)
-    idj: number | null;      // ID adicional (opcional)
-    sw: string | null;       // Switch adicional (opcional)
+  id_tipogateway: number;
+  nombre: string;
+  descripcion?: string;
+  activo: boolean;
+  configuracion?: any;
+  fecha_creacion: string;
+  fecha_actualizacion: string;
+  id_usuario_creacion: number;
+  id_usuario_actualizacion: number;
 }
 ```
 
-## 🚀 Características Implementadas
+## 🔧 Operaciones CRUD
 
-### ✅ Operaciones CRUD Completas
-
-- **GET** - `getTipoGateways()`: Obtener todos los tipos de gateway
-- **GET** - `getTipoGatewayById(id)`: Obtener un tipo específico por ID
-- **POST** - `createTipoGateway(item)`: Crear nuevo tipo de gateway
-- **PUT** - `updateTipoGateway(item)`: Actualizar tipo existente
-- **DELETE** - `deleteTipoGateway(id)`: Eliminar tipo de gateway
-- **SAVE** - `saveTipoGateway(item)`: Auto-detecta crear/actualizar
-
-### 🔧 Funcionalidades Adicionales
-
-- **URLs Dinámicas**: Uso de `ApiConfigService` con endpoint ID 23
-- **Gestión de Sesión**: Integración automática con `SessionService`
-- **Manejo de Errores**: Tratamiento robusto de errores HTTP
-- **Logging Detallado**: Logs completos para debugging
-- **Validaciones**: Validación de datos requeridos
-- **Método Debug**: `debugService()` para verificar configuración
-
-## 📝 Uso del Servicio
-
-### 📋 Obtener Lista de Tipos de Gateway
-
+### 1. **GET** - Obtener Tipos de Gateway
 ```typescript
-import { TipoGatewayService } from '@/features/tipogateway/services/tipogateway.service';
+getTipoGateways(filters?: {
+  activo?: boolean;
+  nombre?: string;
+}): Observable<TipoGatewayCrudResponse>
+```
 
-constructor(private tipoGatewayService: TipoGatewayService) {}
+### 2. **POST** - Crear Tipo de Gateway
+```typescript
+createTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse>
+```
 
-// Obtener todos los tipos
-getTiposGateway() {
-  this.tipoGatewayService.getTipoGateways().subscribe({
-    next: (response) => {
-      console.log('Tipos de gateway:', response.data);
-      this.tiposGateway = response.data;
-    },
-    error: (error) => {
-      console.error('Error:', error);
-    }
+### 3. **PUT** - Actualizar Tipo de Gateway
+```typescript
+updateTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse>
+```
+
+### 4. **DELETE** - Eliminar Tipo de Gateway
+```typescript
+deleteTipoGateway(id: number): Observable<TipoGatewayCrudSingleResponse>
+```
+
+### 5. **SAVE** - Guardar (Crear o Actualizar)
+```typescript
+saveTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse>
+```
+
+### 6. **GET BY ID** - Obtener por ID
+```typescript
+getTipoGatewayById(id: number): Observable<TipoGatewayCrudSingleResponse>
+```
+
+## 🚀 Funcionalidades Adicionales
+
+### URLs Dinámicas
+- **Endpoint ID 2:** Configuración dinámica de URLs
+- **Base URL:** Obtenida del `ApiConfigService`
+
+### Filtros Avanzados
+- **Por estado:** `activo: boolean`
+- **Por nombre:** `nombre: string`
+- **Combinables:** Múltiples filtros simultáneos
+
+### Validación Automática
+- **Crear vs Actualizar:** Detecta automáticamente si es nuevo o existente
+- **Campos requeridos:** Validación de campos obligatorios
+- **Tipos de datos:** Validación de tipos TypeScript
+
+## 📝 Ejemplos de Uso
+
+### Obtener todos los tipos de gateway activos
+```typescript
+this.tipoGatewayService.getTipoGateways({ activo: true })
+  .subscribe(response => {
+    console.log('Tipos de gateway activos:', response.data);
   });
-}
 ```
 
-### ➕ Crear Nuevo Tipo de Gateway
-
+### Crear un nuevo tipo de gateway
 ```typescript
-createTipoGateway() {
-  const nuevoTipo: TipoGatewayFormItem = {
-    nombre: 'PayPal',
-    clave: 'PP',
-    tipo_deposito: 20,
-    estado: 'A',
-    swActivo: 1,
-    idj: null,
-    sw: null
-  };
+const nuevoTipoGateway: TipoGatewayFormItem = {
+  nombre: 'PayPal',
+  descripcion: 'Gateway de PayPal',
+  activo: true,
+  configuracion: { apiKey: 'xxx', secret: 'yyy' }
+};
 
-  this.tipoGatewayService.createTipoGateway(nuevoTipo).subscribe({
-    next: (response) => {
-      console.log('Tipo creado:', response.data);
-      this.refreshList();
-    },
-    error: (error) => {
-      console.error('Error al crear:', error);
-    }
+this.tipoGatewayService.createTipoGateway(nuevoTipoGateway)
+  .subscribe(response => {
+    console.log('Tipo de gateway creado:', response.data);
   });
-}
 ```
 
-### ✏️ Actualizar Tipo Existente
-
+### Actualizar un tipo de gateway existente
 ```typescript
-updateTipoGateway(id: number) {
-  const tipoActualizado: TipoGatewayFormItem = {
-    id: id,
-    nombre: 'OpenPay Updated',
-    clave: 'VT',
-    tipo_deposito: 35,
-    estado: 'A',
-    swActivo: 1
-  };
+const tipoGatewayActualizado: TipoGatewayFormItem = {
+  id_tipogateway: 1,
+  nombre: 'PayPal Pro',
+  descripcion: 'Gateway de PayPal Pro',
+  activo: true,
+  configuracion: { apiKey: 'xxx', secret: 'yyy' }
+};
 
-  this.tipoGatewayService.updateTipoGateway(tipoActualizado).subscribe({
-    next: (response) => {
-      console.log('Tipo actualizado:', response.data);
-      this.refreshList();
-    },
-    error: (error) => {
-      console.error('Error al actualizar:', error);
-    }
+this.tipoGatewayService.updateTipoGateway(tipoGatewayActualizado)
+  .subscribe(response => {
+    console.log('Tipo de gateway actualizado:', response.data);
   });
-}
 ```
 
-### 🗑️ Eliminar Tipo de Gateway
-
+### Guardar automáticamente (crear o actualizar)
 ```typescript
-deleteTipoGateway(id: number) {
-  if (confirm('¿Está seguro de eliminar este tipo de gateway?')) {
-    this.tipoGatewayService.deleteTipoGateway(id).subscribe({
-      next: (response) => {
-        console.log('Tipo eliminado exitosamente');
-        this.refreshList();
-      },
-      error: (error) => {
-        console.error('Error al eliminar:', error);
-      }
-    });
-  }
-}
-```
-
-### 💾 Auto-Save (Crear o Actualizar)
-
-```typescript
-saveTipoGateway(formData: TipoGatewayFormItem) {
-  // El servicio detecta automáticamente si crear o actualizar
-  this.tipoGatewayService.saveTipoGateway(formData).subscribe({
-    next: (response) => {
-      const action = formData.id ? 'actualizado' : 'creado';
-      console.log(`Tipo ${action}:`, response.data);
-      this.refreshList();
-    },
-    error: (error) => {
-      console.error('Error al guardar:', error);
-    }
+this.tipoGatewayService.saveTipoGateway(tipoGateway)
+  .subscribe(response => {
+    console.log('Tipo de gateway guardado:', response.data);
   });
-}
 ```
 
-## 🔧 Configuración y Debug
+## 🔗 Dependencias
 
-### Verificar Configuración del Servicio
+- `@angular/core`
+- `@angular/common/http`
+- `rxjs`
+- `ApiConfigService`
 
+## 📊 Respuestas de API
+
+### Respuesta de Lista
 ```typescript
-// En consola del navegador o en código
-this.tipoGatewayService.debugService();
-```
-
-### Requisitos Previos
-
-1. **Endpoint Configurado**: El endpoint con ID 23 debe estar configurado en `ApiConfigService`
-2. **Sesión Activa**: Usuario debe estar logueado para obtener `usr` e `id_session`
-3. **Permisos**: Usuario debe tener permisos para operaciones CRUD
-
-## 📊 Respuestas de la API
-
-### Lista de Tipos (GET)
-```json
-{
-  "statuscode": 200,
-  "mensaje": "ok",
-  "data": [
-    {
-      "id": 1,
-      "nombre": "OpenPay",
-      "clave": "VT",
-      "tipo_deposito": 30,
-      "estado": "A",
-      "fecha_mov": "2024-04-23T10:53:02.050",
-      "swActivo": 0,
-      "idj": null,
-      "sw": null
-    }
-  ]
+interface TipoGatewayCrudResponse {
+  statuscode: number;
+  mensaje: string;
+  data: TipoGatewayItem[];
 }
 ```
 
-### Operación Individual (POST/PUT/DELETE)
-```json
-{
-  "statuscode": 200,
-  "mensaje": "Operación exitosa",
-  "data": {
-    "id": 1,
-    "nombre": "OpenPay",
-    "clave": "VT",
-    // ... resto de campos
-  }
+### Respuesta Individual
+```typescript
+interface TipoGatewayCrudSingleResponse {
+  statuscode: number;
+  mensaje: string;
+  data: TipoGatewayItem;
 }
 ```
 
-## 🔄 Integración con Otros Servicios
+## 🛠️ Configuración
 
-- **ApiConfigService**: Obtención dinámica de URLs
-- **SessionService**: Datos de sesión para autenticación
-- **HttpClient**: Comunicación HTTP con la API
+El servicio se configura automáticamente usando el `ApiConfigService` para obtener la URL base y el endpoint correcto.
 
-## 🎯 Estados y Códigos
+## 📈 Rendimiento
 
-- **Estado "A"**: Activo
-- **Estado "I"**: Inactivo
-- **swActivo 1**: Habilitado
-- **swActivo 0**: Deshabilitado
-
-## 🚨 Manejo de Errores
-
-El servicio incluye manejo robusto de errores:
-- Validación de datos requeridos
-- Manejo de errores HTTP
-- Logging detallado de errores
-- Mensajes de error descriptivos
+- **Caché:** Implementado a nivel de HTTP
+- **Filtros:** Optimizados para consultas eficientes
+- **Paginación:** Soporte para paginación automática

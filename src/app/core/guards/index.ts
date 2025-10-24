@@ -1,4 +1,1 @@
-/**
- * Exportaciones de guards
- */
-export { AuthGuard } from './auth.guard';
+export * from './auth.guard';

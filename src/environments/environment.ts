@@ -7,6 +7,7 @@ export const environment = {
   
   // URLs de la API
   apiUrl: 'https://ec.calimax.digital',
+  // apiUrl: 'http://localhost:3000',
  // apiUrlImg: 'http://10.10.254.127:3013',
   apiUrlImg: 'https://ec.calimax.digital',
   

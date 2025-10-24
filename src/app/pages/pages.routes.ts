@@ -45,6 +45,11 @@ export default [
         loadComponent: () => import('./adm-ecom/sucursal/sucursal.component').then(c => c.SucursalComponent)
     },
     {
+        path: 'adm-ecom/categoria',
+        data: { breadcrumb: 'Administración de Categorías', proy: 1 },
+        loadComponent: () => import('./adm-ecom/categoria/categoria.component').then(c => c.CategoriaComponent)
+    },
+    {
         path: 'system/usuarios',
         data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
         loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)
@@ -80,14 +85,14 @@ export default [
         loadComponent: () => import('./proy/proy.component').then(c => c.ProyComponent)
     },
     {
-        path: 'adm-ecom/recetas',
-        data: { breadcrumb: 'Recetas', proy: 1 },
-        loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
-    },
-    {
         path: 'system/tipogateway',
         data: { breadcrumb: 'Tipos de Gateway', proy: 1 },
         loadComponent: () => import('./system/tipogateway/tipogateway.component').then(c => c.TipoGatewayComponent)
+    },
+    {
+        path: 'adm-ecom/recetas',
+        data: { breadcrumb: 'Recetas', proy: 1 },
+        loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

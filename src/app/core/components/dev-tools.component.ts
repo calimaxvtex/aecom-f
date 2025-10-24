@@ -1,212 +1,182 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
-import { SessionService } from '@/core/services/session.service';
 
-/**
- * Componente de herramientas de desarrollo
- * Solo se muestra en modo desarrollo para facilitar testing
- */
 @Component({
   selector: 'app-dev-tools',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   template: `
-    <div *ngIf="!environment.production" 
-         class="fixed top-4 right-4 bg-yellow-100 border border-yellow-400 rounded-lg p-4 z-50 shadow-lg max-w-sm">
-      
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-3">
-        <h4 class="font-bold text-yellow-800 text-sm">🛠️ Dev Tools</h4>
-        <button (click)="toggleCollapsed()" 
-                class="text-yellow-600 hover:text-yellow-800 text-xs">
-          {{ collapsed ? '▼' : '▲' }}
-        </button>
+    <div class="dev-tools-panel" *ngIf="showDevTools">
+      <div class="dev-tools-header">
+        <h3>🛠️ Dev Tools</h3>
+        <button (click)="togglePanel()" class="close-btn">×</button>
       </div>
       
-      <!-- Contenido colapsable -->
-      <div *ngIf="!collapsed" class="space-y-3">
-        
-        <!-- Bypass Auth -->
-        <label class="flex items-center gap-2">
-          <input type="checkbox" 
-                 [checked]="isBypassEnabled"
-                 (change)="toggleBypass($event)"
-                 class="rounded">
-          <span class="text-sm text-yellow-800">Bypass Auth</span>
-        </label>
-        
-        <!-- Mock Session -->
-        <button (click)="createMockSession()" 
-                class="w-full px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors">
-          👤 Crear Mock Session
-        </button>
-        
-        <!-- Clear Session -->
-        <button (click)="clearSession()" 
-                class="w-full px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors">
-          🗑️ Limpiar Sesión
-        </button>
-        
-        <!-- Environment Info -->
-        <div class="text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
-          <div><strong>Env:</strong> {{ environment.production ? 'PROD' : 'DEV' }}</div>
-          <div><strong>API:</strong> {{ environment.apiUrl }}</div>
-          <div><strong>Bypass:</strong> {{ environment.bypassAuth ? 'ON' : 'OFF' }}</div>
+      <div class="dev-tools-content">
+        <div class="environment-info">
+          <h4>🌍 Environment</h4>
+          <p><strong>Mode:</strong> {{ environment.mode || 'development' }}</p>
+          <p><strong>Production:</strong> {{ environment.production }}</p>
+          <p><strong>API URL:</strong> {{ environment.apiUrl }}</p>
+          <p><strong>Bypass Auth:</strong> {{ environment.bypassAuth }}</p>
         </div>
         
-        <!-- Session Status -->
-        <div class="text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
-          <div><strong>Sesión:</strong> {{ sessionStatus }}</div>
-          <div *ngIf="currentUser"><strong>Usuario:</strong> {{ currentUser }}</div>
+        <div class="debug-actions">
+          <h4>🔧 Debug Actions</h4>
+          <button (click)="clearStorage()" class="debug-btn">Clear Storage</button>
+          <button (click)="reloadPage()" class="debug-btn">Reload Page</button>
+          <button (click)="showConsoleInfo()" class="debug-btn">Console Info</button>
         </div>
         
-        <!-- Quick Actions -->
-        <div class="flex gap-1">
-          <button (click)="goToLogin()" 
-                  class="flex-1 px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs">
-            🔐 Login
-          </button>
-          <button (click)="goToDashboard()" 
-                  class="flex-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs">
-            📊 Dashboard
-          </button>
+        <div class="performance-info">
+          <h4>⚡ Performance</h4>
+          <p><strong>Load Time:</strong> {{ loadTime }}ms</p>
+          <p><strong>Memory:</strong> {{ memoryUsage }}</p>
         </div>
-        
       </div>
     </div>
+    
+    <button 
+      *ngIf="!showDevTools && environment.debugMode" 
+      (click)="togglePanel()" 
+      class="dev-tools-toggle"
+      title="Open Dev Tools"
+    >
+      🛠️
+    </button>
   `,
   styles: [`
-    .fixed {
+    .dev-tools-panel {
       position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 350px;
+      background: #1a1a1a;
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 9999;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
     }
-    .z-50 {
-      z-index: 50;
+    
+    .dev-tools-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: #2a2a2a;
+      border-radius: 8px 8px 0 0;
     }
-    .max-w-sm {
-      max-width: 20rem;
+    
+    .dev-tools-header h3 {
+      margin: 0;
+      font-size: 14px;
     }
-    .shadow-lg {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
     }
-    .transition-colors {
-      transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-      transition-duration: 150ms;
+    
+    .dev-tools-content {
+      padding: 15px;
+    }
+    
+    .dev-tools-content h4 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: #4CAF50;
+    }
+    
+    .dev-tools-content p {
+      margin: 4px 0;
+      font-size: 11px;
+    }
+    
+    .debug-actions {
+      margin: 15px 0;
+    }
+    
+    .debug-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      margin: 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+    
+    .debug-btn:hover {
+      background: #45a049;
+    }
+    
+    .dev-tools-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      z-index: 9998;
+    }
+    
+    .dev-tools-toggle:hover {
+      background: #45a049;
     }
   `]
 })
-export class DevToolsComponent implements OnInit, OnDestroy {
-  environment = environment;
-  isBypassEnabled = false;
-  collapsed = false;
-  sessionStatus = 'No iniciada';
-  currentUser = '';
+export class DevToolsComponent {
+  showDevTools = false;
+  loadTime = 0;
+  memoryUsage = 'N/A';
   
-  private sessionSubscription: any;
-
-  constructor(private sessionService: SessionService) {}
-
-  ngOnInit() {
-    // Verificar estado inicial
-    this.updateSessionStatus();
-    
-    // Verificar bypass desde localStorage
-    this.isBypassEnabled = localStorage.getItem('dev-bypass-auth') === 'true';
-    
-    // Suscribirse a cambios de sesión
-    this.sessionSubscription = this.sessionService.session$.subscribe(session => {
-      this.updateSessionStatus();
+  constructor() {
+    this.loadTime = performance.now();
+    this.updateMemoryUsage();
+  }
+  
+  togglePanel() {
+    this.showDevTools = !this.showDevTools;
+  }
+  
+  clearStorage() {
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log('🧹 Storage cleared');
+  }
+  
+  reloadPage() {
+    window.location.reload();
+  }
+  
+  showConsoleInfo() {
+    console.log('🔧 Dev Tools Info:', {
+      environment: environment,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString()
     });
   }
-
-  ngOnDestroy() {
-    if (this.sessionSubscription) {
-      this.sessionSubscription.unsubscribe();
+  
+  updateMemoryUsage() {
+    if ('memory' in performance) {
+      const memory = (performance as any).memory;
+      this.memoryUsage = `${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB`;
     }
-  }
-
-  toggleCollapsed() {
-    this.collapsed = !this.collapsed;
-  }
-
-  toggleBypass(event: any) {
-    const enabled = event.target.checked;
-    localStorage.setItem('dev-bypass-auth', enabled.toString());
-    this.isBypassEnabled = enabled;
-    
-    if (enabled) {
-      console.log('🔓 [DEV] Bypass de autenticación activado');
-    } else {
-      console.log('🔒 [DEV] Bypass de autenticación desactivado');
-    }
-    
-    // Recargar página para aplicar cambios
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  }
-
-  createMockSession() {
-    const mockUser = {
-      usuario: 'dev_user',
-      id_session: 999999,
-      nombre: 'Usuario de Desarrollo',
-      email: 'dev@calimax.com'
-    };
-    
-    this.sessionService.setSession(mockUser);
-    console.log('👤 [DEV] Sesión mock creada:', mockUser);
-    
-    // Mostrar mensaje de confirmación
-    this.showNotification('Sesión mock creada', 'success');
-  }
-
-  clearSession() {
-    this.sessionService.logout();
-    console.log('🗑️ [DEV] Sesión limpiada');
-    this.showNotification('Sesión limpiada', 'info');
-  }
-
-  goToLogin() {
-    window.location.href = '/login';
-  }
-
-  goToDashboard() {
-    window.location.href = '/dashboards';
-  }
-
-  private updateSessionStatus() {
-    const session = this.sessionService.getSession();
-    
-    if (session && session.isLoggedIn) {
-      this.sessionStatus = 'Activa';
-      this.currentUser = session.nombre || session.usuario?.toString() || 'Usuario';
-    } else {
-      this.sessionStatus = 'No iniciada';
-      this.currentUser = '';
-    }
-  }
-
-  private showNotification(message: string, type: 'success' | 'info' | 'warning' | 'error') {
-    // Crear notificación temporal
-    const notification = document.createElement('div');
-    notification.className = `fixed top-20 right-4 px-4 py-2 rounded text-white text-sm z-50 ${
-      type === 'success' ? 'bg-green-500' :
-      type === 'info' ? 'bg-blue-500' :
-      type === 'warning' ? 'bg-yellow-500' :
-      'bg-red-500'
-    }`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Remover después de 3 segundos
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 3000);
   }
 }

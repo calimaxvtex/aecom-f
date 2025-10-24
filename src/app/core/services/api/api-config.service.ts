@@ -141,7 +141,6 @@ export class ApiConfigService {
     getRecetaCrudUrl(): string {
         return API_URLS.RECETA_CRUD;
     }
-    }
 
     // Método para cambiar URL en tiempo de ejecución
     setBaseUrl(url: string): void {

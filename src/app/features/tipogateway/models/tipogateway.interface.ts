@@ -3,10 +3,18 @@
  */
 
 export interface TipoGatewayItem {
+  id: number;
   id_tipogateway: number;
   nombre: string;
-  descripcion?: string;
+  clave: string;
+  tipo_deposito: string;
+  estado: string;
   activo: boolean;
+  swActivo: number;
+  idj: number;
+  sw: number;
+  fecha_mov: string;
+  descripcion?: string;
   configuracion?: any;
   fecha_creacion: string;
   fecha_actualizacion: string;
@@ -27,10 +35,18 @@ export interface TipoGatewayCrudSingleResponse {
 }
 
 export interface TipoGatewayFormItem {
+  id?: number;
   id_tipogateway?: number;
   nombre: string;
+  clave: string;
+  tipo_deposito: string;
+  estado: string;
+  activo?: boolean;
+  swActivo: number;
+  idj: number;
+  sw: number;
+  fecha_mov?: string;
   descripcion?: string;
-  activo: boolean;
   configuracion?: any;
 }
 

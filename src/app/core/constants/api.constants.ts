@@ -1,4 +1,4 @@
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../environments/environment.qa';
 
 export const API_CONFIG = {
     BASE_URL: environment.apiUrl,

@@ -146,8 +146,8 @@ interface TipoGatewayCrudResponse {
 interface TipoGatewayCrudSingleResponse {
   statuscode: number;
   mensaje: string;
-  data: TipoGatewayItem;
-}
+  data: TipoGatewayItem;  
+} 
 ```
 
 ## 🛠️ Configuración

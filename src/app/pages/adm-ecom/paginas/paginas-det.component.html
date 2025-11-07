@@ -1,0 +1,199 @@
+<div class="card">
+  <p-table
+    #dt
+    [value]="componentes"
+    [paginator]="true"
+    paginatorDropdownAppendTo="body"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    responsiveLayout="scroll"
+    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes asociados"
+    [rowsPerPageOptions]="[5, 10, 25]"
+    [globalFilterFields]="['tipo_comp', 'nomPagina', 'nombre_ref', 'canal']"
+    [loading]="loadingComponentes"
+  >
+    <ng-template #caption>
+      <div class="flex flex-wrap gap-2 items-center justify-between">
+        <input
+          pInputText
+          type="text"
+          (input)="dt.filterGlobal($event.target.value, 'contains')"
+          placeholder="Buscar componentes..."
+          class="w-full sm:w-80 order-1 sm:order-0"
+        />
+          <div class="flex gap-2 order-0 sm:order-1 items-end">
+            <!-- ✅ Actualizar lista -->
+            <button
+              (click)="filtrarComponentesPorPagina()"
+              pButton
+              raised
+              icon="pi pi-refresh"
+              [loading]="loadingComponentes"
+              pTooltip="Actualizar lista"
+            ></button>
+
+            <!-- ✅ Agregar componente (solo si hay página seleccionada) -->
+            <button
+              *ngIf="paginaSeleccionada"
+              (click)="abrirModalAgregarComponente()"
+              pButton
+              raised
+              icon="pi pi-plus"
+              severity="success"
+              pTooltip="Agregar componente a la página"
+            ></button>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th class="white-space-nowrap" style="width:8%">ID Asociación</th>
+        <th class="white-space-nowrap" style="width:8%">Orden</th>
+        <th class="white-space-nowrap" style="width:15%">Tipo Componente</th>
+        <th class="white-space-nowrap" style="width:25%">Nombre Componente</th>
+        <th class="white-space-nowrap" style="width:20%">Página</th>
+        <th class="white-space-nowrap" style="width:10%">Canal</th>
+        <th class="white-space-nowrap" style="width:14%">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-componente let-editing="editing" let-ri="rowIndex">
+      <tr>
+        <!-- ID Asociación -->
+        <td>{{ componente.id_pagd }}</td>
+
+        <!-- Orden -->
+        <td>
+          <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
+            {{ componente.orden }}
+          </span>
+        </td>
+
+        <!-- Tipo Componente -->
+        <td>
+          <span class="capitalize font-medium" [class]="getTipoColor(componente.tipo_comp)">
+            {{ componente.tipo_comp }}
+          </span>
+        </td>
+
+        <!-- Nombre Componente -->
+        <td>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-puzzle-piece text-blue-500"></i>
+            <span class="font-medium">{{ componente.nombre_ref }}</span>
+          </div>
+        </td>
+
+        <!-- Página -->
+        <td>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-file text-green-500"></i>
+            <span>{{ componente.nomPagina }}</span>
+          </div>
+        </td>
+
+        <!-- Canal -->
+        <td>
+          <p-tag
+            [value]="componente.canal"
+            [severity]="componente.canal === 'WEB' ? 'success' : 'info'"
+            class="text-xs">
+          </p-tag>
+        </td>
+
+        <!-- Acciones -->
+        <td>
+          <div class="flex gap-2">
+            <button
+              pButton
+              icon="pi pi-eye"
+              (click)="verDetalleComponente(componente)"
+              class="p-button-sm p-button-text p-button-info"
+              pTooltip="Ver detalles del componente"
+            ></button>
+            <button
+              pButton
+              icon="pi pi-external-link"
+              (click)="irAComponente(componente)"
+              class="p-button-sm p-button-text p-button-primary"
+              pTooltip="Ir al componente"
+            ></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  </div>
+
+<!-- Modal para agregar componente a página -->
+<p-dialog
+  [(visible)]="mostrarModalAgregar"
+  header="Agregar Componente a Página"
+  [modal]="true"
+  [style]="{width: '500px'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [closeOnEscape]="true"
+>
+  <div class="space-y-4">
+    <!-- Información de la página -->
+    <div *ngIf="paginaSeleccionada" class="bg-blue-50 p-3 rounded-lg">
+      <h4 class="font-medium text-blue-800">Página seleccionada:</h4>
+      <p class="text-blue-700">{{ paginaSeleccionada.nombre }}</p>
+      <p class="text-sm text-blue-600">Canal: {{ paginaSeleccionada.canal }}</p>
+    </div>
+
+    <!-- Selector de tipo de componente -->
+    <div>
+      <label class="block font-medium mb-2">Tipo de Componente *</label>
+      <p-select
+        [(ngModel)]="nuevoComponente.tipo_comp"
+        [options]="tiposComponenteOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Seleccionar tipo de componente"
+        class="w-full"
+        [ngModelOptions]="{standalone: true}"
+      />
+    </div>
+
+    <!-- Selector de componente referenciado -->
+    <div>
+      <label class="block font-medium mb-2">Componente a Agregar *</label>
+      <p-select
+        [(ngModel)]="nuevoComponente.id_ref"
+        [options]="componentesDisponibles"
+        optionLabel="nombre"
+        optionValue="id_comp"
+        placeholder="Seleccionar componente"
+        class="w-full"
+        [ngModelOptions]="{standalone: true}"
+      />
+      <small class="text-gray-500 mt-1 block">
+        Selecciona el componente específico que quieres agregar a la página
+      </small>
+    </div>
+  </div>
+
+  <!-- Botones del modal -->
+  <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+    <button
+      pButton
+      type="button"
+      (click)="cerrarModalAgregar()"
+      label="Cancelar"
+      class="p-button-text"
+    ></button>
+    <button
+      pButton
+      type="button"
+      (click)="agregarComponente()"
+      label="Agregar Componente"
+      [disabled]="!nuevoComponente.tipo_comp || !nuevoComponente.id_ref || guardando"
+      [loading]="guardando"
+      class="p-button-success"
+    ></button>
+  </div>
+</p-dialog>

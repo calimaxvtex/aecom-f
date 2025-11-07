@@ -6,19 +6,20 @@ Esta página permite administrar las páginas web y de aplicación del sistema.
 
 ### ✅ **Operaciones CRUD**
 
-- **Crear**: Nueva página con nombre y canal
-- **Leer**: Lista paginada con filtros
-- **Actualizar**: Modificar nombre y estado
+- **Crear**: Nueva página con nombre
+- **Leer**: Lista paginada con filtros por canal
+- **Actualizar**: Modificar nombre, cambiar estado con ToggleSwitch
 - **Eliminar**: Marcar como baja (lógico)
 
 ### ✅ **Características de UI**
 
 - **Tabla responsive** con paginación
-- **Filtros avanzados** por canal, estado y búsqueda
+- **Filtros avanzados** por canal y búsqueda
+- **ToggleSwitch** para cambio rápido de estado
 - **Modal de formulario** con validación
 - **Confirmaciones** para operaciones críticas
 - **Notificaciones** toast para feedback
-- **Estados visuales** con tags coloreados
+- **Estados visuales** con ToggleSwitch intuitivo
 
 ## 🏗️ Estructura de Archivos
 
@@ -56,7 +57,7 @@ paginas/
 ```typescript
 {
     nombre: string,  // Requerido, 3-100 caracteres
-    canal: 'WEB' | 'APP'  // Requerido
+    estado: boolean  // Por defecto true (activo)
 }
 ```
 
@@ -66,7 +67,6 @@ paginas/
 {
     id_pag: number,  // Requerido
     nombre: string,  // Requerido, 3-100 caracteres
-    canal: 'WEB' | 'APP',  // Opcional
     estado: 1 | 0   // Opcional
 }
 ```
@@ -80,8 +80,8 @@ paginas/
 
 ### **Canales Disponibles**
 
-- `WEB` - Páginas web (verde, success)
-- `APP` - Páginas de aplicación (azul, info)
+- `WEB` - Páginas web
+- `APP` - Páginas de aplicación
 
 ## 🚀 URL de Acceso
 
@@ -100,16 +100,22 @@ paginas/
 ### **2. Crear Página**
 
 1. Click en "Nueva Página"
-2. Completar formulario (nombre, canal)
+2. Completar formulario (nombre)
 3. Validación automática
 4. Submit → API → Notificación → Recarga lista
 
 ### **3. Editar Página**
 
+**Opción A - Edición Rápida:**
+
+1. **Cambiar estado**: ToggleSwitch directo en tabla (confirmación para desactivar)
+2. **Editar nombre**: Click en celda nombre → edición inline
+
+**Opción B - Edición Completa:**
+
 1. Click en botón editar (lápiz)
-2. Modificar campos en modal
-3. Toggle para activar/desactivar
-4. Submit → API → Notificación → Recarga lista
+2. Modificar todos los campos en modal
+3. Submit → API → Notificación → Recarga lista
 
 ### **4. Eliminar Página**
 
@@ -122,7 +128,6 @@ paginas/
 ### **Frontend**
 
 - Nombre: requerido, 3-100 caracteres
-- Canal: requerido, valores válidos
 - Formulario completo antes de submit
 
 ### **Backend**
@@ -150,8 +155,8 @@ paginas/
 ### **Payloads**:
 
 - **SL**: `{ action: "SL", usr, id_session }`
-- **IN**: `{ action: "IN", nombre, canal, usr, id_session }`
-- **UP**: `{ action: "UP", id_pag, nombre?, canal?, usr, id_session }`
+- **IN**: `{ action: "IN", nombre, usr, id_session }`
+- **UP**: `{ action: "UP", id_pag, nombre?, usr, id_session }`
 - **DL**: `{ action: "DL", id_pag, id_pagd, usr, id_session }`
 
 ## 🐛 Manejo de Errores
@@ -175,9 +180,9 @@ mostrarModal = false;            // Visibilidad del modal
 esEdicion = false;               // Modo del modal
 
 // Filtros
-filtroCanal = '';
+canalFiltroSeleccionado: string = '';
 filtroEstado: number | null = null;
-filtroBusqueda = '';
+filtroBusqueda: string = '';
 ```
 
 ## 🎉 Resultado Final
@@ -185,6 +190,9 @@ filtroBusqueda = '';
 Una página completa de gestión de páginas con:
 
 - ✅ **UX moderna** y intuitiva
+- ✅ **Filtro por canal** (WEB/APP) con botones visuales
+- ✅ **ToggleSwitch** para cambios de estado rápidos
+- ✅ **Edición inline** para nombres
 - ✅ **Operaciones CRUD** completas
 - ✅ **Validación robusta**
 - ✅ **Feedback visual** constante

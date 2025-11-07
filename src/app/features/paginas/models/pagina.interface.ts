@@ -101,10 +101,10 @@ export type EstadoPagina = 1 | 0;
 export interface PaginaStats {
     total: number;
     activas: number;
-    bajas: number;
-    por_canal: {
+    inactivas: number;
+    porCanal: {
         WEB: number;
-        MOBILE: number;
+        APP: number;
     };
 }
 

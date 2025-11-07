@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // PrimeNG Modules (standalone)
+import { TabsModule } from 'primeng/tabs';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -18,7 +19,16 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Servicios específicos del dominio
-import { PaginaService, Pagina, CreatePaginaRequest, UpdatePaginaRequest } from '../../../features/paginas';
+import {
+    PaginaService,
+    Pagina,
+    CreatePaginaRequest,
+    UpdatePaginaRequest,
+    PaginaStats
+} from '../../../features/paginas';
+
+// Componentes locales
+import { PaginasDetComponent } from './paginas-det.component';
 
 @Component({
     selector: 'app-paginas',
@@ -28,6 +38,7 @@ import { PaginaService, Pagina, CreatePaginaRequest, UpdatePaginaRequest } from 
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
+        TabsModule,
         TableModule,
         ButtonModule,
         InputTextModule,
@@ -39,7 +50,9 @@ import { PaginaService, Pagina, CreatePaginaRequest, UpdatePaginaRequest } from 
         ToggleSwitchModule,
         CardModule,
         SkeletonModule,
-        TooltipModule
+        TooltipModule,
+        // Componentes locales
+        PaginasDetComponent
     ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './paginas.component.html',
@@ -82,6 +95,17 @@ export class PaginasComponent implements OnInit, OnDestroy {
 
     // Control de estado temporal del ToggleSwitch
     toggleStates: { [key: string]: boolean } = {};
+
+    // ===== PROPIEDADES PARA SISTEMA DE TABS =====
+    activeTabIndex = 0; // Tab activo por defecto
+    paginaSeleccionada: Pagina | null = null; // Página seleccionada para filtrado de componentes
+
+    estadisticas: PaginaStats = {
+        total: 0,
+        activas: 0,
+        inactivas: 0,
+        porCanal: { WEB: 0, APP: 0 }
+    };
 
     // Filtro por canal (estilo banners)
     canalFiltroSeleccionado: string = '';
@@ -548,6 +572,94 @@ export class PaginasComponent implements OnInit, OnDestroy {
             }
         }, 150); // Pequeño delay para permitir que los clicks se ejecuten primero
     }
+
+    // ========== SISTEMA DE TABS ==========
+
+    /**
+     * Maneja el cambio de tab
+     */
+    onTabClick(tabIndex: number): void {
+        console.log('🔄 Cambiando a tab:', tabIndex);
+        this.activeTabIndex = tabIndex;
+
+        // Cargar datos específicos según la tab
+        if (tabIndex === 1) {
+            this.calcularEstadisticas();
+        }
+    }
+
+    // ========== COMUNICACIÓN PADRE-HIJO (PATRÓN TAB_PADRE_HIJO) ==========
+
+    // Variables para detección de doble click (PATRÓN ESTABLECIDO)
+    private lastClickTime: number = 0;
+    private lastClickedPagina: Pagina | null = null;
+    private readonly DOUBLE_CLICK_DELAY = 300; // ms
+
+    /**
+     * Maneja clicks en filas de la tabla de páginas
+     */
+    onRowClick(pagina: Pagina): void {
+        const currentTime = Date.now();
+        const timeDiff = currentTime - this.lastClickTime;
+
+        console.log('👆 Click en página:', pagina.nombre, 'timeDiff:', timeDiff);
+
+        // Detectar doble click
+        if (timeDiff < this.DOUBLE_CLICK_DELAY && this.lastClickedPagina?.id_pag === pagina.id_pag) {
+            console.log('🎯 Doble click detectado!');
+            this.onPaginaDobleClick(pagina);
+        } else {
+            // Click simple - seleccionar página
+            console.log('👆 Click simple - seleccionando página');
+            this.onPaginaSeleccionada(pagina);
+        }
+
+        // Actualizar timestamps para el próximo click
+        this.lastClickTime = currentTime;
+        this.lastClickedPagina = pagina;
+    }
+
+    /**
+     * Maneja la selección de una página desde el tab padre
+     */
+    onPaginaSeleccionada(pagina: Pagina | null): void {
+        console.log('📄 Página seleccionada:', pagina);
+        this.paginaSeleccionada = pagina;
+    }
+
+    /**
+     * Maneja el doble click en una página - selección + navegación automática
+     */
+    onPaginaDobleClick(pagina: Pagina): void {
+        console.log('🎯 Doble click en página:', pagina.nombre);
+
+        // Forzar cambio de estado para asegurar detección de cambios
+        this.activeTabIndex = 0;
+        setTimeout(() => {
+            this.paginaSeleccionada = { ...pagina }; // Clon para change detection
+            this.activeTabIndex = 1; // Cambiar automáticamente al tab de componentes
+        }, 0);
+    }
+
+    /**
+     * Calcula estadísticas de las páginas
+     */
+    private calcularEstadisticas(): void {
+        console.log('📊 Calculando estadísticas de páginas...');
+
+        this.estadisticas = {
+            total: this.paginas.length,
+            activas: this.paginas.filter(p => p.estado === 1).length,
+            inactivas: this.paginas.filter(p => p.estado === 0).length,
+            porCanal: {
+                WEB: this.paginas.filter(p => p.canal === 'WEB').length,
+                APP: this.paginas.filter(p => p.canal === 'APP').length
+            }
+        };
+
+        console.log('📊 Estadísticas calculadas:', this.estadisticas);
+    }
+
 
     // ========== FILTRO POR CANAL (ESTILO BANNERS) ==========
 

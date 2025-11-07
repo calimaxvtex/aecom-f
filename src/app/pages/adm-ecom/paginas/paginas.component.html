@@ -1,5 +1,27 @@
 <div class="card">
-  <p-table
+  <!-- Sistema de Tabs -->
+  <p-tabs [value]="activeTabIndex.toString()">
+    <p-tablist>
+      <p-tab value="0" (click)="onTabClick(0)">
+        <i class="pi pi-list mr-2"></i>
+        📋 Lista de Páginas
+      </p-tab>
+      <p-tab value="1" (click)="onTabClick(1)">
+        <i class="pi pi-list mr-2"></i>
+        📋 Lista de Componentes
+        <p-tag
+          *ngIf="paginaSeleccionada"
+          [value]="paginaSeleccionada.nombre"
+          severity="info"
+          class="text-xs ml-2">
+        </p-tag>
+      </p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <!-- Tab 1: Lista de Páginas -->
+      <p-tabpanel value="0">
+        <p-table
     #dt
     [value]="paginas"
     [paginator]="true"
@@ -70,7 +92,11 @@
     </ng-template>
 
     <ng-template #body let-pagina let-editing="editing" let-ri="rowIndex">
-      <tr>
+      <tr
+        (click)="onRowClick(pagina)"
+        [class.bg-blue-50]="paginaSeleccionada?.id_pag === pagina.id_pag"
+        class="cursor-pointer hover:bg-gray-50 transition-colors"
+      >
         <!-- ID (solo vista) -->
         <td>{{ pagina.id_pag }}</td>
 
@@ -221,7 +247,16 @@
         </td>
       </tr>
     </ng-template>
-  </p-table>
+        </p-table>
+      </p-tabpanel>
+
+      <!-- Tab 2: Lista de Componentes -->
+      <p-tabpanel value="1">
+        <app-paginas-det [paginaSeleccionada]="paginaSeleccionada"></app-paginas-det>
+      </p-tabpanel>
+
+    </p-tabpanels>
+  </p-tabs>
 </div>
 
 <!-- ⚠️ MODAL DE ELIMINACIÓN -->

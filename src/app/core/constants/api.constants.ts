@@ -14,7 +14,8 @@ export const API_CONFIG = {
         SUCURSAL: { CRUD: '/api/admsucursal/v1' },
         PROYECTO: { CRUD: '/api/admproy/v1' },
         RECETA: { CRUD: '/api/admrcta/v1' },
-        PAGINAS: { CRUD: '/api/acatpag/v1' }
+        PAGINAS: { CRUD: '/api/acatpag/v1' },
+        PAGINAS_DET: { CRUD: '/api/acatpagdet/v1' }
     }
 };
 
@@ -30,7 +31,8 @@ export const API_URLS = {
     SUCURSAL_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUCURSAL.CRUD}`,
     PROYECTO_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROYECTO.CRUD}`,
     RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`,
-    PAGINAS_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS.CRUD}`
+    PAGINAS_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS.CRUD}`,
+    PAGINAS_DET_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS_DET.CRUD}`
 };
 
 

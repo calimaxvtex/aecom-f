@@ -20,6 +20,7 @@ export interface Banner {
     fecha_ini: string;
     fecha_fin: string;
     url_banner?: string | null;
+    url_banner_m?: string | null;
     url_banner_call?: string | null;
     orden: number;
     swEnable: number;
@@ -51,6 +52,7 @@ export interface CreateBannerRequest {
     fecha_ini: string;
     fecha_fin: string;
     url_banner?: string | null;
+    url_banner_m?: string | null;
     url_banner_call?: string | null;
     orden: number;
     swEnable: number;
@@ -154,7 +156,7 @@ export interface BannerAdvancedFilters extends BannerFilters {
 /**
  * Respuesta cruda del backend (array)
  */
-export interface BannerRawArrayResponse extends Array<BannerRawResponseItem> {}
+export interface BannerRawArrayResponse extends Array<BannerRawResponseItem> { }
 
 /**
  * Item individual de respuesta cruda

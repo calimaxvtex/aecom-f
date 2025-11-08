@@ -433,6 +433,93 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                         </div>
                     </div>
 
+                    <!-- URL Banner Mobile con preview -->
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">URL del Banner Mobile</label>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <input
+                                    pInputText
+                                    formControlName="url_banner_m"
+                                    placeholder="https://ejemplo.com/imagen-mobile.jpg"
+                                    class="w-full"
+                                />
+                            </div>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-external-link"
+                                (click)="validarUrl(bannerForm.get('url_banner_m')?.value)"
+                                pTooltip="Validar URL"
+                                class="p-button-secondary"
+                            ></button>
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-upload"
+                                (click)="triggerMobileFileInput()"
+                                [loading]="uploadingMobileImage"
+                                pTooltip="Cargar imagen móvil desde archivo"
+                                class="p-button-success"
+                            ></button>
+                            <button
+                                pButton
+                                type="button"
+                                [icon]="mobilePreviewCollapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+                                (click)="toggleMobilePreview()"
+                                pTooltip="Mostrar/ocultar preview"
+                                class="p-button-text"
+                                [disabled]="!bannerForm.get('url_banner_m')?.value || uploadingMobileImage"
+                            ></button>
+                            <!-- Input file oculto para móvil -->
+                            <input
+                                #mobileFileInput
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif"
+                                (change)="onMobileFileSelected($event)"
+                                style="display: none;"
+                            />
+                        </div>
+
+                        <!-- Estado de carga de imagen móvil -->
+                        <div class="mt-3" *ngIf="uploadingMobileImage">
+                            <div class="border border-blue-300 rounded-lg p-4 bg-blue-50">
+                                <div class="flex items-center gap-3">
+                                    <i class="pi pi-spin pi-spinner text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-800">Subiendo imagen móvil...</div>
+                                        <div class="text-sm text-blue-600" *ngIf="selectedMobileFile">
+                                            {{ selectedMobileFile.name }} ({{ formatFileSize(selectedMobileFile.size) }})
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview del banner móvil colapsable -->
+                        <div class="mt-3" *ngIf="bannerForm.get('url_banner_m')?.value && !uploadingMobileImage && !mobilePreviewCollapsed">
+                            <div class="border border-green-300 rounded-lg p-4 bg-green-50">
+                                <div class="max-w-2xl mx-auto">
+                                    <div class="relative overflow-hidden rounded-lg">
+                                        <img
+                                            [src]="bannerForm.get('url_banner_m')?.value"
+                                            [alt]="bannerForm.get('nombre')?.value"
+                                            class="w-full max-h-96 object-contain rounded border"
+                                            (error)="onImageError($event)"
+                                        />
+                                        <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                            <i class="pi pi-check"></i>
+                                            Cargado
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-600 text-center">
+                                        URL_IMG móvil obtenida automáticamente
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- URL Landing -->
                     <div>
                         <label class="text-sm font-medium text-gray-700 mb-2 block">URL Landing</label>
@@ -937,7 +1024,7 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
 */
 
     `]
-    
+
 })
 export class BannersTabComponent implements OnInit, OnChanges {
     // Input para recibir el componente seleccionado
@@ -959,8 +1046,11 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // Estados para previews colapsables
     imagePreviewCollapsed = true; // Inicia colapsado
     landingPreviewCollapsed = true; // Inicia colapsado
+    mobilePreviewCollapsed = true; // Inicia colapsado
     uploadingLandingImage = false;
     selectedLandingFile: File | null = null;
+    uploadingMobileImage = false;
+    selectedMobileFile: File | null = null;
 
     // Modales
     showBannerModal = false;
@@ -1019,6 +1109,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     @ViewChild('dtBanners') dtBanners!: Table;
     @ViewChild('fileInput') fileInput!: any;
     @ViewChild('landingFileInput') landingFileInput!: any;
+    @ViewChild('mobileFileInput') mobileFileInput!: any;
 
     ngOnInit(): void {
         this.initializeForms();
@@ -1040,13 +1131,14 @@ export class BannersTabComponent implements OnInit, OnChanges {
         const fechaHoy = new Date();
         const fechaFin = new Date();
         fechaFin.setDate(fechaFin.getDate() + 7);
-        
+
         const fechaHoyStr = this.formatDate(fechaHoy);
         const fechaFinStr = this.formatDate(fechaFin);
 
         this.bannerForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.maxLength(100)]],
             url_banner: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
+            url_banner_m: ['', [Validators.pattern(/^https?:\/\/.+/)]],
             url_banner_call: ['', [Validators.pattern(/^https?:\/\/.+/)]],
             tipo_call: ['NONE', [Validators.required]],
             call: [''],
@@ -1058,7 +1150,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
             orden: [1, [Validators.required, Validators.min(1)]],
             swEnable: [1],
             swslug: [0],
-            slug: [{value: '', disabled: true}] // Slug deshabilitado inicialmente
+            slug: [{ value: '', disabled: true }] // Slug deshabilitado inicialmente
         });
     }
 
@@ -1173,6 +1265,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
                 url_banner: banner.url_banner,
+                url_banner_m: banner.url_banner_m,
                 url_banner_call: banner.url_banner_call,
                 tipo_call: banner.tipo_call,
                 call: banner.call,
@@ -1252,6 +1345,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 tipo_call: formData.tipo_call,
                 call: formData.call || '',
                 url_banner: formData.url_banner || '',
+                url_banner_m: formData.url_banner_m || '',
                 url_banner_call: formData.url_banner_call || '',
                 orden: formData.orden,
                 swsched: formData.swsched ? 1 : 0,
@@ -2092,6 +2186,111 @@ export class BannersTabComponent implements OnInit, OnChanges {
     clearPreviewData(): void {
         this.previewUrlValue = '';
         this.sanitizedPreviewUrl = null;
+    }
+
+    /**
+     * Toggle para mostrar/ocultar preview de URL móvil
+     */
+    toggleMobilePreview(): void {
+        this.mobilePreviewCollapsed = !this.mobilePreviewCollapsed;
+    }
+
+    /**
+     * Activa el input file para móvil
+     */
+    triggerMobileFileInput(): void {
+        if (this.mobileFileInput) {
+            this.mobileFileInput.nativeElement.click();
+        }
+    }
+
+    /**
+     * Maneja la selección de archivos para móvil
+     */
+    onMobileFileSelected(event: any): void {
+        const file = event.target.files[0] as File;
+        if (file) {
+
+            // Validar archivo
+            const validation = this.imageUploadService.validateFiles([file]);
+            if (!validation.isValid) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Archivo Inválido',
+                    detail: validation.errors.join('. '),
+                    life: 5000
+                });
+                return;
+            }
+
+            // Mostrar warnings si existen
+            if (validation.warnings.length > 0) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Advertencia',
+                    detail: validation.warnings.join('. '),
+                    life: 3000
+                });
+            }
+
+            // Guardar archivo y proceder con la carga
+            this.selectedMobileFile = file;
+            this.uploadMobileImage(file);
+        }
+    }
+
+    /**
+     * Sube la imagen móvil
+     */
+    uploadMobileImage(file: File): void {
+        this.uploadingMobileImage = true;
+
+        this.imageUploadService.uploadSingleBannerImage(file).subscribe({
+            next: (response) => {
+                this.uploadingMobileImage = false;
+
+                if (response.images && response.images.length > 0) {
+                    const imageData = response.images[0];
+                    const urlImg = imageData.img;
+
+                    // Actualizar el campo URL_BANNER_M con la nueva URL
+                    this.bannerForm.patchValue({
+                        url_banner_m: urlImg
+                    });
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Imagen Móvil Cargada',
+                        detail: `La imagen "${imageData.name}" se ha subido correctamente`,
+                        life: 3000
+                    });
+
+                    // Limpiar archivo seleccionado
+                    this.selectedMobileFile = null;
+
+                    // Resetear el input file
+                    if (this.mobileFileInput) {
+                        this.mobileFileInput.nativeElement.value = '';
+                    }
+                }
+            },
+            error: (error) => {
+                this.uploadingMobileImage = false;
+                console.error('❌ Error al subir imagen móvil:', error);
+
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al subir la imagen';
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al Subir Imagen Móvil',
+                    detail: errorMessage,
+                    life: 5000
+                });
+
+                // Limpiar archivo seleccionado en caso de error
+                this.selectedMobileFile = null;
+            }
+        });
     }
 
     // ========== FORMATEO DE TEXTO ==========

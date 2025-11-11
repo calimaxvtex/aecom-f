@@ -11,7 +11,8 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Servicios para obtener componentes disponibles
 import { CompService } from '../../../features/comp/services/comp.service';
@@ -42,9 +43,10 @@ import { Pagina } from '../../../features/paginas';
         CardModule,
         TooltipModule,
         DialogModule,
-        SelectModule
+        SelectModule,
+        ConfirmDialogModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './paginas-det.component.html',
     styleUrls: ['./paginas-det.component.scss']
@@ -58,6 +60,7 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     private paginaDetService = inject(PaginaDetService);
     private compService = inject(CompService);
     private messageService = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
     private paginaDetServiceModal = inject(PaginaDetService); // Para consultas del modal
 
     // Datos - COMPONENTES ASOCIADOS A LA PÁGINA SELECCIONADA
@@ -66,9 +69,14 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     // Estados de carga
     loadingComponentes = false;
     guardando = false;
+    eliminando = false;
 
     // Estados de modales
     mostrarModalAgregar = false;
+    showConfirmDeleteComponente = false;
+
+    // Componente seleccionado para eliminación
+    componenteToDelete: PaginaDet | null = null;
 
     // Datos para el modal de agregar componente
     componentesDisponibles: ComponenteSimple[] = [];
@@ -173,31 +181,6 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
         return colores[tipoComp] || 'text-gray-500';
     }
 
-    /**
-     * Acción para ver detalles del componente
-     */
-    verDetalleComponente(componente: PaginaDet): void {
-        console.log('👁️ Ver detalles del componente:', componente);
-        // TODO: Implementar navegación o modal de detalles
-        this.messageService.add({
-            severity: 'info',
-            summary: 'Información',
-            detail: `Ver detalles del componente: ${componente.nombre_ref}`
-        });
-    }
-
-    /**
-     * Acción para ir al componente (navegación)
-     */
-    irAComponente(componente: PaginaDet): void {
-        console.log('🔗 Ir al componente:', componente);
-        // TODO: Implementar navegación al módulo de componentes
-        this.messageService.add({
-            severity: 'info',
-            summary: 'Navegación',
-            detail: `Ir al componente ID: ${componente.id_ref}`
-        });
-    }
 
     // ========== FUNCIONALIDAD MODAL AGREGAR COMPONENTE ==========
 
@@ -331,6 +314,70 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
                 this.guardando = false;
             }
         });
+    }
+
+    // ========== FUNCIONALIDAD ELIMINAR COMPONENTE ==========
+
+    /**
+     * Inicia el proceso de eliminación mostrando el modal de confirmación
+     */
+    eliminarComponente(componente: PaginaDet): void {
+        this.componenteToDelete = componente;
+        this.showConfirmDeleteComponente = true;
+    }
+
+    /**
+     * Confirma la eliminación del componente
+     */
+    confirmDeleteComponente(): void {
+        if (this.componenteToDelete && this.paginaSeleccionada) {
+            this.eliminando = true;
+
+            console.log('🗑️ Eliminando componente:', this.componenteToDelete.nombre_ref, 'de página:', this.paginaSeleccionada.nombre);
+
+            this.paginaDetService.deletePaginaDet(this.componenteToDelete.id_pagd, this.paginaSeleccionada.id_pag)
+                .subscribe({
+                    next: (response) => {
+                        console.log('✅ Componente eliminado exitosamente:', response);
+
+                        // Mostrar mensaje de éxito
+                        const mensaje = response.mensaje || 'Componente eliminado de la página';
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Eliminado',
+                            detail: mensaje,
+                            life: 5000
+                        });
+
+                        // Cerrar modal y recargar lista
+                        this.cancelDeleteComponente();
+                        this.filtrarComponentesPorPagina();
+                    },
+                    error: (error) => {
+                        console.error('❌ Error al eliminar componente:', error);
+
+                        // Mostrar mensaje de error
+                        const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el componente';
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error al eliminar',
+                            detail: errorMessage,
+                            life: 5000
+                        });
+
+                        this.eliminando = false;
+                    }
+                });
+        }
+    }
+
+    /**
+     * Cancela la eliminación del componente
+     */
+    cancelDeleteComponente(): void {
+        this.showConfirmDeleteComponente = false;
+        this.componenteToDelete = null;
+        this.eliminando = false;
     }
 
     /**

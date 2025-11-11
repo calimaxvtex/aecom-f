@@ -192,6 +192,49 @@ p-table ::ng-deep .p-datatable-table-container {
     overflow: visible !important;
 }
 
+// ===== ESTILOS PARA SCROLLBARS HORIZONTALES =====
+
+// Forzar scrollbar horizontal para la tabla de páginas
+.tabla-paginas ::ng-deep .p-datatable-table-container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+// Forzar scrollbar horizontal para la tabla de componentes (cuando está embebida)
+.tabla-componentes ::ng-deep .p-datatable-table-container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+// Estilos para scrollbar personalizado (Webkit browsers)
+.tabla-paginas ::ng-deep .p-datatable-table-container::-webkit-scrollbar,
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.tabla-paginas ::ng-deep .p-datatable-table-container::-webkit-scrollbar-track,
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.tabla-paginas ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb,
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.tabla-paginas ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb:hover,
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+// Asegurar que las tablas no se compriman
+.tabla-paginas,
+.tabla-componentes {
+    min-width: 100%;
+}
+
 // ===== ESTILOS PARA SISTEMA DE TABS =====
 
 .p-tabs {

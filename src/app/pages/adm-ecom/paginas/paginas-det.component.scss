@@ -193,3 +193,35 @@ select.p-inputtext-sm:focus {
 p-table ::ng-deep .p-datatable-table-container {
     overflow: visible !important;
 }
+
+// ===== ESTILOS PARA SCROLLBARS HORIZONTALES =====
+
+// Forzar scrollbar horizontal para la tabla de componentes
+.tabla-componentes ::ng-deep .p-datatable-table-container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+// Estilos para scrollbar personalizado (Webkit browsers)
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.tabla-componentes ::ng-deep .p-datatable-table-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+// Asegurar que la tabla no se comprima
+.tabla-componentes {
+    min-width: 100%;
+}

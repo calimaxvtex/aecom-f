@@ -21,6 +21,12 @@ import { Componente } from '../../../features/comp/models/comp.interface';
 import { PaginaDetService } from '../../../features/paginas/services/pagina-det.service';
 import { PaginaDet } from '../../../features/paginas/models/pagina-det.interface';
 
+// Interfaz para componentes disponibles por tipo
+interface ComponenteSimple {
+    id: number;
+    nombre: string;
+}
+
 // Interfaces para comunicación padre-hijo
 import { Pagina } from '../../../features/paginas';
 
@@ -52,6 +58,7 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     private paginaDetService = inject(PaginaDetService);
     private compService = inject(CompService);
     private messageService = inject(MessageService);
+    private paginaDetServiceModal = inject(PaginaDetService); // Para consultas del modal
 
     // Datos - COMPONENTES ASOCIADOS A LA PÁGINA SELECCIONADA
     componentes: PaginaDet[] = [];
@@ -64,7 +71,7 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     mostrarModalAgregar = false;
 
     // Datos para el modal de agregar componente
-    componentesDisponibles: Componente[] = [];
+    componentesDisponibles: ComponenteSimple[] = [];
     nuevoComponente: { tipo_comp: string; id_ref: number } = { tipo_comp: '', id_ref: 0 };
 
     // Opciones para los selects
@@ -195,21 +202,47 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     // ========== FUNCIONALIDAD MODAL AGREGAR COMPONENTE ==========
 
     /**
-     * Carga los componentes disponibles para agregar a la página
+     * Método legacy - ya no se usa. Los componentes se cargan dinámicamente al seleccionar tipo.
      */
     private cargarComponentesDisponibles(): void {
-        if (!this.paginaSeleccionada) return;
+        // Este método ya no se utiliza - los componentes se cargan dinámicamente
+        // en onTipoComponenteChange() cuando el usuario selecciona un tipo
+        console.log('⚠️ cargarComponentesDisponibles() - método legacy, no utilizado');
+    }
 
-        console.log('📋 Cargando componentes disponibles para canal:', this.paginaSeleccionada.canal);
+    /**
+     * Maneja el cambio de selección del tipo de componente en el modal
+     * Consulta el servicio con el payload dinámico según el tipo seleccionado
+     */
+    onTipoComponenteChange(): void {
+        const tipoSeleccionado = this.nuevoComponente.tipo_comp;
 
-        this.compService.getComponentesByCanal(this.paginaSeleccionada.canal).subscribe({
+        if (!tipoSeleccionado) {
+            console.log('📋 Tipo de componente no seleccionado - limpiando lista');
+            this.componentesDisponibles = [];
+            this.nuevoComponente.id_ref = 0;
+            return;
+        }
+
+        console.log('🔄 Usuario cambió tipo de componente a:', tipoSeleccionado);
+
+        // Limpiar selección anterior
+        this.nuevoComponente.id_ref = 0;
+
+        // Consultar servicio con payload dinámico
+        this.paginaDetServiceModal.getComponentesPorTipo(tipoSeleccionado).subscribe({
             next: (response) => {
+                console.log('✅ Componentes obtenidos para tipo', tipoSeleccionado + ':', response.data?.length || 0, 'componentes');
                 this.componentesDisponibles = response.data || [];
-                console.log('✅ Componentes disponibles cargados:', this.componentesDisponibles.length);
             },
             error: (error) => {
-                console.error('❌ Error al cargar componentes disponibles:', error);
+                console.error('❌ Error al obtener componentes para tipo', tipoSeleccionado + ':', error);
                 this.componentesDisponibles = [];
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: `Error al cargar componentes de tipo ${tipoSeleccionado}`
+                });
             }
         });
     }

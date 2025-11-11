@@ -156,6 +156,7 @@
         placeholder="Seleccionar tipo de componente"
         class="w-full"
         [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="onTipoComponenteChange()"
       />
     </div>
 
@@ -166,7 +167,7 @@
         [(ngModel)]="nuevoComponente.id_ref"
         [options]="componentesDisponibles"
         optionLabel="nombre"
-        optionValue="id_comp"
+        optionValue="id"
         placeholder="Seleccionar componente"
         class="w-full"
         [ngModelOptions]="{standalone: true}"

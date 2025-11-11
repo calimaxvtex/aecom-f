@@ -355,4 +355,47 @@ export class PaginaDetService {
     getPaginasDetByPagina(idPag: number): Observable<PaginaDetResponse> {
         return this.getByPagina(idPag);
     }
+
+    /**
+     * Obtiene componentes disponibles por tipo (payload dinámico)
+     * Payload: {"action": "SL", "tipo_comp": "[tipo_seleccionado]", "usr": "ADMIN", "id_session": 1}
+     * @param tipo_comp Tipo de componente seleccionado por el usuario (carrusel, categoria, vitrina, etc.)
+     */
+    getComponentesPorTipo(tipo_comp: string): Observable<any> {
+        console.log('🔍 Consultando componentes por tipo:', tipo_comp);
+
+        return this.getPaginasDetUrl().pipe(
+            switchMap(url => {
+                // Payload con tipo_comp dinámico según selección del usuario
+                const payload = {
+                    action: 'SL',
+                    tipo_comp: tipo_comp,
+                    usr: 'ADMIN',
+                    id_session: 1
+                };
+
+                console.log('📤 Payload enviado:', payload);
+                console.log('🔗 URL destino:', url);
+                console.log('📋 Tipo de componente solicitado:', tipo_comp);
+
+                return this.http.post<any>(url, payload).pipe(
+                    map((response: any) => {
+                        console.log('✅ Respuesta del backend para tipo', tipo_comp + ':', response);
+
+                        // Verificar error del backend
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error para tipo', tipo_comp + ':', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
+                        }
+
+                        return response;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error en getComponentesPorTipo para tipo', tipo_comp + ':', error);
+                        return throwError(() => new Error('Error al obtener componentes por tipo'));
+                    })
+                );
+            })
+        );
+    }
 }

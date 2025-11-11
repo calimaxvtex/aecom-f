@@ -92,11 +92,8 @@ export interface PaginaDetFilters extends PaginaDetQueryParams {
  */
 export type TipoComponentePagina =
     | 'carrusel'     // Carrusel de imágenes
-    | 'banner'       // Banner publicitario
-    | 'producto'     // Lista de productos
     | 'categoria'    // Categorías
-    | 'texto'        // Texto/HTML
-    | 'imagen'       // Imagen simple
+    | 'vitrina'      // Vitrina de productos
     | string;        // Otros tipos
 
 /**
@@ -123,11 +120,8 @@ export interface PaginaDetStats {
  */
 export const TIPO_COMPONENTE_PAGINA = {
     CARRUSEL: 'carrusel',
-    BANNER: 'banner',
-    PRODUCTO: 'producto',
     CATEGORIA: 'categoria',
-    TEXTO: 'texto',
-    IMAGEN: 'imagen'
+    VITRINA: 'vitrina'
 } as const;
 
 /**

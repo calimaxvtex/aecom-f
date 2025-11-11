@@ -70,11 +70,8 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     // Opciones para los selects
     tiposComponenteOptions: { label: string; value: string }[] = [
         { label: 'Carrusel', value: 'carrusel' },
-        { label: 'Banner', value: 'banner' },
-        { label: 'Producto', value: 'producto' },
-        { label: 'Categoría', value: 'categoria' },
-        { label: 'Texto', value: 'texto' },
-        { label: 'Imagen', value: 'imagen' }
+        { label: 'Categorías', value: 'categoria' },
+        { label: 'Vitrina', value: 'vitrina' }
     ];
 
     // Filtro por canal
@@ -163,11 +160,8 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     getTipoColor(tipoComp: string): string {
         const colores: { [key: string]: string } = {
             'carrusel': 'text-blue-600',
-            'banner': 'text-green-600',
-            'producto': 'text-purple-600',
             'categoria': 'text-orange-600',
-            'texto': 'text-gray-600',
-            'imagen': 'text-pink-600'
+            'vitrina': 'text-purple-600'
         };
         return colores[tipoComp] || 'text-gray-500';
     }

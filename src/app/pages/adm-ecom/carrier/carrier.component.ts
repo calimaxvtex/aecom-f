@@ -695,10 +695,19 @@ export class CarrierComponent implements OnInit {
      * Guarda todos los horarios
      */
     guardarHorarios(): void {
-        if (!this.carrierParaHorarios) return;
+        console.log('🕐 ========== INICIO guardarHorarios() ==========');
+        console.log('🕐 carrierParaHorarios:', this.carrierParaHorarios);
+        console.log('🕐 diasSeleccionados:', this.diasSeleccionados);
+        console.log('🕐 ventanasHorario:', this.ventanasHorario);
+        
+        if (!this.carrierParaHorarios) {
+            console.log('🕐 ERROR: No hay carrierParaHorarios');
+            return;
+        }
 
         // Validaciones
         if (this.diasSeleccionados.length === 0) {
+            console.log('🕐 ERROR: No hay días seleccionados');
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Validación',
@@ -709,6 +718,7 @@ export class CarrierComponent implements OnInit {
         }
 
         if (this.ventanasHorario.length === 0) {
+            console.log('🕐 ERROR: No hay ventanas de horario');
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Validación',
@@ -718,63 +728,106 @@ export class CarrierComponent implements OnInit {
             return;
         }
 
+        console.log('🕐 Iniciando validación de ventanas...');
         // Validar cada ventana
-        for (const ventana of this.ventanasHorario) {
+        for (let i = 0; i < this.ventanasHorario.length; i++) {
+            const ventana = this.ventanasHorario[i];
+            console.log(`🕐 Validando ventana ${i}:`, ventana);
+            
             if (!ventana.hini || !this.validarFormatoHora(ventana.hini)) {
+                console.log('🕐 ERROR: Hora inicio inválida');
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Validación',
-                    detail: `Hora de inicio inválida en ${this.getNombreDia(ventana.week_day)}`,
+                    detail: `Hora de inicio inválida en ventana ${i + 1}`,
                     life: 3000
                 });
                 return;
             }
 
             if (!ventana.hfin || !this.validarFormatoHora(ventana.hfin)) {
+                console.log('🕐 ERROR: Hora fin inválida');
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Validación',
-                    detail: `Hora de fin inválida en ${this.getNombreDia(ventana.week_day)}`,
+                    detail: `Hora de fin inválida en ventana ${i + 1}`,
                     life: 3000
                 });
                 return;
             }
 
             if (!this.validarRangoHoras(ventana.hini, ventana.hfin)) {
+                console.log('🕐 ERROR: Rango de horas inválido');
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Validación',
-                    detail: `La hora fin debe ser mayor que la hora inicio en ${this.getNombreDia(ventana.week_day)}`,
+                    detail: `La hora fin debe ser mayor que la hora inicio en ventana ${i + 1}`,
                     life: 3000
                 });
                 return;
             }
 
             if (ventana.fee < 0) {
+                console.log('🕐 ERROR: Fee negativo');
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Validación',
-                    detail: `El fee no puede ser negativo en ${this.getNombreDia(ventana.week_day)}`,
+                    detail: `El fee no puede ser negativo en ventana ${i + 1}`,
                     life: 3000
                 });
                 return;
             }
 
             if (ventana.capacidad <= 0 || ventana.capacidad_app <= 0) {
+                console.log('🕐 ERROR: Capacidades inválidas');
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Validación',
-                    detail: `Las capacidades deben ser mayores a 0 en ${this.getNombreDia(ventana.week_day)}`,
+                    detail: `Las capacidades deben ser mayores a 0 en ventana ${i + 1}`,
                     life: 3000
                 });
                 return;
             }
         }
+        
+        console.log('🕐 ✅ Todas las validaciones pasaron');
 
         this.savingHorarios = true;
 
         const operaciones: Promise<any>[] = [];
         
+        // ========== PASO 1: Separar ventanas nuevas de existentes ==========
+        const ventanasNuevas = this.ventanasHorario.filter(v => !v.id_sched || v.esNuevo);
+        const ventanasExistentes = this.ventanasHorario.filter(v => v.id_sched && !v.esNuevo);
+        
+        console.log('===============> 🕐 Ventanas nuevas:', ventanasNuevas.length);
+        console.log('🕐 Ventanas existentes:', ventanasExistentes.length);
+        
+        // ========== PASO 2: Crear nuevos horarios (IN) para ventanas nuevas ==========
+        ventanasNuevas.forEach(ventana => {
+            // Crear un horario para cada día en ventana.dias
+            ventana.dias.forEach((dia: number) => {
+                const payload = {
+                    id_carrier: this.carrierParaHorarios!.id_carrier,
+                    week_day: dia,
+                    hini: ventana.hini,
+                    hfin: ventana.hfin,
+                    hini_int: this.horaAEntero(ventana.hini),
+                    hfin_int: this.horaAEntero(ventana.hfin),
+                    fee: ventana.fee,
+                    capacidad: ventana.capacidad,
+                    capacidad_app: ventana.capacidad_app,
+                    hora_ini: this.horaAFormatoCompleto(ventana.hini),
+                    hora_fin: this.horaAFormatoCompleto(ventana.hfin),
+                    phora_ini: this.horaAFormatoCompleto(ventana.hini),
+                    estado: ventana.estado || 'A'
+                };
+                console.log('🕐 Creando nuevo horario (IN):', payload);
+                operaciones.push(firstValueFrom(this.carrierService.createHorario(payload)));
+            });
+        });
+        
+        // ========== PASO 3: Actualizar horarios existentes (UP) ==========
         // Para cada horario original, actualizar según corresponda
         this.horariosOriginales.forEach(horario => {
             // Buscar si este horario debe estar activo (coincide con alguna ventana actual)
@@ -814,13 +867,15 @@ export class CarrierComponent implements OnInit {
                     phora_ini: this.horaAFormatoCompleto(ventanaCorrespondiente.hini),
                     estado: 'A'
                 };
+                console.log('🕐 Actualizando horario existente (UP):', payload);
                 operaciones.push(firstValueFrom(this.carrierService.updateHorario(payload)));
             } else {
-                // Si NO debe estar activo, solo actualizar el estado a Inactivo
+                // Si NO debe estar activo, solo actualizar el estado a Inactivo (R = Retirado)
                 const payload: any = {
                     id_sched: horario.id_sched,
-                    estado: 'I'
+                    estado: 'R'
                 };
+                console.log('🕐 Desactivando horario (UP):', payload);
                 operaciones.push(firstValueFrom(this.carrierService.updateHorario(payload)));
             }
         });

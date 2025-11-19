@@ -483,7 +483,7 @@
                             <p-tag
                                 [value]="getEstadoLabel(ventana.estado)"
                                 [severity]="getEstadoSeverity(ventana.estado)"
-                                (click)="ventana.estado = ventana.estado === 'A' ? 'I' : 'R'"
+                                (click)="ventana.estado = ventana.estado === 'A' ? 'R' : 'A'"
                                 class="cursor-pointer hover:opacity-80 transition-opacity"
                                 title="Clic para cambiar"
                             ></p-tag>
@@ -505,7 +505,7 @@
         </div>
 
         <!-- Botón para agregar ventana -->
-        <div class="flex justify-content-end mb-4">
+        <!-- <div class="flex justify-content-end mb-4">
             <button
                 pButton
                 icon="pi pi-plus"
@@ -515,7 +515,7 @@
                 class="p-button-success btn-agregar-ventana"
                 pTooltip="Agregar nueva ventana de horario para los días seleccionados"
             ></button>
-        </div>
+        </div> -->
 
         <!-- Botones del modal -->
         <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">

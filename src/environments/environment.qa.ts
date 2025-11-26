@@ -4,6 +4,7 @@ export const environment = {
   
   // URLs de API
   apiUrl: 'http://10.10.250.168:3012',
+  // apiUrl: 'http://localhost:3000',
   apiUrlImg: 'http://10.10.254.127:3013',
   
   // Configuración de autenticación

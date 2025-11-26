@@ -1,0 +1,403 @@
+<div class="card">
+    <p-toast></p-toast>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold mb-4">📱 Administración de Push Notifications</h1>
+    </div>
+
+    <!-- Tabla de push notifications -->
+    <p-table
+        #dtPushNotifications
+        [value]="pushNotifications"
+        [paginator]="true"
+        [rows]="20"
+        [showCurrentPageReport]="true"
+        responsiveLayout="scroll"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} push notifications"
+        [rowsPerPageOptions]="[20, 30, 50]"
+        [globalFilterFields]="['ID', 'TITULO', 'CONTENIDO', 'ID_PROMO']"
+        dataKey="ID"
+        [sortMode]="'multiple'"
+        [filterDelay]="300"
+        [loading]="loadingPushNotifications"
+    >
+        <!-- Caption con controles -->
+        <ng-template #caption>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <!-- Input de búsqueda con botón de limpiar -->
+                    <div class="relative w-full sm:w-80">
+                        <input
+                            pInputText
+                            type="text"
+                            [(ngModel)]="searchFilterValue"
+                            (input)="onGlobalFilter(dtPushNotifications)"
+                            placeholder="Buscar push notifications..."
+                            class="w-full pr-10"
+                            name="searchFilter"
+                        />
+                        <!-- Botón X para limpiar búsqueda -->
+                        <button
+                            *ngIf="searchFilterValue && searchFilterValue.length > 0"
+                            type="button"
+                            (click)="clearGlobalFilter(dtPushNotifications)"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer p-1 rounded-full hover:bg-gray-100"
+                            pTooltip="Limpiar búsqueda"
+                            aria-label="Limpiar búsqueda"
+                        >
+                            <i class="pi pi-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <!-- Botones de filtro por estado -->
+                    <div class="flex gap-1 mr-4">
+                        <button
+                            *ngFor="let estado of estadoOptions"
+                            (click)="onEstadoFiltroClick(estado.value)"
+                            pButton
+                            raised
+                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                            [label]="estado.label"
+                            pTooltip="Filtrar por {{ estado.label }}"
+                        ></button>
+                    </div>
+                    <!-- Separador visual -->
+                    <div class="w-px bg-gray-300 mx-2"></div>
+                    <!-- Botones de acción -->
+                    <button
+                        (click)="cargarPushNotifications()"
+                        pButton
+                        raised
+                        icon="pi pi-refresh"
+                        [loading]="loadingPushNotifications"
+                        pTooltip="Actualizar"
+                    ></button>
+                    <button
+                        (click)="openPushNotificationForm()"
+                        pButton
+                        raised
+                        icon="pi pi-plus"
+                        pTooltip="Nueva Push Notification"
+                    ></button>
+                </div>
+            </div>
+        </ng-template>
+
+        <!-- Headers -->
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="ID" style="width: 60px">ID<p-sortIcon field="ID"></p-sortIcon></th>
+                <th pSortableColumn="TITULO" style="min-width: 200px">Título <p-sortIcon field="TITULO"></p-sortIcon></th>
+                <th pSortableColumn="CONTENIDO" style="min-width: 250px">Contenido <p-sortIcon field="CONTENIDO"></p-sortIcon></th>
+                <th pSortableColumn="TIPO" style="width: 80px">Tipo <p-sortIcon field="TIPO"></p-sortIcon></th>
+                <th pSortableColumn="FECHA_INICIO" style="min-width: 150px">Fecha Inicio <p-sortIcon field="FECHA_INICIO"></p-sortIcon></th>
+                <th pSortableColumn="FECHA_FIN" style="min-width: 150px">Fecha Fin <p-sortIcon field="FECHA_FIN"></p-sortIcon></th>
+                <th pSortableColumn="ID_PROMO" style="min-width: 120px">ID Promo <p-sortIcon field="ID_PROMO"></p-sortIcon></th>
+                <th pSortableColumn="ST_ORDEN" style="width: 100px">Estado Orden <p-sortIcon field="ST_ORDEN"></p-sortIcon></th>
+                <th pSortableColumn="ESTADO" style="width: 120px">Estado <p-sortIcon field="ESTADO"></p-sortIcon></th>
+                <th style="width: 120px">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <!-- Body -->
+        <ng-template #body let-pushNotification>
+            <tr class="cursor-pointer hover:bg-gray-50 transition-colors">
+                <!-- ID -->
+                <td class="text-center font-mono text-sm text-blue-600">
+                    {{ pushNotification.ID }}
+                </td>
+
+                <!-- Título -->
+                <td>
+                    <span class="font-medium text-gray-900">
+                        {{ pushNotification.TITULO }}
+                    </span>
+                </td>
+
+                <!-- Contenido -->
+                <td>
+                    <span class="text-gray-700 text-sm">
+                        {{ pushNotification.CONTENIDO | slice:0:50 }}{{ pushNotification.CONTENIDO.length > 50 ? '...' : '' }}
+                    </span>
+                </td>
+
+                <!-- Tipo -->
+                <td class="text-center">
+                    <span class="font-mono text-sm text-gray-600">
+                        {{ pushNotification.TIPO }}
+                    </span>
+                </td>
+
+                <!-- Fecha Inicio -->
+                <td>
+                    <span class="text-gray-700 text-sm">
+                        {{ pushNotification.FECHA_INICIO | date:'short' }}
+                    </span>
+                </td>
+
+                <!-- Fecha Fin -->
+                <td>
+                    <span class="text-gray-700 text-sm">
+                        {{ pushNotification.FECHA_FIN | date:'short' }}
+                    </span>
+                </td>
+
+                <!-- ID Promo -->
+                <td>
+                    <span class="font-mono text-sm text-gray-700">
+                        {{ pushNotification.ID_PROMO }}
+                    </span>
+                </td>
+
+                <!-- Orden -->
+                <td class="text-center">
+                    <span class="font-mono text-sm text-gray-600">
+                        {{ pushNotification.ST_ORDEN }}
+                    </span>
+                </td>
+
+                <!-- Estado -->
+                <td>
+                    <p-tag
+                        [value]="getEstadoLabel(pushNotification.ESTADO)"
+                        [severity]="getEstadoSeverity(pushNotification.ESTADO)"
+                        (click)="toggleEstado(pushNotification); $event.stopPropagation()"
+                        class="cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Clic para cambiar"
+                    ></p-tag>
+                </td>
+
+                <!-- Acciones -->
+                <td (click)="$event.stopPropagation()">
+                    <div class="flex gap-1">
+                        <button
+                            pButton
+                            icon="pi pi-pencil"
+                            (click)="openPushNotificationForm(pushNotification)"
+                            class="p-button-sm p-button-text p-button-warning"
+                            pTooltip="Editar Push Notification"
+                        ></button>
+                        <button
+                            pButton
+                            icon="pi pi-trash"
+                            (click)="deletePushNotification(pushNotification)"
+                            class="p-button-sm p-button-text p-button-danger"
+                            pTooltip="Eliminar Push Notification"
+                        ></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Modal de formulario CRUD -->
+<p-dialog
+    [(visible)]="showPushNotificationModal"
+    [header]="isEditingPushNotification ? 'Editar Push Notification' : 'Nueva Push Notification'"
+    [modal]="true"
+    [style]="{width: '900px', maxWidth: '95vw'}"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="push-notification-form-dialog"
+>
+    <form (ngSubmit)="savePushNotification()" class="p-6">
+        <!-- Campos principales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- ID (solo en edición) -->
+            <div *ngIf="isEditingPushNotification && pushNotificationSeleccionado" class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [value]="pushNotificationSeleccionado.ID"
+                        readonly
+                        class="w-full bg-gray-50"
+                    />
+                    <label>ID</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Título -->
+            <div class="col-span-1 md:col-span-2">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="pushNotificationForm.TITULO"
+                        name="TITULO"
+                        placeholder="Título de la notificación"
+                        class="w-full"
+                        maxlength="200"
+                        required
+                    />
+                    <label>Título *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Contenido -->
+            <div class="col-span-1 md:col-span-2">
+                <p-floatLabel variant="on">
+                    <textarea
+                        pTextarea
+                        [(ngModel)]="pushNotificationForm.CONTENIDO"
+                        name="CONTENIDO"
+                        placeholder="Contenido de la notificación"
+                        class="w-full"
+                        rows="3"
+                        maxlength="500"
+                        required
+                    ></textarea>
+                    <label>Contenido *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Data -->
+            <div class="col-span-1 md:col-span-2">
+                <p-floatLabel variant="on">
+                    <textarea
+                        pTextarea
+                        [(ngModel)]="pushNotificationForm.DATA"
+                        name="DATA"
+                        placeholder="Data adicional (JSON o texto)"
+                        class="w-full"
+                        rows="2"
+                        required
+                    ></textarea>
+                    <label>Data *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Tipo -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="pushNotificationForm.TIPO"
+                        name="TIPO"
+                        type="number"
+                        placeholder="1"
+                        class="w-full"
+                        min="1"
+                        required
+                    />
+                    <label>Tipo *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- ID Promo -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="pushNotificationForm.ID_PROMO"
+                        name="ID_PROMO"
+                        placeholder="ID de promoción"
+                        class="w-full"
+                        maxlength="50"
+                    />
+                    <label>ID Promo</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Orden -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="pushNotificationForm.ST_ORDEN"
+                        name="ST_ORDEN"
+                        type="number"
+                        placeholder="0"
+                        class="w-full"
+                        min="0"
+                    />
+                    <label>Orden</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-span-1 flex items-center gap-4">
+                <p-tag
+                    [value]="getEstadoLabel(pushNotificationForm.ESTADO)"
+                    [severity]="getEstadoSeverity(pushNotificationForm.ESTADO)"
+                    (click)="pushNotificationForm.ESTADO = pushNotificationForm.ESTADO === 'A' ? 'R' : 'A'"
+                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                    pTooltip="Activar/desactivar push notification"
+                ></p-tag>
+                <label class="text-sm text-gray-600">Estado</label>
+            </div>
+
+            <!-- Fecha Inicio -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <p-datepicker
+                        [(ngModel)]="pushNotificationForm.FECHA_INICIO"
+                        name="FECHA_INICIO"
+                        [showTime]="true"
+                        [showIcon]="true"
+                        dateFormat="yy-mm-dd"
+                        hourFormat="24"
+                        placeholder="Selecciona fecha y hora"
+                        styleClass="w-full"
+                        required
+                    ></p-datepicker>
+                    <label>Fecha Inicio *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Fecha Fin -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <p-datepicker
+                        [(ngModel)]="pushNotificationForm.FECHA_FIN"
+                        name="FECHA_FIN"
+                        [showTime]="true"
+                        [showIcon]="true"
+                        dateFormat="yy-mm-dd"
+                        hourFormat="24"
+                        placeholder="Selecciona fecha y hora"
+                        styleClass="w-full"
+                        required
+                    ></p-datepicker>
+                    <label>Fecha Fin *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Fecha Alta (solo en edición) -->
+            <div *ngIf="isEditingPushNotification" class="col-span-1">
+                <p-floatLabel variant="on">
+                    <p-datepicker
+                        [(ngModel)]="pushNotificationForm.FECHA_ALTA"
+                        name="FECHA_ALTA"
+                        [showIcon]="true"
+                        dateFormat="yy-mm-dd"
+                        placeholder="Fecha de alta"
+                        styleClass="w-full"
+                    ></p-datepicker>
+                    <label>Fecha Alta</label>
+                </p-floatLabel>
+            </div>
+
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+            <p-button
+                type="button"
+                (onClick)="closePushNotificationForm()"
+                label="Cancelar"
+                icon="pi pi-times"
+                severity="secondary"
+                [text]="true"
+            ></p-button>
+            <p-button
+                type="submit"
+                [label]="isEditingPushNotification ? 'Actualizar' : 'Crear'"
+                [icon]="isEditingPushNotification ? 'pi pi-check' : 'pi pi-plus'"
+                [loading]="false"
+            ></p-button>
+        </div>
+    </form>
+</p-dialog>
+

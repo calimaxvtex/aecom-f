@@ -55,6 +55,11 @@ export default [
         loadComponent: () => import('./adm-ecom/carrier/carrier.component').then(c => c.CarrierComponent)
     },
     {
+        path: 'adm-ecom/push-notifications',
+        data: { breadcrumb: 'Administración de Push Notifications', proy: 1 },
+        loadComponent: () => import('./adm-ecom/push-notifications/push-notifications.component').then(c => c.PushNotificationsComponent)
+    },
+    {
         path: 'system/usuarios',
         data: { breadcrumb: 'Gestión de Usuarios', proy: 1 },
         loadComponent: () => import('./system/usuarios/usuarios.component').then(c => c.UsuariosComponent)

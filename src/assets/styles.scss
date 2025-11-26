@@ -3,3 +3,52 @@
 @use './layout/layout.scss';
 @use 'primeicons/primeicons.css';
 @use './demo/demo.scss';
+
+/* ==== Overrides selectButton días (global) ==== */
+/* Selector múltiple para asegurar que funcione */
+.p-selectbutton.dias-selectbutton .p-button,
+.p-selectbutton.dias-selectbutton button,
+.p-selectbutton button.p-button,
+.p-dialog .p-selectbutton .p-button {
+  border-radius: 9999px !important;
+  padding: 0.5rem 0.9rem !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+/* Día activo - múltiples variantes */
+.p-selectbutton.dias-selectbutton .p-button.p-highlight,
+.p-selectbutton.dias-selectbutton button.p-highlight,
+.p-selectbutton button.p-button.p-highlight,
+.p-dialog .p-selectbutton .p-button.p-highlight {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  background-color: #10b981 !important;
+  border: none !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+/* Día inactivo - múltiples variantes */
+.p-selectbutton.dias-selectbutton .p-button:not(.p-highlight),
+.p-selectbutton.dias-selectbutton button:not(.p-highlight),
+.p-selectbutton button.p-button:not(.p-highlight),
+.p-dialog .p-selectbutton .p-button:not(.p-highlight) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #6b7280 !important;
+  border: 1px solid #e5e7eb !important;
+  opacity: 0.85 !important;
+}
+
+/* Hover inactivo */
+.p-selectbutton.dias-selectbutton .p-button:not(.p-highlight):hover,
+.p-selectbutton.dias-selectbutton button:not(.p-highlight):hover,
+.p-selectbutton button.p-button:not(.p-highlight):hover,
+.p-dialog .p-selectbutton .p-button:not(.p-highlight):hover {
+  background: #f9fafb !important;
+  background-color: #f9fafb !important;
+  color: #374151 !important;
+  opacity: 1 !important;
+}

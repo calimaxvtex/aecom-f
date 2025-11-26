@@ -142,6 +142,18 @@ export class ApiConfigService {
         return API_URLS.RECETA_CRUD;
     }
 
+    getCarrierCrudUrl(): string {
+        return API_URLS.CARRIER_CRUD;
+    }
+
+    getCarrierSchedCrudUrl(): string {
+        return API_URLS.CARRIER_SCHED_CRUD;
+    }
+
+    getPushNotificationCrudUrl(): string {
+        return API_URLS.PUSH_NOTIFICATION_CRUD;
+    }
+
     // Método para cambiar URL en tiempo de ejecución
     setBaseUrl(url: string): void {
         this.baseUrl = url;

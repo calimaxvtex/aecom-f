@@ -1,4 +1,4 @@
-import { environment } from '../../../environments/environment.qa';
+import { environment } from '../../../environments/environment';
 
 export const API_CONFIG = {
     BASE_URL: environment.apiUrl,
@@ -14,7 +14,10 @@ export const API_CONFIG = {
         SUCURSAL: {CRUD: '/api/admsucursal/v1'},
         CATEGORIA: {CRUD: '/api/admcat/v1'},
         PROYECTO: {CRUD: '/api/admproy/v1'},
-        RECETA: {CRUD: '/api/admrcta/v1'}
+        RECETA: {CRUD: '/api/admrcta/v1'},
+        CARRIER: {CRUD: '/api/admcarr/v1'},
+        CARRIER_SCHED: {CRUD: '/api/admcarrsched/v1'},
+        PUSH_NOTIFICATION: {CRUD: '/api/admpush/v1'}
     }
 };
 
@@ -30,7 +33,10 @@ export const API_URLS = {
     SUCURSAL_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUCURSAL.CRUD}`,
     CATEGORIA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CATEGORIA.CRUD}`,
     PROYECTO_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROYECTO.CRUD}`,
-    RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`
+    RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`,
+    CARRIER_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CARRIER.CRUD}`,
+    CARRIER_SCHED_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CARRIER_SCHED.CRUD}`,
+    PUSH_NOTIFICATION_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PUSH_NOTIFICATION.CRUD}`
 };
 
 

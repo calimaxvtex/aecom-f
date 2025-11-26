@@ -1,0 +1,538 @@
+<div class="card">
+    <p-toast></p-toast>
+
+    <!-- Toast para confirmaciones -->
+    <p-toast key="confirm" [baseZIndex]="5000">
+        <ng-template let-message pTemplate="message">
+            <div class="w-full">
+                <!-- Icono de advertencia -->
+                <div class="flex align-items-center mb-3">
+                    <i class="pi pi-exclamation-triangle text-2xl text-orange-500 mr-3"></i>
+                    <div class="font-semibold text-lg text-gray-800">{{ message.summary }}</div>
+                </div>
+
+                <!-- Mensaje descriptivo -->
+                <div class="mb-4 text-gray-700 leading-relaxed">
+                    {{ message.detail }}
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-content-end gap-2 pt-3 border-top-1 border-gray-200">
+                    <p-button
+                        label="Cancelar"
+                        icon="pi pi-times"
+                        size="small"
+                        [text]="true"
+                        severity="contrast"
+                        (onClick)="messageService.clear('confirm')"
+                        class="px-3 py-2"
+                    ></p-button>
+                </div>
+            </div>
+        </ng-template>
+    </p-toast>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold mb-4">📦 Administración de Carriers</h1>
+    </div>
+
+    <!-- Tabla de carriers -->
+    <p-table
+        #dtCarriers
+        [value]="carriers"
+        [paginator]="true"
+        [rows]="20"
+        [showCurrentPageReport]="true"
+        responsiveLayout="scroll"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} carriers"
+        [rowsPerPageOptions]="[20, 30, 50]"
+        [globalFilterFields]="['id_carrier', 'id_ref_vtex', 'nombre', 'tienda', 'tipo_envio_desc', 'fee']"
+        dataKey="id_carrier"
+        [sortMode]="'multiple'"
+        [filterDelay]="300"
+        [loading]="loadingCarriers"
+    >
+        <!-- Caption con controles -->
+        <ng-template #caption>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <!-- Input de búsqueda con botón de limpiar -->
+                    <div class="relative w-full sm:w-80">
+                        <input
+                            pInputText
+                            type="text"
+                            [(ngModel)]="searchFilterValue"
+                            (input)="onGlobalFilter(dtCarriers)"
+                            placeholder="Buscar carriers..."
+                            class="w-full pr-10"
+                            name="searchFilter"
+                        />
+                        <!-- Botón X para limpiar búsqueda -->
+                        <button
+                            *ngIf="searchFilterValue && searchFilterValue.length > 0"
+                            type="button"
+                            (click)="clearGlobalFilter(dtCarriers)"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer p-1 rounded-full hover:bg-gray-100"
+                            pTooltip="Limpiar búsqueda"
+                            aria-label="Limpiar búsqueda"
+                        >
+                            <i class="pi pi-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <!-- Botones de filtro por estado -->
+                    <div class="flex gap-1 mr-4">
+                        <button
+                            *ngFor="let estado of estadoOptions"
+                            (click)="onEstadoFiltroClick(estado.value)"
+                            pButton
+                            raised
+                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                            [label]="estado.label"
+                            pTooltip="Filtrar por {{ estado.label }}"
+                        ></button>
+                    </div>
+                    <!-- Separador visual -->
+                    <div class="w-px bg-gray-300 mx-2"></div>
+                    <!-- Botones de acción -->
+                    <button
+                        (click)="cargarCarriers()"
+                        pButton
+                        raised
+                        icon="pi pi-refresh"
+                        [loading]="loadingCarriers"
+                        pTooltip="Actualizar"
+                    ></button>
+                    <button
+                        (click)="openCarrierForm()"
+                        pButton
+                        raised
+                        icon="pi pi-plus"
+                        pTooltip="Nuevo Carrier"
+                    ></button>
+                </div>
+            </div>
+        </ng-template>
+
+        <!-- Headers -->
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="id_carrier" style="width: 100px">ID<p-sortIcon field="id_carrier"></p-sortIcon></th>
+                <th pSortableColumn="id_ref_vtex" style="min-width: 150px">ID Ref VTEX <p-sortIcon field="id_ref_vtex"></p-sortIcon></th>
+                <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+                <th pSortableColumn="tienda" style="min-width: 150px">Tienda <p-sortIcon field="tienda"></p-sortIcon></th>
+                <th pSortableColumn="tipo_envio_desc" style="min-width: 200px">Tipo envío <p-sortIcon field="tipo_envio_desc"></p-sortIcon></th>
+                <th pSortableColumn="fee" style="min-width: 120px">Fee <p-sortIcon field="fee"></p-sortIcon></th>
+                <th pSortableColumn="estado" style="width: 120px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                <th style="width: 150px">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <!-- Body -->
+        <ng-template #body let-carrier>
+            <tr class="cursor-pointer hover:bg-gray-50 transition-colors">
+                <!-- ID Carrier -->
+                <td class="text-center font-mono text-sm text-blue-600">
+                    {{ carrier.id_carrier }}
+                </td>
+
+                <!-- ID Ref VTEX -->
+                <td class="font-mono text-sm text-gray-700">
+                    {{ carrier.id_ref_vtex }}
+                </td>
+
+                <!-- Nombre -->
+                <td>
+                    <span class="font-medium text-gray-900">
+                        {{ carrier.nombre | titlecase }}
+                    </span>
+                </td>
+
+                <!-- Tienda -->
+                <td>
+                    <span class="text-gray-700">
+                        {{ carrier.tienda }}
+                    </span>
+                </td>
+
+                <!-- Tipo Envío -->
+                <td>
+                    <span class="text-gray-700">
+                        {{ carrier.tipo_envio_desc }}
+                    </span>
+                </td>
+
+                <!-- Fee -->
+                <td class="text-right font-mono text-sm">
+                    <span class="text-green-600 font-semibold">
+                        {{ formatearFee(carrier.fee || 0) }}
+                    </span>
+                </td>
+
+                <!-- Estado -->
+                <td>
+                    <p-tag
+                        [value]="getEstadoLabel(carrier.estado)"
+                        [severity]="getEstadoSeverity(carrier.estado)"
+                        (click)="toggleEstado(carrier); $event.stopPropagation()"
+                        class="cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Clic para cambiar"
+                    ></p-tag>
+                </td>
+
+                <!-- Acciones -->
+                <td (click)="$event.stopPropagation()">
+                    <div class="flex gap-1">
+                        <button
+                            pButton
+                            icon="pi pi-pencil"
+                            (click)="openCarrierForm(carrier)"
+                            class="p-button-sm p-button-text p-button-warning"
+                            pTooltip="Editar Carrier"
+                        ></button>
+                        <button
+                            pButton
+                            icon="pi pi-clock"
+                            (click)="openHorariosModal(carrier)"
+                            class="p-button-sm p-button-text p-button-info"
+                            pTooltip="Gestionar Horarios"
+                        ></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Modal de formulario CRUD -->
+<p-dialog
+    [(visible)]="showCarrierModal"
+    [header]="isEditingCarrier ? 'Editar Carrier' : 'Nuevo Carrier'"
+    [modal]="true"
+    [style]="{width: '800px', maxWidth: '95vw'}"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="carrier-form-dialog"
+>
+    <form (ngSubmit)="saveCarrier()" class="p-6">
+        <!-- Campos principales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- ID Carrier (solo en edición) -->
+            <div *ngIf="isEditingCarrier && carrierSeleccionado" class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [value]="carrierSeleccionado.id_carrier"
+                        readonly
+                        class="w-full bg-gray-50"
+                    />
+                    <label>ID Carrier</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- ID Ref VTEX -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="carrierForm.id_ref_vtex"
+                        name="id_ref_vtex"
+                        placeholder="Ej: ABC1234"
+                        class="w-full"
+                        maxlength="7"
+                        pattern="[A-Za-z0-9]*"
+                        required
+                        (input)="filtrarIdRefVtex($event)"
+                    />
+                    <label>ID Ref VTEX *</label>
+                </p-floatLabel>
+                <small class="text-gray-500 mt-1 block">
+                    Máximo 7 caracteres alfanuméricos (sin espacios ni caracteres especiales)
+                </small>
+            </div>
+
+            <!-- Nombre -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="carrierForm.nombre"
+                        name="nombre"
+                        placeholder="Nombre del carrier"
+                        class="w-full"
+                        maxlength="100"
+                        required
+                    />
+                    <label>Nombre *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Tienda (No editable) -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="carrierForm.tienda"
+                        name="tienda"
+                        placeholder="Nombre de la tienda"
+                        class="w-full bg-gray-50"
+                        readonly
+                        required
+                    />
+                    <label>Tienda *</label>
+                </p-floatLabel>
+                <small class="text-gray-500 mt-1 block">
+                    <i class="pi pi-info-circle mr-1"></i>
+                    Este campo viene de la tabla de sucursales y no es editable
+                </small>
+            </div>
+
+            <!-- Tipo Envío (SELECT) -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <p-select
+                        [(ngModel)]="carrierForm.tipo_envio"
+                        name="tipo_envio"
+                        [options]="tipoEnvioOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Selecciona tipo de envío"
+                        class="w-full"
+                        (onChange)="onTipoEnvioChange()"
+                        required
+                    ></p-select>
+                    <label>Tipo de Envío *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Fee (Costo de envío) -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="carrierForm.fee"
+                        name="fee"
+                        type="number"
+                        placeholder="0.00"
+                        class="w-full"
+                        min="0"
+                        step="0.01"
+                        required
+                    />
+                    <label>Costo de Envío (Fee) *</label>
+                </p-floatLabel>
+                <small class="text-gray-500 mt-1 block">
+                    <i class="pi pi-dollar mr-1"></i>
+                    {{ formatearFee(carrierForm.fee || 0) }}
+                </small>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-span-1 flex items-center gap-4">
+                <p-tag
+                    [value]="getEstadoLabel(carrierForm.estado)"
+                    [severity]="getEstadoSeverity(carrierForm.estado)"
+                    (click)="carrierForm.estado = carrierForm.estado === 'A' ? 'R' : 'A'"
+                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                    pTooltip="Activar/desactivar carrier"
+                ></p-tag>
+                <label class="text-sm text-gray-600">Estado</label>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+            <p-button
+                type="button"
+                (onClick)="closeCarrierForm()"
+                label="Cancelar"
+                class="p-button-text"
+            ></p-button>
+            <p-button
+                type="submit"
+                [label]="isEditingCarrier ? 'Actualizar' : 'Crear'"
+                [disabled]="!carrierForm.nombre.trim() || !carrierForm.id_ref_vtex.trim() || !carrierForm.tienda.trim() || !carrierForm.tipo_envio || carrierForm.fee < 0"
+                class="p-button-success"
+            ></p-button>
+        </div>
+    </form>
+</p-dialog>
+
+<!-- Modal de Horarios -->
+<p-dialog
+    [(visible)]="showHorariosModal"
+    [header]="'Horarios - Carrier: ' + (carrierParaHorarios?.nombre || '')"
+    [modal]="true"
+    [style]="{width: '1000px', maxWidth: '95vw'}"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="horarios-form-dialog"
+>
+    <div *ngIf="loadingHorarios" class="flex justify-content-center align-items-center py-8">
+        <i class="pi pi-spin pi-spinner text-4xl text-blue-500"></i>
+    </div>
+
+    <div *ngIf="!loadingHorarios" class="p-4">
+        <!-- Selector de días de la semana (Chips clicables) -->
+        <div class="mb-6">
+            <div class="mb-3 text-sm font-medium text-gray-700">Días de la semana *</div>
+            <div class="flex flex-wrap gap-2">
+                <span
+                    *ngFor="let dia of diasSemanaOptions"
+                    (click)="toggleDia(dia.value)"
+                    [class.dia-activo]="diasSeleccionados.includes(dia.value)"
+                    [class.dia-inactivo]="!diasSeleccionados.includes(dia.value)"
+                    class="dia-chip cursor-pointer transition-all duration-200 px-4 py-2 rounded-full font-semibold text-sm select-none"
+                >
+                    {{ dia.label }}
+                </span>
+            </div>
+            <small class="block mt-2 text-gray-500">Haz clic en los días para activarlos o desactivarlos.</small>
+        </div>
+
+        <!-- Tabla de ventanas de horario -->
+        <div class="mb-4">
+            <p-table
+                [value]="ventanasHorario"
+                [paginator]="false"
+                dataKey="id_sched"
+                [loading]="loadingHorarios"
+                styleClass="p-datatable-sm"
+            >
+                <ng-template #header>
+                    <tr>
+                        <th style="width: 120px">Hora Inicio *</th>
+                        <th style="width: 120px">Hora Fin *</th>
+                        <th style="width: 120px">Tarifa (Fee) *</th>
+                        <th style="width: 120px">Capacidad Web *</th>
+                        <th style="width: 120px">Capacidad App *</th>
+                        <th style="width: 100px">Estado</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template #body let-ventana let-index="rowIndex">
+                    <tr>
+                        <!-- Hora Inicio -->
+                        <td>
+                            <input
+                                pInputText
+                                [(ngModel)]="ventana.hini"
+                                placeholder="08:00"
+                                style="width: 100px"
+                                maxlength="5"
+                                [ngModelOptions]="{standalone: true}"
+                            />
+                        </td>
+
+                        <!-- Hora Fin -->
+                        <td>
+                            <input
+                                pInputText
+                                [(ngModel)]="ventana.hfin"
+                                placeholder="10:00"
+                                style="width: 100px"
+                                maxlength="5"
+                                [ngModelOptions]="{standalone: true}"
+                            />
+                        </td>
+
+                        <!-- Fee -->
+                        <td>
+                            <input
+                                pInputText
+                                type="number"
+                                [(ngModel)]="ventana.fee"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                style="width: 100px"
+                                [ngModelOptions]="{standalone: true}"
+                            />
+                        </td>
+
+                        <!-- Capacidad Web -->
+                        <td>
+                            <input
+                                pInputText
+                                type="number"
+                                [(ngModel)]="ventana.capacidad"
+                                placeholder="20"
+                                min="1"
+                                style="width: 100px"
+                                [ngModelOptions]="{standalone: true}"
+                            />
+                        </td>
+
+                        <!-- Capacidad App -->
+                        <td>
+                            <input
+                                pInputText
+                                type="number"
+                                [(ngModel)]="ventana.capacidad_app"
+                                placeholder="20"
+                                min="1"
+                                style="width: 100px"
+                                [ngModelOptions]="{standalone: true}"
+                            />
+                        </td>
+
+                        <!-- Estado -->
+                        <td>
+                            <p-tag
+                                [value]="getEstadoLabel(ventana.estado)"
+                                [severity]="getEstadoSeverity(ventana.estado)"
+                                (click)="ventana.estado = ventana.estado === 'A' ? 'R' : 'A'"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                                title="Clic para cambiar"
+                            ></p-tag>
+                        </td>
+
+                        
+                    </tr>
+                </ng-template>
+
+                <ng-template #empty>
+                    <tr>
+                        <td colspan="7" class="text-center py-6 text-gray-500">
+                            <i class="pi pi-info-circle mr-2"></i>
+                            No hay ventanas de horario configuradas. Haz clic en "Agregar Ventana" para comenzar.
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+
+        <!-- Botón para agregar ventana -->
+        <!-- <div class="flex justify-content-end mb-4">
+            <button
+                pButton
+                icon="pi pi-plus"
+                label="Agregar Ventana"
+                (click)="agregarVentanaHorario()"
+                [disabled]="diasSeleccionados.length === 0 || ventanasHorario.length >= 10"
+                class="p-button-success btn-agregar-ventana"
+                pTooltip="Agregar nueva ventana de horario para los días seleccionados"
+            ></button>
+        </div> -->
+
+        <!-- Botones del modal -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+            <p-button
+                type="button"
+                (onClick)="closeHorariosModal()"
+                label="Cancelar"
+                class="p-button-text btn-modal-accion"
+            ></p-button>
+            <p-button
+                type="button"
+                (onClick)="guardarHorarios()"
+                label="Guardar Horarios"
+                [disabled]="ventanasHorario.length === 0 || savingHorarios"
+                [loading]="savingHorarios"
+                class="p-button-success btn-modal-accion"
+            ></p-button>
+        </div>
+    </div>
+</p-dialog>

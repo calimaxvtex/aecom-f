@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, Input }
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 
 // PrimeNG Modules (standalone)
 import { TableModule } from 'primeng/table';
@@ -13,8 +12,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { CheckboxModule } from 'primeng/checkbox';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Servicios para obtener componentes disponibles
@@ -47,9 +44,7 @@ import { Pagina } from '../../../features/paginas';
         TooltipModule,
         DialogModule,
         SelectModule,
-        ConfirmDialogModule,
-        CheckboxModule,
-        InputNumberModule
+        ConfirmDialogModule
     ],
     providers: [MessageService, ConfirmationService],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -105,16 +100,6 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
 
     // Estados de reordenamiento
     reordenando = false;
-
-    // Selección múltiple para reorden grupal
-    multiSelectMode = false;
-    selectedComponentes: PaginaDet[] = [];
-    selectedComponentesMap: { [key: number]: boolean } = {};
-    selectAllComponentes = false;
-
-    // Reordenamiento grupal
-    nuevaPosicion = 1;
-    reordenandoGrupo = false;
 
     constructor() {
         console.log('🏗️ PaginasDetComponent inicializado');
@@ -178,13 +163,7 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
                         // Ordenar componentes por el campo 'orden' antes de asignar
                         const componentesOrdenados = componentesFiltrados.sort((a, b) => a.orden - b.orden);
                         this.componentes = componentesOrdenados;
-                        this.componentesOriginal = this.componentes
-
-                        // Limpiar selecciones al cargar nuevos datos
-                        this.selectedComponentes = [];
-                        this.selectedComponentesMap = {};
-                        this.selectAllComponentes = false;
-                        this.multiSelectMode = false;
+                        this.componentesOriginal = this.componentes;
 
                         this.loadingComponentes = false;
                     },
@@ -626,258 +605,4 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
         this.updateComponenteOrderInServer(movedItem.id_pagd, newOrder);
     }
 
-    // ========== REORDENAMIENTO GRUPAL ==========
-
-    /**
-     * Alterna el modo de selección múltiple
-     */
-    toggleMultiSelectMode(): void {
-        this.multiSelectMode = !this.multiSelectMode;
-
-        // Limpiar selecciones cuando se desactiva el modo
-        if (!this.multiSelectMode) {
-            this.selectedComponentes = [];
-            this.selectedComponentesMap = {};
-            this.selectAllComponentes = false;
-            this.nuevaPosicion = 1;
-        } else {
-            // Inicializar el mapa de selecciones
-            this.componentes.forEach(item => {
-                if (!this.selectedComponentesMap[item.id_pagd]) {
-                    this.selectedComponentesMap[item.id_pagd] = false;
-                }
-            });
-            this.nuevaPosicion = 1;
-        }
-    }
-
-    /**
-     * Alterna la selección de todos los componentes
-     */
-    toggleSelectAllComponentes(): void {
-        if (this.selectAllComponentes) {
-            // Seleccionar todos
-            this.selectedComponentes = [...this.componentes];
-            this.componentes.forEach(item => {
-                this.selectedComponentesMap[item.id_pagd] = true;
-            });
-            this.nuevaPosicion = 1;
-        } else {
-            // Deseleccionar todos
-            this.selectedComponentes = [];
-            this.componentes.forEach(item => {
-                this.selectedComponentesMap[item.id_pagd] = false;
-            });
-        }
-    }
-
-    /**
-     * Maneja el cambio de selección de un componente individual
-     */
-    onComponenteSelectionChange(componente: PaginaDet): void {
-        const isSelected = this.selectedComponentesMap[componente.id_pagd] || false;
-
-        if (isSelected) {
-            if (!this.selectedComponentes.includes(componente)) {
-                this.selectedComponentes.push(componente);
-            }
-        } else {
-            this.selectedComponentes = this.selectedComponentes.filter(
-                selected => selected.id_pagd !== componente.id_pagd
-            );
-        }
-
-        // Actualizar el estado del "seleccionar todos"
-        this.selectAllComponentes = this.selectedComponentes.length === this.componentes.length
-            && this.componentes.length > 0;
-
-        // Reset posición cuando se hace una nueva selección
-        if (this.selectedComponentes.length > 0) {
-            this.nuevaPosicion = 1;
-        }
-    }
-
-    /**
-     * Valida si la posición de destino es válida para el reorden grupal
-     */
-    validarPosicionReorden(): boolean {
-        // Verificar que hay componentes seleccionados
-        if (this.selectedComponentes.length === 0) {
-            return false;
-        }
-
-        // Si no hay valor, no es válido
-        if (!this.nuevaPosicion) {
-            return false;
-        }
-
-        // Convertir a número si es necesario
-        const posicion = Number(this.nuevaPosicion);
-
-        // Verificar que la posición es un número válido
-        if (isNaN(posicion) || posicion < 1) {
-            return false;
-        }
-
-        // Verificar que la posición no excede el total de componentes
-        if (posicion > this.componentes.length) {
-            return false;
-        }
-
-        // Verificar que es un número entero
-        if (!Number.isInteger(posicion)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Maneja el cambio en el input de posición
-     */
-    onPosicionChange(): void {
-        // Convertir a número y asegurar que sea entero
-        const posicion = Number(this.nuevaPosicion);
-        if (!isNaN(posicion) && posicion > 0) {
-            this.nuevaPosicion = Math.floor(posicion);
-        }
-    }
-
-    /**
-     * Calcula los nuevos órdenes para el reorden grupal
-     */
-    private calcularNuevosOrdenes(): { id_pagd: number, orden: number }[] {
-        console.log('🔄 ENTRA calcularNuevosOrdenes');
-        if (this.selectedComponentes.length === 0) {
-            return [];
-        }
-
-        // 1. Obtener componentes no seleccionados
-        const componentesNoSeleccionados = this.componentes.filter(
-            item => !this.selectedComponentes.includes(item)
-        );
-
-        // 2. Reorganizar: insertar seleccionados en posición destino
-        const posicionDestino = this.nuevaPosicion - 1; // Convertir a índice base 0
-
-        const nuevoOrden = [
-            ...componentesNoSeleccionados.slice(0, posicionDestino),
-            ...this.selectedComponentes,
-            ...componentesNoSeleccionados.slice(posicionDestino)
-        ];
-
-        // 3. Recalcular órdenes secuenciales (base 1)
-        return nuevoOrden.map((item, index) => ({
-            id_pagd: item.id_pagd,
-            orden: index + 1
-        }));
-    }
-
-    /**
-     * Ejecuta el reorden grupal de los componentes seleccionados
-     */
-    reordenarGrupo(): void {
-        console.log('🔄 ENTRA reordenarGrupo');
-        if (!this.validarPosicionReorden() || this.selectedComponentes.length === 0) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Posición inválida',
-                detail: 'La posición de destino debe ser válida y debe haber componentes seleccionados',
-                life: 3000
-            });
-            return;
-        }
-
-        if (!this.paginaSeleccionada) {
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'No hay página seleccionada',
-                life: 3000
-            });
-            return;
-        }
-
-        // Activar estado de loading
-        this.reordenandoGrupo = true;
-
-        // Calcular nuevos órdenes
-        const payload = this.calcularNuevosOrdenes();
-
-        console.log('🔄 Reordenando grupo:', {
-            componentesSeleccionados: this.selectedComponentes.length,
-            posicionDestino: this.nuevaPosicion,
-            payload: payload
-        });
-
-        // Actualizar la lista local con los nuevos órdenes ANTES de enviar
-        this.actualizarOrdenesLocales(payload);
-
-        // ✅ Enviar peticiones individuales con action: 'UPO' para cada componente
-        // Usar forkJoin para enviar todas las peticiones en paralelo
-        const requests = payload.map(item =>
-            this.paginaDetService.updateComponenteOrder(
-                this.paginaSeleccionada!.id_pag,
-                item.id_pagd,
-                item.orden
-            )
-        );
-
-        forkJoin(requests).subscribe({
-            next: (responses) => {
-                console.log('✅ Reorden grupal exitoso:', responses);
-                this.reordenandoGrupo = false;
-                this.limpiarSeleccionReorden();
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Reorden exitoso',
-                    detail: `${this.selectedComponentes.length} componente(s) movido(s) a la posición ${this.nuevaPosicion}`,
-                    life: 3000
-                });
-            },
-            error: (error) => {
-                console.error('❌ Error en reorden grupal:', error);
-                this.reordenandoGrupo = false;
-
-                // Revertir cambios locales en caso de error
-                this.filtrarComponentesPorPagina();
-
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error en reorden',
-                    detail: 'No se pudo reordenar el grupo de componentes',
-                    life: 5000
-                });
-            }
-        });
-    }
-
-    /**
-     * Actualiza los órdenes locales después del reorden exitoso
-     */
-    private actualizarOrdenesLocales(payload: { id_pagd: number, orden: number }[]): void {
-        // Crear mapa de nuevos órdenes
-        const ordenesMap = new Map(payload.map(item => [item.id_pagd, item.orden]));
-
-        // Actualizar componentes
-        this.componentes.forEach(item => {
-            if (ordenesMap.has(item.id_pagd)) {
-                item.orden = ordenesMap.get(item.id_pagd)!;
-            }
-        });
-
-        // Reordenar array localmente
-        this.componentes.sort((a, b) => a.orden - b.orden);
-    }
-
-    /**
-     * Limpia la selección después del reorden
-     */
-    private limpiarSeleccionReorden(): void {
-        this.selectedComponentes = [];
-        this.selectedComponentesMap = {};
-        this.selectAllComponentes = false;
-        this.nuevaPosicion = 1;
-    }
 }

@@ -10,131 +10,56 @@
     responsiveLayout="scroll"
     currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes asociados"
     [rowsPerPageOptions]="[5, 10, 25]"
-    [globalFilterFields]="['tipo_comp', 'nomPagina', 'nombre_ref', 'canal']"
     [loading]="loadingComponentes"
     class="tabla-componentes"
   >
     <ng-template #caption>
-      <div class="flex flex-wrap gap-2 items-center justify-between">
-        <input
-          pInputText
-          type="text"
-          (input)="dt.filterGlobal($event.target.value, 'contains')"
-          placeholder="Buscar componentes..."
-          class="w-full sm:w-80 order-1 sm:order-0"
-        />
-          <div class="flex gap-2 order-0 sm:order-1 items-end">
-            <!-- ✅ Toggle selección múltiple -->
-            <button
-              [icon]="multiSelectMode ? 'pi pi-times' : 'pi pi-check-square'"
-              (onClick)="toggleMultiSelectMode()"
-              pButton
-              raised
-              [pTooltip]="multiSelectMode ? 'Cancelar selección múltiple' : 'Activar selección múltiple'"
-              tooltipPosition="top"
-            ></button>
+      <div class="flex flex-wrap gap-2 items-center justify-end">
+        <!-- ✅ Actualizar lista -->
+        <button
+          (click)="filtrarComponentesPorPagina()"
+          pButton
+          raised
+          icon="pi pi-refresh"
+          [loading]="loadingComponentes"
+          pTooltip="Actualizar lista"
+        ></button>
 
-            <!-- ✅ Actualizar lista -->
-            <button
-              (click)="filtrarComponentesPorPagina()"
-              pButton
-              raised
-              icon="pi pi-refresh"
-              [loading]="loadingComponentes"
-              pTooltip="Actualizar lista"
-            ></button>
-
-            <!-- ✅ Agregar componente (solo si hay página seleccionada) -->
-            <button
-              *ngIf="paginaSeleccionada"
-              (click)="abrirModalAgregarComponente()"
-              pButton
-              raised
-              icon="pi pi-plus"
-              severity="success"
-              pTooltip="Agregar componente a la página"
-            ></button>
-        </div>
+        <!-- ✅ Agregar componente (solo si hay página seleccionada) -->
+        <button
+          *ngIf="paginaSeleccionada"
+          (click)="abrirModalAgregarComponente()"
+          pButton
+          raised
+          icon="pi pi-plus"
+          severity="success"
+          pTooltip="Agregar componente a la página"
+        ></button>
       </div>
     </ng-template>
 
     <ng-template #header>
       <tr>
-        <th style="width: 40px">
-          <p-checkbox
-            *ngIf="multiSelectMode"
-            [(ngModel)]="selectAllComponentes"
-            [binary]="true"
-            (onChange)="toggleSelectAllComponentes()"
-            label=""
-          ></p-checkbox>
-        </th>
-        
-        <!-- Columna de reorden grupal (solo visible cuando hay componentes seleccionados) -->
-        <th *ngIf="selectedComponentes.length > 0" style="width: 200px">
-          <div class="flex items-center gap-2">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs text-gray-600">Mover a posición:</label>
-              <div class="flex items-center gap-1">
-                <input 
-                  pInputNumber 
-                  [(ngModel)]="nuevaPosicion"
-                  (onInput)="onPosicionChange()"
-                  [min]="1" 
-                  [max]="componentes.length"
-                  placeholder="Pos"
-                  class="w-16 text-center"
-                  [disabled]="reordenandoGrupo"
-                />
-                <p-button 
-                  icon="pi pi-arrows-v"
-                  size="small"
-                  (onClick)="reordenarGrupo()"
-                  [disabled]="!validarPosicionReorden() || reordenandoGrupo"
-                  [loading]="reordenandoGrupo"
-                  pTooltip="Mover grupo seleccionado a posición"
-                  tooltipPosition="top"
-                  styleClass="p-button-primary p-button-raised"
-                ></p-button>
-              </div>
-            </div>
-          </div>
-        </th>
-        
-        <th class="white-space-nowrap" style="width:8%">ID Asociación</th>
-        <th class="white-space-nowrap" style="width:8%">Orden</th>
-        <th class="white-space-nowrap" style="width:15%">Tipo Componente</th>
-        <th class="white-space-nowrap" style="width:25%">Nombre Componente</th>
-        <th class="white-space-nowrap" style="width:20%">Página</th>
+        <th style="width: 5%"></th>
+        <th class="white-space-nowrap" style="width:10%">ID Asociación</th>
+        <th class="white-space-nowrap" style="width:10%">Orden</th>
+        <th class="white-space-nowrap" style="width:30%">Tipo Componente</th>
+        <th class="white-space-nowrap" style="width:30%">Nombre Componente</th>
         <th class="white-space-nowrap" style="width:10%">Canal</th>
-        <th class="white-space-nowrap" style="width:14%">Acciones</th>
+        <th class="white-space-nowrap" style="width:5%">Acciones</th>
       </tr>
     </ng-template>
 
     <ng-template #body let-componente let-editing="editing" let-ri="rowIndex">
       <tr [pReorderableRow]="ri">
-        <!-- Columna del checkbox o handle de arrastre -->
+        <!-- Columna del handle de arrastre -->
         <td class="text-center">
-          <div *ngIf="multiSelectMode" class="flex justify-center">
-            <p-checkbox
-              [(ngModel)]="selectedComponentesMap[componente.id_pagd]"
-              [binary]="true"
-              (onChange)="onComponenteSelectionChange(componente)"
-            ></p-checkbox>
-          </div>
-          <div *ngIf="!multiSelectMode" class="drag-handle-container">
+          <div class="drag-handle-container">
             <span
               pReorderableRowHandle
               class="pi pi-bars drag-handle"
               pTooltip="Arrastrar para reordenar"
             ></span>
-          </div>
-        </td>
-        
-        <!-- Columna de reorden grupal (solo visible cuando hay componentes seleccionados) -->
-        <td *ngIf="selectedComponentes.length > 0" class="text-center">
-          <div class="text-xs text-gray-500">
-            {{selectedComponentes.includes(componente) ? 'Seleccionado' : ''}}
           </div>
         </td>
 
@@ -147,8 +72,8 @@
             <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
               {{ componente.orden }}
             </span>
-            <!-- Botones de orden individual (solo cuando no está en modo selección múltiple) -->
-            <div *ngIf="!multiSelectMode" class="flex flex-col gap-1">
+            <!-- Botones de orden individual -->
+            <div class="flex flex-col gap-1">
               <button
                 pButton
                 icon="pi pi-arrow-up"
@@ -185,14 +110,6 @@
           <div class="flex items-center gap-2">
             <i class="pi pi-puzzle-piece text-blue-500"></i>
             <span class="font-medium">{{ componente.nombre_ref }}</span>
-          </div>
-        </td>
-
-        <!-- Página -->
-        <td>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-file text-green-500"></i>
-            <span>{{ componente.nomPagina }}</span>
           </div>
         </td>
 

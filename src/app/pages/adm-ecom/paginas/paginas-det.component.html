@@ -3,7 +3,7 @@
     #dt
     [value]="componentes"
     (onRowReorder)="onRowReorder($event)"
-    [paginator]="true"
+    [paginator]="componentes.length > 10"
     paginatorDropdownAppendTo="body"
     [rows]="10"
     [showCurrentPageReport]="true"

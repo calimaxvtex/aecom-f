@@ -89,13 +89,6 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
         { label: 'Vitrina', value: 'vitrina' }
     ];
 
-    // Filtro por canal
-    canalFiltroSeleccionado: string = '';
-    canalesOptions: { label: string; value: string }[] = [
-        { label: 'Web', value: 'WEB' },
-        { label: 'App', value: 'APP' }
-    ];
-
     // ========== PROPIEDADES PARA REORDENAMIENTO ==========
 
     // Estados de reordenamiento

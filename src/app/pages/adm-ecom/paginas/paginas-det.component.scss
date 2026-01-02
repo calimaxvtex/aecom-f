@@ -225,3 +225,67 @@ p-table ::ng-deep .p-datatable-table-container {
 .tabla-componentes {
     min-width: 100%;
 }
+
+// ===== ESTILOS PARA REORDENAMIENTO =====
+
+// Drag handle para reordenamiento
+.drag-handle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: move;
+}
+
+.drag-handle {
+    color: #6b7280;
+    font-size: 1rem;
+    cursor: move;
+    transition: color 0.2s ease;
+    
+    &:hover {
+        color: #3b82f6;
+    }
+}
+
+// Estilos para filas reordenables
+.p-datatable .p-datatable-tbody > tr[pReorderableRow] {
+    cursor: move;
+}
+
+.p-datatable .p-datatable-tbody > tr[pReorderableRow]:hover {
+    background-color: #f1f5f9;
+}
+
+// Estilos para botones de orden individual
+.p-button.p-button-text.p-button-secondary.p-button-sm {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    min-width: 1.5rem !important;
+    padding: 0 !important;
+    border-radius: 0.25rem !important;
+}
+
+.p-button.p-button-text.p-button-secondary.p-button-sm .p-button-icon {
+    font-size: 0.75rem !important;
+}
+
+// Estilos para checkboxes de selección múltiple
+.p-checkbox {
+    margin: 0 auto;
+}
+
+// Estilos para input de posición en reorden grupal
+.p-inputnumber {
+    width: 4rem;
+}
+
+.p-inputnumber .p-inputnumber-input {
+    text-align: center;
+    font-weight: 600;
+}
+
+// Estilos para indicador de selección
+.text-xs.text-gray-500 {
+    font-size: 0.75rem;
+    color: #6b7280;
+}

@@ -358,7 +358,7 @@ export class PaginaDetService {
 
     /**
      * Obtiene componentes disponibles por tipo (payload dinámico)
-     * Payload: {"action": "SL", "tipo_comp": "[tipo_seleccionado]", "usr": "ADMIN", "id_session": 1}
+     * Payload: {"action": "SL", "tipo_comp": "[TIPO_COM]", "usr": "[USUARIO]", "id_session": [ID_SESSION]}
      * @param tipo_comp Tipo de componente seleccionado por el usuario (carrusel, categoria, vitrina, etc.)
      */
     getComponentesPorTipo(tipo_comp: string): Observable<any> {
@@ -366,12 +366,11 @@ export class PaginaDetService {
 
         return this.getPaginasDetUrl().pipe(
             switchMap(url => {
-                // Payload con tipo_comp dinámico según selección del usuario
+                // ✅ Payload con tipo_comp dinámico según selección del usuario y datos de sesión
                 const payload = {
                     action: 'SL',
                     tipo_comp: tipo_comp,
-                    usr: 'ADMIN',
-                    id_session: 1
+                    ...this.getSessionData() // ✅ Usar datos de sesión reales (usr, id_session)
                 };
 
                 console.log('📤 Payload enviado:', payload);
@@ -393,6 +392,105 @@ export class PaginaDetService {
                     catchError(error => {
                         console.error('❌ Error en getComponentesPorTipo para tipo', tipo_comp + ':', error);
                         return throwError(() => new Error('Error al obtener componentes por tipo'));
+                    })
+                );
+            })
+        );
+    }
+
+    /**
+     * Actualiza el orden de un componente individual de página
+     * Payload: {"action":"UPO","id_pag":9,"id_pagd":31,"orden":4,"usr":"eje","id_session":1}
+     * @param idPag ID de la página padre
+     * @param idPagd ID del componente (detalle de página)
+     * @param orden Nuevo orden del componente
+     */
+    updateComponenteOrder(idPag: number, idPagd: number, orden: number): Observable<PaginaDetSingleResponse> {
+        console.log('🔄 Actualizando orden de componente individual:', { idPag, idPagd, orden });
+
+        return this.getPaginasDetUrl().pipe(
+            switchMap(url => {
+                const payload: any = {
+                    action: 'UPO' as const, // Update Order - actualizar orden de un componente
+                    id_pag: idPag,
+                    id_pagd: idPagd,
+                    orden: orden,
+                    ...this.getSessionData() // REGLA CRÍTICA: Inyección de sesión
+                };
+
+                console.log('📦 Payload para actualizar orden de componente:', payload);
+
+                return this.http.post<PaginaDetResponse>(url, payload).pipe(
+                    map((response: any) => {
+                        console.log('📥 Respuesta actualización orden:', response);
+
+                        // Verificar error del backend
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error en actualización de orden:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
+                        }
+
+                        // Tomar el primer elemento del array de respuesta si existe
+                        const data = response.data && response.data.length > 0 ? response.data[0] : null;
+
+                        return {
+                            statuscode: response.statuscode || 200,
+                            mensaje: response.mensaje || 'Orden de componente actualizado correctamente',
+                            data: data
+                        } as PaginaDetSingleResponse;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error en updateComponenteOrder:', error);
+                        return throwError(() => error);
+                    })
+                );
+            })
+        );
+    }
+
+    /**
+     * Actualiza el orden de múltiples componentes de página (LEGACY - mantener para reordenamiento grupal)
+     * Similar a updateItemsOrder de collections
+     * @param idPag ID de la página padre
+     * @param items Array de {id_pagd: number, orden: number}
+     * @deprecated Usar updateComponenteOrder para actualizaciones individuales
+     */
+    updateComponentesOrder(idPag: number, items: { id_pagd: number, orden: number }[]): Observable<PaginaDetSingleResponse> {
+        console.log('🔄 Actualizando orden de componentes de página (múltiples):', { idPag, itemsCount: items.length });
+
+        return this.getPaginasDetUrl().pipe(
+            switchMap(url => {
+                const payload: any = {
+                    action: 'UPR' as const, // Update Reorder según convenciones del proyecto
+                    id_pag: idPag,  // ID de la página padre
+                    items: items,
+                    ...this.getSessionData() // REGLA CRÍTICA: Inyección de sesión
+                };
+
+                console.log('📦 Payload para actualizar orden de componentes:', payload);
+
+                return this.http.post<PaginaDetResponse>(url, payload).pipe(
+                    map((response: any) => {
+                        console.log('📥 Respuesta actualización orden:', response);
+
+                        // Verificar error del backend
+                        if (response.statuscode && response.statuscode !== 200) {
+                            console.log('❌ Backend devolvió error en actualización de orden:', response);
+                            throw new Error(response.mensaje || 'Error del servidor');
+                        }
+
+                        // Tomar el primer elemento del array de respuesta si existe
+                        const data = response.data && response.data.length > 0 ? response.data[0] : null;
+
+                        return {
+                            statuscode: response.statuscode || 200,
+                            mensaje: response.mensaje || 'Orden de componentes actualizado correctamente',
+                            data: data
+                        } as PaginaDetSingleResponse;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error en updateComponentesOrder:', error);
+                        return throwError(() => error);
                     })
                 );
             })

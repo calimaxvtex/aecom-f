@@ -2,6 +2,7 @@
   <p-table
     #dt
     [value]="componentes"
+    (onRowReorder)="onRowReorder($event)"
     [paginator]="true"
     paginatorDropdownAppendTo="body"
     [rows]="10"
@@ -23,6 +24,16 @@
           class="w-full sm:w-80 order-1 sm:order-0"
         />
           <div class="flex gap-2 order-0 sm:order-1 items-end">
+            <!-- ✅ Toggle selección múltiple -->
+            <button
+              [icon]="multiSelectMode ? 'pi pi-times' : 'pi pi-check-square'"
+              (onClick)="toggleMultiSelectMode()"
+              pButton
+              raised
+              [pTooltip]="multiSelectMode ? 'Cancelar selección múltiple' : 'Activar selección múltiple'"
+              tooltipPosition="top"
+            ></button>
+
             <!-- ✅ Actualizar lista -->
             <button
               (click)="filtrarComponentesPorPagina()"
@@ -49,6 +60,47 @@
 
     <ng-template #header>
       <tr>
+        <th style="width: 40px">
+          <p-checkbox
+            *ngIf="multiSelectMode"
+            [(ngModel)]="selectAllComponentes"
+            [binary]="true"
+            (onChange)="toggleSelectAllComponentes()"
+            label=""
+          ></p-checkbox>
+        </th>
+        
+        <!-- Columna de reorden grupal (solo visible cuando hay componentes seleccionados) -->
+        <th *ngIf="selectedComponentes.length > 0" style="width: 200px">
+          <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-gray-600">Mover a posición:</label>
+              <div class="flex items-center gap-1">
+                <input 
+                  pInputNumber 
+                  [(ngModel)]="nuevaPosicion"
+                  (onInput)="onPosicionChange()"
+                  [min]="1" 
+                  [max]="componentes.length"
+                  placeholder="Pos"
+                  class="w-16 text-center"
+                  [disabled]="reordenandoGrupo"
+                />
+                <p-button 
+                  icon="pi pi-arrows-v"
+                  size="small"
+                  (onClick)="reordenarGrupo()"
+                  [disabled]="!validarPosicionReorden() || reordenandoGrupo"
+                  [loading]="reordenandoGrupo"
+                  pTooltip="Mover grupo seleccionado a posición"
+                  tooltipPosition="top"
+                  styleClass="p-button-primary p-button-raised"
+                ></p-button>
+              </div>
+            </div>
+          </div>
+        </th>
+        
         <th class="white-space-nowrap" style="width:8%">ID Asociación</th>
         <th class="white-space-nowrap" style="width:8%">Orden</th>
         <th class="white-space-nowrap" style="width:15%">Tipo Componente</th>
@@ -60,15 +112,65 @@
     </ng-template>
 
     <ng-template #body let-componente let-editing="editing" let-ri="rowIndex">
-      <tr>
+      <tr [pReorderableRow]="ri">
+        <!-- Columna del checkbox o handle de arrastre -->
+        <td class="text-center">
+          <div *ngIf="multiSelectMode" class="flex justify-center">
+            <p-checkbox
+              [(ngModel)]="selectedComponentesMap[componente.id_pagd]"
+              [binary]="true"
+              (onChange)="onComponenteSelectionChange(componente)"
+            ></p-checkbox>
+          </div>
+          <div *ngIf="!multiSelectMode" class="drag-handle-container">
+            <span
+              pReorderableRowHandle
+              class="pi pi-bars drag-handle"
+              pTooltip="Arrastrar para reordenar"
+            ></span>
+          </div>
+        </td>
+        
+        <!-- Columna de reorden grupal (solo visible cuando hay componentes seleccionados) -->
+        <td *ngIf="selectedComponentes.length > 0" class="text-center">
+          <div class="text-xs text-gray-500">
+            {{selectedComponentes.includes(componente) ? 'Seleccionado' : ''}}
+          </div>
+        </td>
+
         <!-- ID Asociación -->
         <td>{{ componente.id_pagd }}</td>
 
         <!-- Orden -->
         <td>
-          <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
-            {{ componente.orden }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
+              {{ componente.orden }}
+            </span>
+            <!-- Botones de orden individual (solo cuando no está en modo selección múltiple) -->
+            <div *ngIf="!multiSelectMode" class="flex flex-col gap-1">
+              <button
+                pButton
+                icon="pi pi-arrow-up"
+                size="small"
+                (click)="moveOrderUp(componente); $event.stopPropagation()"
+                [disabled]="componente.orden === 1 || reordenando"
+                class="p-button-sm p-button-text p-button-secondary"
+                pTooltip="Mover arriba"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-arrow-down"
+                size="small"
+                (click)="moveOrderDown(componente); $event.stopPropagation()"
+                [disabled]="componente.orden === componentes.length || reordenando"
+                class="p-button-sm p-button-text p-button-secondary"
+                pTooltip="Mover abajo"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </div>
         </td>
 
         <!-- Tipo Componente -->

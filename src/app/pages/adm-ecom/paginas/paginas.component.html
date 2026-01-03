@@ -24,7 +24,7 @@
         <p-table
     #dt
     [value]="paginas"
-    [paginator]="true"
+    [paginator]="paginas.length > 10"
     paginatorDropdownAppendTo="body"
     [rows]="10"
     [showCurrentPageReport]="true"

@@ -268,6 +268,49 @@ export class PaginaDetService {
     }
 
     /**
+     * Actualiza el id_ref (componente referenciado) de un detalle de página
+     * Payload: {"action":"UP", "id_pagd": [id_pagd], "id_ref": [id_ref], "usr": "...", "id_session": ...}
+     */
+    updateComponenteRef(idPagd: number, idRef: number): Observable<PaginaDetSingleResponse> {
+        console.log('✏️ Actualizando componente referenciado:', { idPagd, idRef });
+
+        return this.getPaginasDetUrl().pipe(
+            switchMap(url => {
+                const payload = {
+                    action: 'UP' as const,
+                    id_pagd: idPagd,
+                    id_ref: idRef,
+                    ...this.getSessionData()
+                };
+
+                console.log('📤 Payload para actualizar id_ref:', payload);
+
+                return this.http.post<PaginaDetResponse>(url, payload).pipe(
+                    map((response: any) => {
+                        console.log('✅ Respuesta de actualizar id_ref:', response);
+
+                        if (response.statuscode && response.statuscode !== 200) {
+                            throw new Error(response.mensaje || `Error del servidor (${response.statuscode})`);
+                        }
+
+                        const paginaDetActualizada = response.data && response.data.length > 0 ? response.data[0] : null;
+
+                        return {
+                            statuscode: response.statuscode || 200,
+                            mensaje: response.mensaje || 'Componente referenciado actualizado correctamente',
+                            data: paginaDetActualizada
+                        } as PaginaDetSingleResponse;
+                    }),
+                    catchError(error => {
+                        console.error('❌ Error al actualizar id_ref:', error);
+                        return throwError(() => new Error('Error al actualizar el componente referenciado'));
+                    })
+                );
+            })
+        );
+    }
+
+    /**
      * Elimina un detalle de página (marca como baja)
      */
     deletePaginaDet(idPagd: number, idPag: number): Observable<PaginaDetSingleResponse> {

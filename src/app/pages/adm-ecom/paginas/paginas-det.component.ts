@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, inject, Input, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -61,6 +61,7 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
     private compService = inject(CompService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
+    private cdr = inject(ChangeDetectorRef);
 
     // Datos - COMPONENTES ASOCIADOS A LA PÁGINA SELECCIONADA
     componentes: PaginaDet[] = [];
@@ -93,6 +94,15 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
 
     // Estados de reordenamiento
     reordenando = false;
+
+    // ========== PROPIEDADES PARA EDICIÓN INLINE ==========
+
+    // Edición inline
+    editingCell: string | null = null;
+    originalValue: any = null;
+    hasChanges: boolean = false;
+    isTransitioningFields = false;
+    componentesDisponiblesInline: ComponenteSimple[] = []; // Componentes disponibles para edición inline
 
     constructor() {
         console.log('🏗️ PaginasDetComponent inicializado');
@@ -596,6 +606,219 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
 
         // ✅ Enviar solo el componente movido con action: 'UPO'
         this.updateComponenteOrderInServer(movedItem.id_pagd, newOrder);
+    }
+
+    // ========== EDICIÓN INLINE ==========
+
+    /**
+     * Maneja clics fuera del contenedor de edición inline para cancelar
+     */
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: Event): void {
+        if (this.editingCell && this.editingCell.includes('-id_ref')) {
+            const target = event.target as HTMLElement;
+            const editContainer = target.closest('.inline-edit-container');
+
+            if (!editContainer) {
+                console.log('🔄 Clic fuera del contenedor de edición - cancelando edición');
+                this.cancelInlineEditByBlur();
+            }
+        }
+    }
+
+    /**
+     * Inicia la edición inline del campo nombre componente (id_ref)
+     */
+    editInlineComponente(componente: PaginaDet): void {
+        const newEditingCell = componente.id_pagd + '-id_ref';
+
+        // Si ya estamos editando otro campo y hay cambios pendientes
+        if (this.editingCell && this.hasChanges && this.editingCell !== newEditingCell) {
+            console.warn('⚠️ Cambiando de campo con cambios pendientes - cancelando edición anterior');
+            this.cancelInlineEdit();
+        }
+
+        this.isTransitioningFields = true;
+        this.editingCell = newEditingCell;
+        this.originalValue = componente.id_ref;
+        this.hasChanges = false;
+
+        console.log(`✏️ Iniciando edición inline de componente:`, {
+            id_pagd: componente.id_pagd,
+            tipo_comp: componente.tipo_comp,
+            id_ref_original: this.originalValue
+        });
+
+        // Cargar componentes disponibles según el tipo
+        this.componentesDisponiblesInline = [];
+        this.paginaDetService.getComponentesPorTipo(componente.tipo_comp).subscribe({
+            next: (response) => {
+                console.log('✅ Componentes obtenidos para edición inline:', response.data?.length || 0);
+
+                // Mapear la respuesta a ComponenteSimple[]
+                this.componentesDisponiblesInline = (response.data || []).map((item: any) => {
+                    if (item.id_comp && item.nombre) {
+                        return { id: item.id_comp, nombre: item.nombre };
+                    } else if (item.id_ref && item.nombre_ref) {
+                        return { id: item.id_ref, nombre: item.nombre_ref };
+                    } else if (item.id && item.nombre) {
+                        return { id: item.id, nombre: item.nombre };
+                    }
+                    return { id: 0, nombre: 'Desconocido' };
+                }).filter((item: ComponenteSimple) => item.id !== 0);
+
+                console.log('📋 Componentes disponibles para edición inline:', this.componentesDisponiblesInline.length);
+
+                // Enfocar el select después de cargar los datos
+                setTimeout(() => {
+                    const selectElement = document.querySelector(`[aria-label="id_ref-${componente.id_pagd}"]`) as HTMLElement;
+                    if (selectElement) {
+                        const inputElement = selectElement.querySelector('input') as HTMLInputElement;
+                        if (inputElement) {
+                            inputElement.focus();
+                        }
+                    }
+                    this.isTransitioningFields = false;
+                }, 100);
+            },
+            error: (error) => {
+                console.error('❌ Error al obtener componentes para edición inline:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al cargar componentes disponibles'
+                });
+                this.cancelInlineEdit();
+            }
+        });
+    }
+
+    /**
+     * Detecta cambios en el select durante la edición inline
+     */
+    onInputChange(componente: PaginaDet): void {
+        this.hasChanges = componente.id_ref !== this.originalValue;
+    }
+
+    /**
+     * Guarda la edición inline del componente
+     */
+    saveInlineEditComponente(componente: PaginaDet): void {
+        console.log('💾 Guardando edición inline de componente:', {
+            id_pagd: componente.id_pagd,
+            id_ref_nuevo: componente.id_ref,
+            id_ref_original: this.originalValue
+        });
+
+        if (componente.id_ref === this.originalValue) {
+            console.log('ℹ️ Valor no cambió, cancelando');
+            this.cancelInlineEdit();
+            return;
+        }
+
+        this.guardando = true;
+
+        this.paginaDetService.updateComponenteRef(componente.id_pagd, componente.id_ref).subscribe({
+            next: (response) => {
+                console.log('✅ Componente actualizado:', response);
+
+                // Actualizar el nombre del componente en el objeto local
+                if (response.data) {
+                    const componenteActualizado = response.data;
+                    const index = this.componentes.findIndex(c => c.id_pagd === componente.id_pagd);
+                    if (index !== -1) {
+                        this.componentes[index].id_ref = componenteActualizado.id_ref;
+                        this.componentes[index].nombre_ref = componenteActualizado.nombre_ref;
+                    }
+                }
+
+                this.editingCell = null;
+                this.originalValue = null;
+                this.hasChanges = false;
+                this.isTransitioningFields = false;
+                this.guardando = false;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Componente Actualizado',
+                    detail: 'El componente referenciado ha sido actualizado correctamente'
+                });
+            },
+            error: (error: any) => {
+                console.error('❌ Error al actualizar componente:', error);
+
+                // Revertir el cambio local
+                componente.id_ref = this.originalValue;
+                this.editingCell = null;
+                this.originalValue = null;
+                this.hasChanges = false;
+                this.guardando = false;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error.message || 'Error al actualizar el componente referenciado',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    /**
+     * Cancela la edición inline por blur (clic fuera)
+     */
+    cancelInlineEditByBlur(): void {
+        setTimeout(() => {
+            if (this.isTransitioningFields) {
+                console.log('🔄 Blur durante transición - ignorando');
+                return;
+            }
+
+            if (this.editingCell) {
+                console.log('🔄 Ejecutando blur - restaurando valor original');
+
+                const [idPagd, field] = this.editingCell.split('-');
+                const componente = this.componentes.find(c => c.id_pagd === parseInt(idPagd));
+
+                if (componente && field === 'id_ref') {
+                    componente.id_ref = this.originalValue;
+                    this.cdr.detectChanges();
+                    setTimeout(() => this.cdr.detectChanges(), 0);
+                    setTimeout(() => this.cdr.detectChanges(), 10);
+                }
+
+                this.editingCell = null;
+                this.originalValue = null;
+                this.hasChanges = false;
+                this.isTransitioningFields = false;
+                this.componentesDisponiblesInline = [];
+            }
+        }, 150);
+    }
+
+    /**
+     * Cancela la edición inline
+     */
+    cancelInlineEdit(): void {
+        console.log('🔄 Cancelando edición inline:', this.editingCell, 'hasChanges:', this.hasChanges);
+
+        if (this.editingCell && this.hasChanges) {
+            const [idPagd, field] = this.editingCell.split('-');
+            const componente = this.componentes.find(c => c.id_pagd === parseInt(idPagd));
+
+            if (componente && field === 'id_ref') {
+                componente.id_ref = this.originalValue;
+                this.cdr.detectChanges();
+                setTimeout(() => this.cdr.detectChanges(), 0);
+                setTimeout(() => this.cdr.detectChanges(), 10);
+            }
+        }
+
+        this.editingCell = null;
+        this.originalValue = null;
+        this.hasChanges = false;
+        this.isTransitioningFields = false;
+        this.componentesDisponiblesInline = [];
     }
 
 }

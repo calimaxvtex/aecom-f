@@ -11,6 +11,7 @@
     currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes asociados"
     [loading]="loadingComponentes"
     class="tabla-componentes"
+    [contentStyle]="{overflow: 'visible'}"
   >
     <ng-template #caption>
       <div class="flex flex-wrap gap-2 items-center justify-end">
@@ -103,11 +104,53 @@
           </span>
         </td>
 
-        <!-- Nombre Componente -->
+        <!-- Nombre Componente (edición inline) -->
         <td>
-          <div class="flex items-center gap-2">
+          <!-- Vista normal -->
+          <div
+            *ngIf="editingCell !== componente.id_pagd + '-id_ref'"
+            (click)="editInlineComponente(componente); $event.stopPropagation()"
+            class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+            pTooltip="Clic para editar componente"
+          >
             <i class="pi pi-puzzle-piece text-blue-500"></i>
             <span class="font-medium">{{ componente.nombre_ref }}</span>
+          </div>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === componente.id_pagd + '-id_ref'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [(ngModel)]="componente.id_ref"
+              [options]="componentesDisponiblesInline"
+              optionLabel="nombre"
+              optionValue="id"
+              (ngModelChange)="onInputChange(componente)"
+              (keyup.escape)="cancelInlineEdit()"
+              placeholder="Seleccionar componente"
+              class="p-input flex-1"
+              [attr.aria-label]="'id_ref-' + componente.id_pagd"
+              [ngModelOptions]="{standalone: true}"
+            ></p-select>
+            <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+              <button
+                pButton
+                icon="pi pi-check"
+                (click)="saveInlineEditComponente(componente)"
+                class="inline-action-btn p-button-success p-button-text"
+                pTooltip="Guardar (Enter)"
+                [disabled]="guardando"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-undo"
+                (click)="cancelInlineEdit()"
+                class="inline-action-btn p-button-secondary p-button-text"
+                pTooltip="Cancelar (Escape)"
+              ></button>
+            </div>
           </div>
         </td>
 

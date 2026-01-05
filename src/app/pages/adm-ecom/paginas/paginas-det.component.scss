@@ -5,6 +5,13 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+// Asegurar que el panel del select aparezca por encima de otros elementos
+.inline-edit-container ::ng-deep .p-select-overlay {
+    z-index: 1100 !important;
 }
 
 .inline-action-btn {
@@ -190,16 +197,12 @@ select.p-inputtext-sm:focus {
     overflow: visible !important;
 }
 
-p-table ::ng-deep .p-datatable-table-container {
-    overflow: visible !important;
-}
 
 // ===== ESTILOS PARA SCROLLBARS HORIZONTALES =====
 
 // Forzar scrollbar horizontal para la tabla de componentes
 .tabla-componentes ::ng-deep .p-datatable-table-container {
     overflow-x: auto !important;
-    overflow-y: visible !important;
 }
 
 // Estilos para scrollbar personalizado (Webkit browsers)

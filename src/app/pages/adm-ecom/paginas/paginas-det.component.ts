@@ -618,8 +618,10 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
         if (this.editingCell && this.editingCell.includes('-id_ref')) {
             const target = event.target as HTMLElement;
             const editContainer = target.closest('.inline-edit-container');
+            const selectPanel = target.closest('.p-select-overlay') || target.closest('.p-select-panel');
 
-            if (!editContainer) {
+            // No cancelar si el clic fue en el panel del select o dentro del contenedor de edición
+            if (!editContainer && !selectPanel) {
                 console.log('🔄 Clic fuera del contenedor de edición - cancelando edición');
                 this.cancelInlineEditByBlur();
             }
@@ -697,7 +699,14 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
      * Detecta cambios en el select durante la edición inline
      */
     onInputChange(componente: PaginaDet): void {
+        // Forzar detección de cambios para asegurar que el valor se actualice
+        this.cdr.detectChanges();
         this.hasChanges = componente.id_ref !== this.originalValue;
+        console.log('🔄 Cambio detectado en select:', {
+            id_ref_nuevo: componente.id_ref,
+            id_ref_original: this.originalValue,
+            hasChanges: this.hasChanges
+        });
     }
 
     /**

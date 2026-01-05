@@ -127,12 +127,13 @@
               [options]="componentesDisponiblesInline"
               optionLabel="nombre"
               optionValue="id"
-              (ngModelChange)="onInputChange(componente)"
+              (ngModelChange)="onInputChange(componente); $event"
               (keyup.escape)="cancelInlineEdit()"
               placeholder="Seleccionar componente"
               class="p-input flex-1"
               [attr.aria-label]="'id_ref-' + componente.id_pagd"
               [ngModelOptions]="{standalone: true}"
+              appendTo="body"
             ></p-select>
             <div class="flex gap-1 mt-1" *ngIf="hasChanges">
               <button

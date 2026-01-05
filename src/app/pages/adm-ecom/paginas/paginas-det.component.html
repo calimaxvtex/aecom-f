@@ -5,11 +5,10 @@
     (onRowReorder)="onRowReorder($event)"
     [paginator]="componentes.length > 10"
     paginatorDropdownAppendTo="body"
-    [rows]="10"
+    [rows]="15"
     [showCurrentPageReport]="true"
     responsiveLayout="scroll"
     currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes asociados"
-    [rowsPerPageOptions]="[5, 10, 25]"
     [loading]="loadingComponentes"
     class="tabla-componentes"
   >
@@ -139,6 +138,7 @@
   [resizable]="false"
   [closable]="true"
   [closeOnEscape]="true"
+  [dismissableMask]="true"
   [contentStyle]="{overflow: 'visible'}"
 >
   <div class="space-y-4">

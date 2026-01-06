@@ -19,13 +19,6 @@
                         class="w-full sm:w-80" />
                 </div>
                 <div class="flex gap-2 items-center">
-                    <!-- Botones de filtro por estado -->
-                    <div class="flex gap-1 mr-4">
-                        <button *ngFor="let estado of estadoOptions" (click)="onEstadoFiltroClick(estado.value)" pButton
-                            raised
-                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
-                            [label]="estado.label" pTooltip="Filtrar por {{ estado.label }}"></button>
-                    </div>
                     <!-- Botones de acción -->
                     <button (click)="loadCps()" pButton raised icon="pi pi-refresh" [loading]="loadingCobertura"
                         pTooltip="Actualizar" class="p-button-outlined"></button>

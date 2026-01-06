@@ -130,14 +130,28 @@ export class ApiConfigService {
         return API_URLS.SUCURSAL_CRUD;
     }
 
+    getCategoriaCrudUrl(): string {
+        return API_URLS.CATEGORIA_CRUD;
+    }
+
     getProyectoCrudUrl(): string {
         return API_URLS.PROYECTO_CRUD;
     }
 
-
-
     getRecetaCrudUrl(): string {
         return API_URLS.RECETA_CRUD;
+    }
+
+    getCarrierCrudUrl(): string {
+        return API_URLS.CARRIER_CRUD;
+    }
+
+    getCarrierSchedCrudUrl(): string {
+        return API_URLS.CARRIER_SCHED_CRUD;
+    }
+
+    getPushNotificationCrudUrl(): string {
+        return API_URLS.PUSH_NOTIFICATION_CRUD;
     }
 
     getPaginasCrudUrl(): string {

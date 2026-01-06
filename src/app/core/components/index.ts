@@ -1,4 +1,1 @@
-/**
- * Exportaciones de componentes core
- */
-export { DevToolsComponent } from './dev-tools.component';
+export * from './dev-tools.component';

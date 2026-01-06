@@ -1,7 +1,3 @@
-/**
- * Configuración de entorno para PRODUCCIÓN
- * Este archivo se usa cuando se ejecuta en modo producción
- */
 export const environment = {
   production: true,
 
@@ -39,5 +35,13 @@ export const environment = {
 
   // Configuración de validación
   enableFormValidation: true,
-  enableRealTimeValidation: false
+  enableRealTimeValidation: false,
+
+  // Configuración de notificaciones
+  enableNotifications: true,
+  notificationTimeout: 3000,
+
+  // Configuración de analytics
+  enableAnalytics: true,
+  analyticsId: 'PROD-ANALYTICS-ID'
 };

@@ -1,0 +1,248 @@
+<div class="card">
+    <p-toast></p-toast>
+
+    <!-- Título -->
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold mb-4">Cobertura sucursales</h1>
+    </div>
+
+    <!-- Tabla de coberturas -->
+    <p-table #dtCp [value]="cp" [paginator]="true" [rows]="10" [showCurrentPageReport]="true" responsiveLayout="scroll"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+        [rowsPerPageOptions]="[10, 25, 50]" [loading]="loadingCobertura" [sortMode]="'single'"
+        [globalFilterFields]="['id', 'codigo_postal', 'colonia', 'municipio']" [filterDelay]="300">
+        <!-- Caption con controles -->
+        <ng-template #caption>
+            <div class="flex flex-wrap gap-2 items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <input pInputText type="text" (input)="onGlobalFilter(dtCp, $event)" placeholder="Buscar..."
+                        class="w-full sm:w-80" />
+                </div>
+                <div class="flex gap-2 items-center">
+                    <!-- Botones de filtro por estado -->
+                    <div class="flex gap-1 mr-4">
+                        <button *ngFor="let estado of estadoOptions" (click)="onEstadoFiltroClick(estado.value)" pButton
+                            raised
+                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                            [label]="estado.label" pTooltip="Filtrar por {{ estado.label }}"></button>
+                    </div>
+                    <!-- Botones de acción -->
+                    <button (click)="loadCps()" pButton raised icon="pi pi-refresh" [loading]="loadingCobertura"
+                        pTooltip="Actualizar" class="p-button-outlined"></button>
+                    <button (click)="openCpForm()" pButton raised icon="pi pi-plus" pTooltip="Agregar cobertura"
+                        class="p-button-success"></button>
+                </div>
+            </div>
+        </ng-template>
+
+        <!-- Headers -->
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="id" style="width: 80px">Id<p-sortIcon field="id"></p-sortIcon></th>
+                <th pSortableColumn="sucursal" style="width: 200px">Sucursal<p-sortIcon field="sucursal"></p-sortIcon>
+                </th>
+                <th pSortableColumn="codigo_postal" style="width: 150px">Código Postal<p-sortIcon
+                        field="codigo_postal"></p-sortIcon></th>
+                <th pSortableColumn="colonia" style="min-width: 200px">Colonia<p-sortIcon field="colonia"></p-sortIcon>
+                </th>
+                <th pSortableColumn="municipio" style="min-width: 200px">Municipio<p-sortIcon
+                        field="municipio"></p-sortIcon></th>
+                <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                <th style="width: 150px">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <!-- Body -->
+        <ng-template #body let-Cp>
+            <tr [class.bg-blue-50]="Cp === CoberturaSeleccionado"
+                class="cursor-pointer hover:bg-gray-50 transition-colors">
+                <!-- ID -->
+                <td class="text-center font-mono text-sm">{{ Cp.id }}</td>
+
+                <!-- Sucursal -->
+                <td>
+                    <!-- Vista normal -->
+                    <span *ngIf="editingCell !== Cp.id + '-sucursal'"
+                        (click)="editInline(Cp, 'sucursal'); $event.stopPropagation()"
+                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        {{ Cp.tienda }}
+                    </span>
+
+                    <!-- Vista edición -->
+                    <div *ngIf="editingCell === Cp.id + '-sucursal'"
+                        class="flex gap-1 items-center inline-edit-container">
+                        <p-select [(ngModel)]="Cp.sucursal" [options]="sucursales"
+                            (ngModelChange)="onInlineChange(Cp, 'sucursal')" (keyup.enter)="saveInline(Cp, 'sucursal')"
+                            (keyup.escape)="cancelInlineEdit()" class="w-full"></p-select>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-check"
+                            (click)="saveInline(Cp, 'sucursal'); $event.stopPropagation()"
+                            class="p-button-sm p-button-success p-button-text inline-action-btn"></button>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-undo"
+                            (click)="cancelInlineEdit(); $event.stopPropagation()"
+                            class="p-button-sm p-button-secondary p-button-text inline-action-btn"></button>
+                    </div>
+                </td>
+
+
+                <!-- Código Postal -->
+                <td>
+                    <span class="px-2 py-1">
+                        {{ Cp.codigo_postal }}
+                    </span>
+                </td>
+
+                <!-- Colonia -->
+                <td>
+                    <!-- Vista normal -->
+                    <span *ngIf="editingCell !== Cp.id + '-colonia'"
+                        (click)="editInline(Cp, 'colonia'); $event.stopPropagation()"
+                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        {{ Cp.colonia | uppercase }}
+                    </span>
+
+                    <!-- Vista edición -->
+                    <div *ngIf="editingCell === Cp.id + '-colonia'"
+                        class="flex gap-1 items-center inline-edit-container">
+                        <p-select [(ngModel)]="Cp.colonia" [options]="colonias"
+                            (ngModelChange)="onInlineChange(Cp, 'colonia')" (keyup.enter)="saveInline(Cp, 'colonia')"
+                            (keyup.escape)="cancelInlineEdit()" class="w-full"></p-select>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-check"
+                            (click)="saveInline(Cp, 'colonia'); $event.stopPropagation()"
+                            class="p-button-sm p-button-success p-button-text inline-action-btn"></button>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-undo"
+                            (click)="cancelInlineEdit(); $event.stopPropagation()"
+                            class="p-button-sm p-button-secondary p-button-text inline-action-btn"></button>
+                    </div>
+                </td>
+
+                <!-- Municipio -->
+                <td>
+                    <!-- Vista normal -->
+                    <span *ngIf="editingCell !== Cp.id + '-municipio'"
+                        (click)="editInline(Cp, 'municipio'); $event.stopPropagation()"
+                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        {{ Cp.d_ciudad | uppercase }}
+                    </span>
+                    <!-- Vista edición -->
+                    <div *ngIf="editingCell === Cp.id + '-municipio'"
+                        class="flex gap-1 items-center inline-edit-container">
+                        <p-select [(ngModel)]="Cp.municipio" [options]="municipios"
+                            (ngModelChange)="onInlineChange(Cp, 'municipio')"
+                            (keyup.enter)="saveInline(Cp, 'municipio')" (keyup.escape)="cancelInlineEdit()"
+                            class="w-full"></p-select>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-check"
+                            (click)="saveInline(Cp, 'municipio'); $event.stopPropagation()"
+                            class="p-button-sm p-button-success p-button-text inline-action-btn"></button>
+
+                        <button *ngIf="hasChanges" pButton icon="pi pi-undo"
+                            (click)="cancelInlineEdit(); $event.stopPropagation()"
+                            class="p-button-sm p-button-secondary p-button-text inline-action-btn"></button>
+                    </div>
+                </td>
+
+                <!-- Estado - TOGGLE -->
+                <td>
+                    <p-tag [value]="getEstadoLabel(Cp.estado)" [severity]="getEstadoSeverity(Cp.estado)"
+                        (click)="toggleEstado(Cp); $event.stopPropagation()"
+                        class="cursor-pointer hover:opacity-80 transition-opacity" title="Clic para cambiar"></p-tag>
+                </td>
+
+                <!-- Acciones -->
+                <td (click)="$event.stopPropagation()">
+                    <div class="flex gap-1">
+                        <button pButton icon="pi pi-pencil" (click)="openCpForm(Cp)"
+                            class="p-button-sm p-button-text p-button-warning" pTooltip="Editar cobertura"></button>
+                        <button pButton icon="pi pi-trash" (click)="eliminarCobertura(Cp)"
+                            class="p-button-sm p-button-text p-button-danger" pTooltip="Eliminar cobertura"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Modal de formulario CRUD -->
+
+<!-- Modal de confirmación personalizado -->
+<p-dialog header="{{confirmHeader}}" [(visible)]="showConfirmDialog" [modal]="true" [style]="{width: '450px'}"
+    [closable]="true" (onHide)="cancelarConfirmacion()">
+    <div class="flex align-items-center gap-3 mb-3">
+        <i class="pi pi-exclamation-triangle text-orange-500 text-2xl"></i>
+        <span class="text-lg">{{confirmMessage}}</span>
+    </div>
+
+    <div class="flex justify-content-end gap-2 mt-4">
+        <p-button label="Cancelar" icon="pi pi-times" severity="secondary"
+            (onClick)="cancelarConfirmacion()"></p-button>
+        <p-button label="Sí, confirmar" icon="pi pi-check" severity="danger" (onClick)="confirmarAccion()"></p-button>
+    </div>
+</p-dialog>
+
+<!-- Modal de Formulario de Cobertura -->
+<p-dialog [(visible)]="showCoberturaModal" [header]="isEditingCobertura ? 'Editar cobertura' : 'Nueva cobertura'"
+    [modal]="true" [style]="{width: '600px'}" [draggable]="false" [resizable]="false" [closable]="true"
+    [closeOnEscape]="true" (onHide)="closeCoberturaForm()">
+    <form [formGroup]="CoberturaForm" (ngSubmit)="saveCobertura()">
+        <div class="grid grid-cols-1 ">
+
+            <!-- Código Postal -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Código Postal</label>
+                <input pInputText type="number" formControlName="codigo_postal" class="w-full" (input)="onCpChange()" />
+                <small
+                    *ngIf="CoberturaForm.get('codigo_postal')?.invalid && CoberturaForm.get('codigo_postal')?.touched"
+                    class="text-red-500">
+                    El código postal es obligatorio
+                </small>
+            </div>
+
+            <!-- Sucursal -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Sucursal</label>
+                <p-select [options]="sucursales" formControlName="sucursal" optionLabel="label" optionValue="value"
+                    class="w-full" placeholder="Seleccione una sucursal">
+                </p-select>
+            </div>
+
+
+            <!-- Colonia -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Colonia</label>
+                <p-select [options]="colonias" formControlName="colonia" optionLabel="label" optionValue="value"
+                    class="w-full" placeholder="Seleccione una colonia">
+                </p-select>
+            </div>
+
+            <!-- Municipio -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Municipio</label>
+                <p-select [options]="municipios" formControlName="municipio" optionLabel="label" optionValue="value"
+                    class="w-full" placeholder="Seleccione un municipio">
+                </p-select>
+            </div>
+
+            <!-- Estado -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Estado</label>
+                <p-tag [value]="CoberturaForm.get('estado')?.value === 'A' ? 'Activo' : 'Inactivo'"
+                    [severity]="CoberturaForm.get('estado')?.value === 'A' ? 'success' : 'danger'"
+                    (click)="toggleState()" class="cursor-pointer hover:opacity-80 transition-opacity"></p-tag>
+            </div>
+
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+            <button pButton type="button" (click)="closeCoberturaForm()" label="Cancelar"
+                class="p-button-text"></button>
+            <button pButton type="submit" [label]="isEditingCobertura ? 'Actualizar' : 'Crear'"
+                [disabled]=" !CoberturaForm.valid || savingCobertura || (isEditingCobertura && CoberturaForm.pristine)"
+                [loading]="savingCobertura" class="p-button-primary"></button>
+        </div>
+    </form>
+</p-dialog>

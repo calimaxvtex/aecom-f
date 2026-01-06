@@ -1,0 +1,292 @@
+<div class="card">
+  <p-table
+    #dt
+    [value]="componentes"
+    (onRowReorder)="onRowReorder($event)"
+    [paginator]="componentes.length > 10"
+    paginatorDropdownAppendTo="body"
+    [rows]="15"
+    [showCurrentPageReport]="true"
+    responsiveLayout="scroll"
+    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} componentes asociados"
+    [loading]="loadingComponentes"
+    class="tabla-componentes"
+    [contentStyle]="{overflow: 'visible'}"
+  >
+    <ng-template #caption>
+      <div class="flex flex-wrap gap-2 items-center justify-end">
+        <!-- ✅ Actualizar lista -->
+        <button
+          (click)="filtrarComponentesPorPagina()"
+          pButton
+          raised
+          icon="pi pi-refresh"
+          [loading]="loadingComponentes"
+          pTooltip="Actualizar lista"
+        ></button>
+
+        <!-- ✅ Agregar componente (solo si hay página seleccionada) -->
+        <button
+          *ngIf="paginaSeleccionada"
+          (click)="abrirModalAgregarComponente()"
+          pButton
+          raised
+          icon="pi pi-plus"
+          severity="success"
+          pTooltip="Agregar componente a la página"
+        ></button>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th style="width: 5%"></th>
+        <th class="white-space-nowrap" style="width:15%">ID Asociación</th>
+        <th class="white-space-nowrap" style="width:15%">Orden</th>
+        <th class="white-space-nowrap" style="width:20%">Tipo Componente</th>
+        <th class="white-space-nowrap" style="width:35%">Nombre Componente</th>
+        <th class="white-space-nowrap" style="width:10%">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-componente let-editing="editing" let-ri="rowIndex">
+      <tr [pReorderableRow]="ri">
+        <!-- Columna del handle de arrastre -->
+        <td class="text-center">
+          <div class="drag-handle-container">
+            <span
+              pReorderableRowHandle
+              class="pi pi-bars drag-handle"
+              pTooltip="Arrastrar para reordenar"
+            ></span>
+          </div>
+        </td>
+
+        <!-- ID Asociación -->
+        <td>{{ componente.id_pagd }}</td>
+
+        <!-- Orden -->
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
+              {{ componente.orden }}
+            </span>
+            <!-- Botones de orden individual -->
+            <div class="flex flex-col gap-1">
+              <button
+                pButton
+                icon="pi pi-arrow-up"
+                size="small"
+                (click)="moveOrderUp(componente); $event.stopPropagation()"
+                [disabled]="componente.orden === 1 || reordenando"
+                class="p-button-sm p-button-text p-button-secondary"
+                pTooltip="Mover arriba"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-arrow-down"
+                size="small"
+                (click)="moveOrderDown(componente); $event.stopPropagation()"
+                [disabled]="componente.orden === componentes.length || reordenando"
+                class="p-button-sm p-button-text p-button-secondary"
+                pTooltip="Mover abajo"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </div>
+        </td>
+
+        <!-- Tipo Componente -->
+        <td>
+          <span class="capitalize font-medium" [class]="getTipoColor(componente.tipo_comp)">
+            {{ componente.tipo_comp }}
+          </span>
+        </td>
+
+        <!-- Nombre Componente (edición inline) -->
+        <td>
+          <!-- Vista normal -->
+          <div
+            *ngIf="editingCell !== componente.id_pagd + '-id_ref'"
+            (click)="editInlineComponente(componente); $event.stopPropagation()"
+            class="flex items-center gap-2 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+            pTooltip="Clic para editar componente"
+          >
+            <i class="pi pi-puzzle-piece text-blue-500"></i>
+            <span class="font-medium">{{ componente.nombre_ref }}</span>
+          </div>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === componente.id_pagd + '-id_ref'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [(ngModel)]="componente.id_ref"
+              [options]="componentesDisponiblesInline"
+              optionLabel="nombre"
+              optionValue="id"
+              (ngModelChange)="onInputChange(componente); $event"
+              (keyup.escape)="cancelInlineEdit()"
+              placeholder="Seleccionar componente"
+              class="p-input flex-1"
+              [attr.aria-label]="'id_ref-' + componente.id_pagd"
+              [ngModelOptions]="{standalone: true}"
+              appendTo="body"
+            ></p-select>
+            <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+              <button
+                pButton
+                icon="pi pi-check"
+                (click)="saveInlineEditComponente(componente)"
+                class="inline-action-btn p-button-success p-button-text"
+                pTooltip="Guardar (Enter)"
+                [disabled]="guardando"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-undo"
+                (click)="cancelInlineEdit()"
+                class="inline-action-btn p-button-secondary p-button-text"
+                pTooltip="Cancelar (Escape)"
+              ></button>
+            </div>
+          </div>
+        </td>
+
+        <!-- Acciones -->
+        <td>
+          <div class="flex gap-2">
+            <button
+              pButton
+              icon="pi pi-trash"
+              (click)="eliminarComponente(componente)"
+              class="p-button-sm p-button-text p-button-danger"
+              pTooltip="Eliminar componente de la página"
+            ></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  </div>
+
+<!-- Modal para agregar componente a página -->
+<p-dialog
+  [(visible)]="mostrarModalAgregar"
+  header="Agregar Componente a Página"
+  [modal]="true"
+  [style]="{width: '500px'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [closeOnEscape]="true"
+  [dismissableMask]="true"
+  [contentStyle]="{overflow: 'visible'}"
+>
+  <div class="space-y-4">
+    <!-- Información de la página -->
+    <div *ngIf="paginaSeleccionada" class="bg-blue-50 p-3 rounded-lg">
+      <h4 class="font-medium text-blue-800">Página seleccionada:</h4>
+      <p class="text-blue-700">{{ paginaSeleccionada.nombre }}</p>
+      <p class="text-sm text-blue-600">Canal: {{ paginaSeleccionada.canal }}</p>
+    </div>
+
+    <!-- Selector de tipo de componente -->
+    <div>
+      <label class="block font-medium mb-2">Tipo de Componente *</label>
+      <p-select
+        [(ngModel)]="nuevoComponente.tipo_comp"
+        [options]="tiposComponenteOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Seleccionar tipo de componente"
+        class="w-full"
+        [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="onTipoComponenteChange()"
+      />
+    </div>
+
+    <!-- Selector de componente referenciado -->
+    <div>
+      <label class="block font-medium mb-2">Componente a Agregar *</label>
+      <p-select
+        [(ngModel)]="nuevoComponente.id_ref"
+        [options]="componentesDisponibles"
+        optionLabel="nombre"
+        optionValue="id"
+        placeholder="Seleccionar componente"
+        class="w-full"
+        [ngModelOptions]="{standalone: true}"
+      />
+      <small class="text-gray-500 mt-1 block">
+        Selecciona el componente específico que quieres agregar a la página
+      </small>
+    </div>
+  </div>
+
+  <!-- Botones del modal -->
+  <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200">
+    <button
+      pButton
+      type="button"
+      (click)="cerrarModalAgregar()"
+      label="Cancelar"
+      class="p-button-text"
+    ></button>
+    <button
+      pButton
+      type="button"
+      (click)="agregarComponente()"
+      label="Agregar Componente"
+      [disabled]="!nuevoComponente.tipo_comp || !nuevoComponente.id_ref || guardando"
+      [loading]="guardando"
+      class="p-button-success"
+    ></button>
+  </div>
+</p-dialog>
+
+<!-- Modal de confirmación de eliminación -->
+<p-dialog
+  [(visible)]="showConfirmDeleteComponente"
+  header="Confirmar Eliminación"
+  [modal]="true"
+  [style]="{width: '400px', minHeight: '200px'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+>
+  <div class="flex items-center gap-4 mb-4">
+    <span class="text-4xl animate-bounce">⚠️</span>
+
+    <div>
+      <h4 class="font-semibold text-xl mb-1">¿Eliminar Componente?</h4>
+
+      <p class="text-sm text-red-600 mt-2 font-medium">
+        Esta acción no se puede deshacer.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+    <button
+      pButton
+      type="button"
+      (click)="cancelDeleteComponente()"
+      label="Cancelar"
+      class="p-button-text"
+    ></button>
+    <button
+      pButton
+      type="button"
+      (click)="confirmDeleteComponente()"
+      label="Eliminar"
+      class="p-button-danger"
+      [loading]="eliminando"
+    ></button>
+  </div>
+</p-dialog>
+
+<!-- Modal de confirmación usando ConfirmationService -->
+<p-confirmDialog></p-confirmDialog>

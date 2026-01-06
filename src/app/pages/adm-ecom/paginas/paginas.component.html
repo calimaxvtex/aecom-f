@@ -1,0 +1,379 @@
+<div class="card">
+  <!-- Sistema de Tabs -->
+  <p-tabs [value]="activeTabIndex.toString()">
+    <p-tablist>
+      <p-tab value="0" (click)="onTabClick(0)">
+        <i class="pi pi-list mr-2"></i>
+        📋 Lista de Páginas
+      </p-tab>
+      <p-tab value="1" (click)="onTabClick(1)">
+        <i class="pi pi-list mr-2"></i>
+        📋 Lista de Componentes
+        <p-tag
+          *ngIf="paginaSeleccionada"
+          [value]="paginaSeleccionada.nombre"
+          severity="info"
+          class="text-xs ml-2">
+        </p-tag>
+      </p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <!-- Tab 1: Lista de Páginas -->
+      <p-tabpanel value="0">
+        <p-table
+    #dt
+    [value]="paginas"
+    [paginator]="paginas.length > 10"
+    paginatorDropdownAppendTo="body"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    responsiveLayout="scroll"
+    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} páginas"
+    [rowsPerPageOptions]="[5, 10, 25]"
+    [globalFilterFields]="['nombre']"
+    [loading]="loadingPaginas"
+    class="tabla-paginas"
+  >
+    <ng-template #caption>
+      <div class="flex flex-wrap gap-2 items-center justify-between">
+        <input
+          pInputText
+          type="text"
+          (input)="aplicarFiltros(); dt.filterGlobal($event.target.value, 'contains')"
+          placeholder="Buscar páginas..."
+          class="w-full sm:w-80 order-1 sm:order-0"
+        />
+          <div class="flex gap-2 order-0 sm:order-1 items-end">
+            <!-- Botones de filtro por canal -->
+            <button
+              *ngFor="let canal of canalesOptions"
+              (click)="onCanalFiltroClick(canal.value)"
+              pButton
+              raised
+              [class]="canalFiltroSeleccionado === canal.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+              [label]="canal.label"
+              pTooltip="Filtrar por {{ canal.label }}"
+            ></button>
+
+            <!-- Separador visual -->
+            <div class="w-px bg-gray-300 mx-1"></div>
+
+            <!-- ✅ PATRÓN CRÍTICO: Botones solo con íconos, raised, sin clases de ancho -->
+            <button
+              (click)="cargarPaginas()"
+              pButton
+              raised
+              icon="pi pi-refresh"
+              [loading]="loadingPaginas"
+              pTooltip="Actualizar"
+            ></button>
+            <button
+              (click)="abrirModalCrear()"
+              pButton
+              raised
+              icon="pi pi-plus"
+              pTooltip="Nueva Página"
+            ></button>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th class="white-space-nowrap" style="width:5%">ID</th>
+        <th class="white-space-nowrap" style="width:25%">Nombre</th>
+        <th class="white-space-nowrap" style="width:13%">Canal</th>
+        <th class="white-space-nowrap" style="width:12%">Estado</th>
+        <th class="white-space-nowrap" style="width:8%">Componentes</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Creación</th>
+        <th class="white-space-nowrap" style="width:15%">Fecha Modificación</th>
+        <th class="white-space-nowrap" style="width:8%">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-pagina let-editing="editing" let-ri="rowIndex">
+      <tr
+        (click)="onRowClick(pagina)"
+        [class.bg-blue-50]="paginaSeleccionada?.id_pag === pagina.id_pag"
+        class="cursor-pointer hover:bg-gray-50 transition-colors"
+      >
+        <!-- ID (solo vista) -->
+        <td>{{ pagina.id_pag }}</td>
+
+        <!-- Nombre (edición inline) -->
+        <td>
+          <div class="flex flex-col gap-1 w-fit">
+            <!-- Nombre Principal -->
+            <div>
+              <span
+                *ngIf="editingCell !== pagina.id_pag + '-nombre'"
+                (click)="editarInline(pagina, 'nombre'); $event.stopPropagation()"
+                class="editable-cell cursor-pointer hover:bg-blue-50 px-1 py-1 rounded transition-colors font-medium"
+                pTooltip="Clic para editar nombre"
+              >
+                {{pagina.nombre}}
+              </span>
+
+              <!-- Vista de edición nombre principal -->
+              <div
+                *ngIf="editingCell === pagina.id_pag + '-nombre'"
+                class="inline-edit-container mb-1"
+              >
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="pagina.nombre"
+                  (input)="onInputChange(pagina, 'nombre')"
+                  (blur)="cancelInlineEditByBlur()"
+                  (keyup.enter)="saveInlineEdit(pagina, 'nombre')"
+                  (keyup.escape)="cancelInlineEdit()"
+                  class="p-inputtext-xs w-full"
+                  #input
+                  [attr.aria-label]="'nombre-' + pagina.id_pag"
+                  placeholder="Nombre de la página"
+                />
+                <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+                  <button
+                    pButton
+                    icon="pi pi-check"
+                    (click)="saveInlineEdit(pagina, 'nombre')"
+                    class="inline-action-btn p-button-success p-button-text"
+                    pTooltip="Guardar nombre"
+                  ></button>
+                  <button
+                    pButton
+                    icon="pi pi-undo"
+                    (click)="cancelInlineEdit()"
+                    class="inline-action-btn p-button-secondary p-button-text"
+                    pTooltip="Cancelar"
+                  ></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <!-- Canal (edición inline) -->
+        <td>
+          <!-- Vista normal -->
+          <span
+          *ngIf="editingCell !== pagina.id_pag + '-canal'"
+          [ngClass]="{
+            'bg-blue-100 text-blue-800': pagina.canal === 'WEB',
+            'bg-purple-100 text-purple-800': pagina.canal === 'APP'
+          }"
+          (click)="editarInline(pagina, 'canal'); $event.stopPropagation()"
+          class="inline-block px-2 py-1 rounded text-xs w-fit cursor-pointer transition-all hover:shadow-md hover:scale-115 editable-cell"
+          pTooltip="Clic para editar canal"
+        >
+          {{ pagina.canal }}
+        </span>
+
+          <!-- Vista de edición -->
+          <div
+            *ngIf="editingCell === pagina.id_pag + '-canal'"
+            class="inline-edit-container"
+          >
+            <p-select
+              [options]="canalesOptions"
+              [(ngModel)]="pagina.canal"
+              (ngModelChange)="onInputChange(pagina, 'canal')"
+              [ngModelOptions]="{standalone: true}"
+              placeholder="Seleccionar canal"
+              class="w-full"
+              [attr.aria-label]="'canal-' + pagina.id_pag"
+            ></p-select>
+            <div class="flex gap-1 mt-1" *ngIf="hasChanges">
+              <button
+                pButton
+                icon="pi pi-check"
+                (click)="saveInlineEdit(pagina, 'canal')"
+                class="inline-action-btn p-button-success p-button-text"
+                pTooltip="Guardar canal"
+              ></button>
+              <button
+                pButton
+                icon="pi pi-undo"
+                (click)="cancelInlineEdit()"
+                class="inline-action-btn p-button-secondary p-button-text"
+                pTooltip="Cancelar"
+              ></button>
+            </div>
+          </div>
+        </td>
+
+        <!-- Estado -->
+        <td class="text-center">
+          <p-toggleSwitch
+            [ngModel]="getPaginaToggleState(pagina)"
+            [ngModelOptions]="{standalone: true}"
+            onLabel="ACTIVO"
+            offLabel="DESACTIVADO"
+            inputId="{{pagina.id_pag}}_estado"
+            (ngModelChange)="onToggleSwitchChange($event, pagina)"
+            class="status-toggle"
+            pTooltip="Cambiar estado de la página"
+          ></p-toggleSwitch>
+        </td>
+
+        <!-- Componentes -->
+        <td class="text-center">
+          <span class="px-2 py-1 bg-gray-100 rounded-full text-sm font-medium">
+            {{ pagina.componentes || 0 }}
+          </span>
+        </td>
+
+        <!-- Fecha Creación -->
+        <td class="text-center">
+          <span>{{ formatDate(pagina.fecha_a) }}</span>
+        </td>
+
+        <!-- Fecha Modificación -->
+        <td class="text-center">
+          <span>{{ formatDate(pagina.fecha_m) }}</span>
+        </td>
+
+        <!-- Acciones -->
+        <td>
+          <div class="flex gap-2">
+            <button
+              pButton
+              icon="pi pi-trash"
+              (click)="eliminarPagina(pagina)"
+              class="p-button-sm p-button-text p-button-danger"
+              pTooltip="Eliminar Página"
+            ></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+        </p-table>
+      </p-tabpanel>
+
+      <!-- Tab 2: Lista de Componentes -->
+      <p-tabpanel value="1">
+        <app-paginas-det [paginaSeleccionada]="paginaSeleccionada"></app-paginas-det>
+      </p-tabpanel>
+
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<!-- ⚠️ MODAL DE ELIMINACIÓN -->
+<p-dialog
+  [(visible)]="mostrarConfirmDelete"
+  header="Confirmar Eliminación"
+  [modal]="true"
+  [style]="{width: '400px', minHeight: '200px'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [maximizable]="false"
+>
+  <div class="flex items-center gap-4 mb-4">
+    <span class="text-8xl animate-bounce">⚠️</span>
+    <div>
+      <h4 class="font-semibold text-xl mb-1">¿Eliminar Página?</h4>
+      <p class="text-gray-700 text-lg">
+        ¿Estás seguro de que deseas eliminar la página
+        <strong>"{{paginaParaEliminar?.nombre}}"</strong>?
+      </p>
+      <p class="text-red-600 mt-2 font-medium">
+        ⚠️ Esta acción no se puede deshacer.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+    <button
+      pButton
+      type="button"
+      (click)="onCancelDelete()"
+      label="Cancelar"
+      class="p-button-text"
+    ></button>
+    <button
+      pButton
+      type="button"
+      (click)="confirmDeletePagina()"
+      label="Eliminar"
+      class="p-button-danger"
+      [loading]="eliminando"
+    ></button>
+  </div>
+</p-dialog>
+
+<!-- 📋 MODAL DE PÁGINA - FORMULARIO SIMPLE -->
+<p-dialog
+  [(visible)]="mostrarModal"
+  header="Nueva Página"
+  [modal]="true"
+  [style]="{width: '600px', maxHeight: '80vh'}"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [closeOnEscape]="true"
+  [dismissableMask]="true"
+>
+  <form [formGroup]="paginaForm" (ngSubmit)="guardar()">
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Nombre -->
+      <div>
+        <label class="block font-medium mb-1">Nombre de la Página *</label>
+        <input
+          pInputText
+          formControlName="nombre"
+          placeholder="ej: Página de Productos, Página de Contacto"
+          class="w-full"
+          autofocus
+        />
+        <small *ngIf="paginaForm.get('nombre')?.invalid && paginaForm.get('nombre')?.touched"
+            class="text-red-500">
+          El nombre es obligatorio (3-100 caracteres)
+        </small>
+      </div>
+
+      <!-- Canal -->
+      <div>
+        <label class="block font-medium mb-1">Canal *</label>
+        <p-select
+          formControlName="canal"
+          [options]="canalesOptions"
+          placeholder="Selecciona el canal"
+          class="w-full"
+        />
+        <small *ngIf="paginaForm.get('canal')?.invalid && paginaForm.get('canal')?.touched"
+            class="text-red-500">
+          El canal es obligatorio
+        </small>
+      </div>
+
+    </div>
+
+    <!-- Botones -->
+    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+      <button
+        pButton
+        type="button"
+        (click)="cerrarModal()"
+        label="Cancelar"
+        class="p-button-text"
+      ></button>
+      <button
+        pButton
+        type="submit"
+        label="Crear"
+        [disabled]="paginaForm.invalid || guardando"
+        [loading]="guardando"
+        class="p-button-success"
+      ></button>
+    </div>
+  </form>
+</p-dialog>
+
+<!-- Modal de confirmación usando ConfirmationService -->
+<p-confirmDialog [style]="{width: '400px'}" appendTo="body"></p-confirmDialog>
+
+<!-- Toast para mensajes -->
+<p-toast></p-toast>

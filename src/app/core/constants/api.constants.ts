@@ -4,21 +4,23 @@ export const API_CONFIG = {
     BASE_URL: environment.apiUrl,
     BASE_URL_IMG: environment.apiUrlImg,
     ENDPOINTS: {
-        MENU: {CRUD: '/api/menu/v1'},
-        SPCONFIG: {GET: '/api/spconfig/v1'},
-        APIC: {CONFIG: '/apic/config'},
-        COLL: {CRUD: '/api/admcoll/v1'},
-        COLLD: {CRUD: '/api/admcolld/v1'},
-        SUC: {CRUD: '/api/admsuc/v1'},
-        BANNER: {UPLOAD: '/upload_banner'},
-        SUCURSAL: {CRUD: '/api/admsucursal/v1'},
-        CATEGORIA: {CRUD: '/api/admcat/v1'},
-        PROYECTO: {CRUD: '/api/admproy/v1'},
-        RECETA: {CRUD: '/api/admrcta/v1'},
-        CARRIER: {CRUD: '/api/admcarr/v1'},
-        CARRIER_SCHED: {CRUD: '/api/admcarrsched/v1'},
-        PUSH_NOTIFICATION: {CRUD: '/api/admpush/v1'},
-        CP: {CRUD: '/api/admcp/v1'}
+        MENU: { CRUD: '/api/menu/v1' },
+        SPCONFIG: { GET: '/api/spconfig/v1' },
+        APIC: { CONFIG: '/apic/config' },
+        COLL: { CRUD: '/api/admcoll/v1' },
+        COLLD: { CRUD: '/api/admcolld/v1' },
+        SUC: { CRUD: '/api/admsuc/v1' },
+        BANNER: { UPLOAD: '/upload_banner' },
+        SUCURSAL: { CRUD: '/api/admsucursal/v1' },
+        CATEGORIA: { CRUD: '/api/admcat/v1' },
+        PROYECTO: { CRUD: '/api/admproy/v1' },
+        RECETA: { CRUD: '/api/admrcta/v1' },
+        CARRIER: { CRUD: '/api/admcarr/v1' },
+        CARRIER_SCHED: { CRUD: '/api/admcarrsched/v1' },
+        PUSH_NOTIFICATION: { CRUD: '/api/admpush/v1' },
+        PAGINAS: { CRUD: '/api/acatpag/v1' },
+        PAGINAS_DET: { CRUD: '/api/acatpagdet/v1' },
+        CP: { CRUD: '/api/admcp/v1' }
     }
 };
 
@@ -37,6 +39,8 @@ export const API_URLS = {
     RECETA_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.RECETA.CRUD}`,
     CARRIER_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CARRIER.CRUD}`,
     CARRIER_SCHED_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CARRIER_SCHED.CRUD}`,
+    PAGINAS_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS.CRUD}`,
+    PAGINAS_DET_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS_DET.CRUD}`,
     PUSH_NOTIFICATION_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PUSH_NOTIFICATION.CRUD}`,
     CP_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CP.CRUD}`
 };

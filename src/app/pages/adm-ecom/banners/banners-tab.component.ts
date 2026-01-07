@@ -29,6 +29,8 @@ import { CatConceptosDetService } from '../../../features/catconceptos/services/
 import { CollService } from '../../../features/coll/services/coll.service';
 import { CatConceptoDet } from '../../../features/catconceptos/models/catconceptosdet.interface';
 import { SucService } from '../../../features/suc/services/suc.service';
+import { RecetaService } from '../../../features/receta/services/receta.service';
+import { RecetaItem } from '../../../features/receta/models/receta.interface';
 
 // Servicio de carga de imágenes
 import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../core/services/img/';
@@ -600,6 +602,23 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
                         </p-floatLabel>
                     </div>
 
+                    <!-- Receta selector (solo si tipo_call es 'RCTA') -->
+                    <div *ngIf="mostrarRecetaSelector">
+                        <p-floatLabel variant="on">
+                            <p-select
+                                formControlName="id_receta"
+                                [options]="recetasOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Seleccionar receta"
+                                class="w-full"
+                                appendTo="body"
+                                [style]="{'z-index': '9999'}"
+                            ></p-select>
+                            <label>Receta</label>
+                        </p-floatLabel>
+                    </div>
+
                     <!-- Programado con fechas en el mismo renglón -->
                     <div class="flex items-center gap-4">
                         <p-tag
@@ -937,7 +956,7 @@ import { ImageUploadService, ImageUploadResponse, ImageFile } from '../../../cor
 */
 
     `]
-    
+
 })
 export class BannersTabComponent implements OnInit, OnChanges {
     // Input para recibir el componente seleccionado
@@ -984,11 +1003,13 @@ export class BannersTabComponent implements OnInit, OnChanges {
     // Opciones para dropdowns
     tipoCallOptions: { label: string; value: string; valor1?: number }[] = [];
     collectionsOptions: { label: string; value: number }[] = [];
+    recetasOptions: { label: string; value: number }[] = [];
     sucursalesOptions: { label: string; value: number }[] = [];
 
     // Estados condicionales del formulario
     mostrarCampoCall = false;
     mostrarCollectionSelector = false;
+    mostrarRecetaSelector = false;
     callLabel = 'Texto Acción';
 
     // Modal de preview
@@ -1004,6 +1025,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     private catConceptosDetService = inject(CatConceptosDetService);
     private collService = inject(CollService);
     private sucService = inject(SucService);
+    private recetaService = inject(RecetaService);
     private imageUploadService = inject(ImageUploadService);
     private fb = inject(FormBuilder);
     private messageService = inject(MessageService);
@@ -1040,7 +1062,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
         const fechaHoy = new Date();
         const fechaFin = new Date();
         fechaFin.setDate(fechaFin.getDate() + 7);
-        
+
         const fechaHoyStr = this.formatDate(fechaHoy);
         const fechaFinStr = this.formatDate(fechaFin);
 
@@ -1051,6 +1073,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
             tipo_call: ['NONE', [Validators.required]],
             call: [''],
             id_coll: [null],
+            id_receta: [null],
             sucursales: [[]],
             swsched: [0],
             fecha_ini: [fechaHoyStr],
@@ -1058,7 +1081,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
             orden: [1, [Validators.required, Validators.min(1)]],
             swEnable: [1],
             swslug: [0],
-            slug: [{value: '', disabled: true}] // Slug deshabilitado inicialmente
+            slug: [{ value: '', disabled: true }] // Slug deshabilitado inicialmente
         });
     }
 
@@ -1170,13 +1193,19 @@ export class BannersTabComponent implements OnInit, OnChanges {
             // Modo edición
             this.bannerSeleccionado = banner;
 
+            // Si el tipo es 'rcta', el id_coll contiene el id_receta
+            const isTipoRcta = banner.tipo_call?.toLowerCase() === 'rcta';
+            const idRecetaValue = isTipoRcta && banner.id_coll ? banner.id_coll : null;
+            const idCollValue = isTipoRcta ? null : banner.id_coll;
+
             this.bannerForm.patchValue({
                 nombre: banner.nombre,
                 url_banner: banner.url_banner,
                 url_banner_call: banner.url_banner_call,
                 tipo_call: banner.tipo_call,
                 call: banner.call,
-                id_coll: banner.id_coll,
+                id_coll: idCollValue,
+                id_receta: idRecetaValue,
                 sucursales: banner.sucursales || [],
                 orden: banner.orden,
                 swsched: banner.swsched,
@@ -1222,7 +1251,8 @@ export class BannersTabComponent implements OnInit, OnChanges {
                 swsched: 0,
                 swEnable: 1,
                 swslug: 0,
-                slug: ''
+                slug: '',
+                id_receta: null
             });
 
             // Asegurar que el campo slug esté deshabilitado para nuevos banners
@@ -1267,9 +1297,13 @@ export class BannersTabComponent implements OnInit, OnChanges {
             }
 
             // Agregar campos opcionales
-            if (formData.id_coll) {
+            // Si el tipo es 'rcta' y hay id_receta, guardarlo en id_coll
+            if (formData.tipo_call?.toLowerCase() === 'rcta' && formData.id_receta) {
+                processedData.id_coll = formData.id_receta;
+            } else if (formData.id_coll) {
                 processedData.id_coll = formData.id_coll;
             }
+
             if (formData.sucursales && formData.sucursales.length > 0) {
                 processedData.sucursales = formData.sucursales;
             }
@@ -1636,6 +1670,7 @@ export class BannersTabComponent implements OnInit, OnChanges {
     cargarOpcionesCatalogo(): void {
         this.cargarTipoCallOptions();
         this.cargarCollectionsOptions();
+        this.cargarRecetasOptions();
         this.cargarSucursalesOptions();
     }
 
@@ -1688,6 +1723,37 @@ export class BannersTabComponent implements OnInit, OnChanges {
                     { label: 'Colección Promocional', value: 3 }
                 ];
                 console.log('📊 Opciones de colecciones (fallback por error):', this.collectionsOptions);
+            }
+        });
+    }
+
+    private cargarRecetasOptions(): void {
+        // Cargar recetas desde el servicio
+        this.recetaService.getRecetas().subscribe({
+            next: (response) => {
+                if (response && response.data) {
+                    this.recetasOptions = response.data.map(receta => ({
+                        label: receta.title || `Receta ${receta.id}`,
+                        value: receta.id
+                    }));
+                } else {
+                    // Fallback a mockup si no hay datos
+                    this.recetasOptions = [
+                        { label: 'Receta 1', value: 1 },
+                        { label: 'Receta 2', value: 2 },
+                        { label: 'Receta 3', value: 3 }
+                    ];
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error cargando recetas:', error);
+                // Fallback a mockup en caso de error
+                this.recetasOptions = [
+                    { label: 'Receta 1', value: 1 },
+                    { label: 'Receta 2', value: 2 },
+                    { label: 'Receta 3', value: 3 }
+                ];
+                console.log('📊 Opciones de recetas (fallback por error):', this.recetasOptions);
             }
         });
     }
@@ -1784,12 +1850,18 @@ export class BannersTabComponent implements OnInit, OnChanges {
         // Mostrar/ocultar selector de colección
         this.mostrarCollectionSelector = selectedTipo?.toLowerCase() === 'coll';
 
+        // Mostrar/ocultar selector de receta
+        this.mostrarRecetaSelector = selectedTipo?.toLowerCase() === 'rcta';
+
         // Reset campos dependientes
         if (!this.mostrarCampoCall) {
             this.bannerForm.patchValue({ call: '' });
         }
         if (!this.mostrarCollectionSelector) {
             this.bannerForm.patchValue({ id_coll: null });
+        }
+        if (!this.mostrarRecetaSelector) {
+            this.bannerForm.patchValue({ id_receta: null });
         }
     }
 

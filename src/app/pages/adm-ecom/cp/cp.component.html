@@ -7,7 +7,7 @@
     </div>
 
     <!-- Tabla de coberturas -->
-    <p-table #dtCp [value]="cp" [paginator]="true" [rows]="10" [showCurrentPageReport]="true" responsiveLayout="scroll"
+    <p-table #dtCp [value]="cpf" [paginator]="true" [rows]="10" [showCurrentPageReport]="true" responsiveLayout="scroll"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
         [rowsPerPageOptions]="[10, 25, 50]" [loading]="loadingCobertura" [sortMode]="'single'"
         [globalFilterFields]="['id', 'codigo_postal', 'colonia', 'municipio']" [filterDelay]="300">
@@ -19,6 +19,15 @@
                         class="w-full sm:w-80" />
                 </div>
                 <div class="flex gap-2 items-center">
+                    <!-- Botones de filtro por estado -->
+                    <div class="flex gap-1 mr-4">
+                        <button *ngFor="let estado of estadoOptions" (click)="onEstadoFiltroClick(estado.value)" pButton
+                            raised
+                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                            [label]="estado.label" pTooltip="Filtrar por {{ estado.label }}"></button>
+                    </div>
+                    <!-- Separador visual -->
+                    <div class="w-px bg-gray-300 mx-2"></div>
                     <!-- Botones de acción -->
                     <button (click)="loadCps()" pButton raised icon="pi pi-refresh" [loading]="loadingCobertura"
                         pTooltip="Actualizar" class="p-button-outlined"></button>
@@ -92,7 +101,7 @@
                     <span *ngIf="editingCell !== Cp.id + '-colonia'"
                         (click)="editInline(Cp, 'colonia'); $event.stopPropagation()"
                         class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
-                        {{ Cp.colonia | uppercase }}
+                        {{ Cp.colonia}}
                     </span>
 
                     <!-- Vista edición -->
@@ -118,7 +127,7 @@
                     <span *ngIf="editingCell !== Cp.id + '-municipio'"
                         (click)="editInline(Cp, 'municipio'); $event.stopPropagation()"
                         class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
-                        {{ Cp.d_ciudad | uppercase }}
+                        {{ Cp.d_ciudad }}
                     </span>
                     <!-- Vista edición -->
                     <div *ngIf="editingCell === Cp.id + '-municipio'"
@@ -179,7 +188,8 @@
 <!-- Modal de Formulario de Cobertura -->
 <p-dialog [(visible)]="showCoberturaModal" [header]="isEditingCobertura ? 'Editar cobertura' : 'Nueva cobertura'"
     [modal]="true" [style]="{width: '600px'}" [draggable]="false" [resizable]="false" [closable]="true"
-    [closeOnEscape]="true" (onHide)="closeCoberturaForm()">
+    [closeOnEscape]="true" (onHide)="closeCoberturaForm()" [blockScroll]="true" [contentStyle]="{ 'overflow': 'hidden' }" [baseZIndex]="1000"
+    styleClass="dialog-overlay-fix">
     <form [formGroup]="CoberturaForm" (ngSubmit)="saveCobertura()">
         <div class="grid grid-cols-1 ">
 

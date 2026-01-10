@@ -105,10 +105,20 @@ p-dialog ::ng-deep .p-dialog-content {
     overflow: visible !important;
 }
 
-p-table ::ng-deep .p-datatable-table-container {
-    overflow: visible !important;
-}
 
 .cdk-overlay-pane {
     z-index: 1105 !important;
+}
+
+:host ::ng-deep .p-datatable-table {
+    min-width: 1100px;
+}
+
+:host ::ng-deep .p-datatable-table-container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+:host ::ng-deep .p-datatable-wrapper {
+    overflow: visible !important;
 }

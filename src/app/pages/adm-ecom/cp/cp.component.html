@@ -4,13 +4,24 @@
     <!-- Título -->
     <div class="mb-4">
         <h1 class="text-2xl font-bold mb-4">Cobertura sucursales</h1>
-    </div>
-
-    <!-- Tabla de coberturas -->
-    <p-table #dtCp [value]="cpf" [paginator]="true" [rows]="10" [showCurrentPageReport]="true" responsiveLayout="scroll"
+    </div>    <!-- Tabla de coberturas -->
+    <div class="table-scroll-wrapper">
+    <p-table 
+        #dtCp 
+        [value]="cpf" 
+        [paginator]="true" 
+        paginatorDropdownAppendTo="body"
+        [rows]="10" 
+        [showCurrentPageReport]="true" 
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-        [rowsPerPageOptions]="[10, 25, 50]" [loading]="loadingCobertura" [sortMode]="'single'"
-        [globalFilterFields]="['id', 'codigo_postal', 'colonia', 'municipio']" [filterDelay]="300">
+        [rowsPerPageOptions]="[10, 25, 50]" 
+        [loading]="loadingCobertura" 
+        [sortMode]="'single'"
+        [globalFilterFields]="['id', 'codigo_postal', 'colonia', 'municipio']" 
+        [filterDelay]="300"
+        responsiveLayout="scroll"
+        [tableStyle]="{ 'min-width': '1100px' }"
+        >
         <!-- Caption con controles -->
         <ng-template #caption>
             <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -40,17 +51,13 @@
         <!-- Headers -->
         <ng-template #header>
             <tr>
-                <th pSortableColumn="id" style="width: 80px">Id<p-sortIcon field="id"></p-sortIcon></th>
-                <th pSortableColumn="sucursal" style="width: 200px">Sucursal<p-sortIcon field="sucursal"></p-sortIcon>
-                </th>
-                <th pSortableColumn="codigo_postal" style="width: 150px">Código Postal<p-sortIcon
-                        field="codigo_postal"></p-sortIcon></th>
-                <th pSortableColumn="colonia" style="min-width: 200px">Colonia<p-sortIcon field="colonia"></p-sortIcon>
-                </th>
-                <th pSortableColumn="municipio" style="min-width: 200px">Municipio<p-sortIcon
-                        field="municipio"></p-sortIcon></th>
-                <th pSortableColumn="estado" style="width: 100px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
-                <th style="width: 150px">Acciones</th>
+                <th pSortableColumn="id" style="min-width: 10px">Id <p-sortIcon field="id"></p-sortIcon></th>
+                <th pSortableColumn="sucursal" style="min-width:10px">Sucursal <p-sortIcon field="sucursal"></p-sortIcon></th>
+                <th pSortableColumn="codigo_postal" style="min-width:10px">Código Postal <p-sortIcon field="codigo_postal"></p-sortIcon></th>
+                <th pSortableColumn="colonia" style="min-width: 10px">Colonia <p-sortIcon field="colonia"></p-sortIcon></th>
+                <th pSortableColumn="municipio" style="min-width: 10px">Municipio <p-sortIcon field="municipio"></p-sortIcon></th>
+                <th pSortableColumn="estado" style="min-width: 10px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                <th style="min-width: 10px">Acciones</th>
             </tr>
         </ng-template>
 
@@ -66,7 +73,7 @@
                     <!-- Vista normal -->
                     <span *ngIf="editingCell !== Cp.id + '-sucursal'"
                         (click)="editInline(Cp, 'sucursal'); $event.stopPropagation()"
-                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        class="cursor-pointer hover:bg-blue-50  py-1 rounded">
                         {{ Cp.tienda }}
                     </span>
 
@@ -75,7 +82,9 @@
                         class="flex gap-1 items-center inline-edit-container">
                         <p-select [(ngModel)]="Cp.sucursal" [options]="sucursales"
                             (ngModelChange)="onInlineChange(Cp, 'sucursal')" (keyup.enter)="saveInline(Cp, 'sucursal')"
-                            (keyup.escape)="cancelInlineEdit()" class="w-full"></p-select>
+                            (keyup.escape)="cancelInlineEdit()" class="w-full"
+                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">                         
+                        </p-select>  
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"
                             (click)="saveInline(Cp, 'sucursal'); $event.stopPropagation()"
@@ -90,7 +99,7 @@
 
                 <!-- Código Postal -->
                 <td>
-                    <span class="px-2 py-1">
+                    <span class="py-1">
                         {{ Cp.codigo_postal }}
                     </span>
                 </td>
@@ -100,7 +109,7 @@
                     <!-- Vista normal -->
                     <span *ngIf="editingCell !== Cp.id + '-colonia'"
                         (click)="editInline(Cp, 'colonia'); $event.stopPropagation()"
-                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        class="cursor-pointer hover:bg-blue-50 py-1 rounded">
                         {{ Cp.colonia}}
                     </span>
 
@@ -109,7 +118,9 @@
                         class="flex gap-1 items-center inline-edit-container">
                         <p-select [(ngModel)]="Cp.colonia" [options]="colonias"
                             (ngModelChange)="onInlineChange(Cp, 'colonia')" (keyup.enter)="saveInline(Cp, 'colonia')"
-                            (keyup.escape)="cancelInlineEdit()" class="w-full"></p-select>
+                            (keyup.escape)="cancelInlineEdit()" class="w-full"
+                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">
+                            </p-select>
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"
                             (click)="saveInline(Cp, 'colonia'); $event.stopPropagation()"
@@ -126,7 +137,7 @@
                     <!-- Vista normal -->
                     <span *ngIf="editingCell !== Cp.id + '-municipio'"
                         (click)="editInline(Cp, 'municipio'); $event.stopPropagation()"
-                        class="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded">
+                        class="cursor-pointer hover:bg-blue-50 py-1 rounded">
                         {{ Cp.d_ciudad }}
                     </span>
                     <!-- Vista edición -->
@@ -135,7 +146,9 @@
                         <p-select [(ngModel)]="Cp.municipio" [options]="municipios"
                             (ngModelChange)="onInlineChange(Cp, 'municipio')"
                             (keyup.enter)="saveInline(Cp, 'municipio')" (keyup.escape)="cancelInlineEdit()"
-                            class="w-full"></p-select>
+                            class="w-full"     [scrollHeight]="'150px'"
+                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">
+                        </p-select>
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"
                             (click)="saveInline(Cp, 'municipio'); $event.stopPropagation()"
@@ -159,13 +172,14 @@
                     <div class="flex gap-1">
                         <button pButton icon="pi pi-pencil" (click)="openCpForm(Cp)"
                             class="p-button-sm p-button-text p-button-warning" pTooltip="Editar cobertura"></button>
-                        <button pButton icon="pi pi-trash" (click)="eliminarCobertura(Cp)"
+                        <button *ngIf="Cp.estado === 'A'" pButton icon="pi pi-trash" (click)="eliminarCobertura(Cp)"
                             class="p-button-sm p-button-text p-button-danger" pTooltip="Eliminar cobertura"></button>
                     </div>
                 </td>
             </tr>
         </ng-template>
     </p-table>
+    </div> 
 </div>
 
 <!-- Modal de formulario CRUD -->
@@ -188,7 +202,7 @@
 <!-- Modal de Formulario de Cobertura -->
 <p-dialog [(visible)]="showCoberturaModal" [header]="isEditingCobertura ? 'Editar cobertura' : 'Nueva cobertura'"
     [modal]="true" [style]="{width: '600px'}" [draggable]="false" [resizable]="false" [closable]="true"
-    [closeOnEscape]="true" (onHide)="closeCoberturaForm()" [blockScroll]="true" [contentStyle]="{ 'overflow': 'hidden' }" [baseZIndex]="1000"
+    [closeOnEscape]="true" (onHide)="closeCoberturaForm()" [baseZIndex]="1000"
     styleClass="dialog-overlay-fix">
     <form [formGroup]="CoberturaForm" (ngSubmit)="saveCobertura()">
         <div class="grid grid-cols-1 ">

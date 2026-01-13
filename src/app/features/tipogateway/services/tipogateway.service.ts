@@ -1,256 +1,117 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
-
-import { ApiConfigService } from '../../../core/services/api/api-config.service';
-import { SessionService } from '../../../core/services/session.service';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { 
-    TipoGatewayCrudResponse, 
-    TipoGatewayCrudSingleResponse, 
-    TipoGatewayFormItem, 
-    TipoGatewayRequest 
+  TipoGatewayItem, 
+  TipoGatewayCrudResponse, 
+  TipoGatewayCrudSingleResponse,
+  TipoGatewayFormItem,
+  TipoGatewayRequest 
 } from '../models/tipogateway.interface';
+import { ApiConfigService } from '../../../core/services/api/api-config.service';
 
-/**
- * Servicio CRUD para el catálogo de Gateways de Pagos
- * Endpoint ID: 23 - Tipo Gateway
- * Maneja operaciones CRUD completas para tipos de gateway de pago
- */
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class TipoGatewayService {
-    private readonly ENDPOINT_ID = 23; // ID del endpoint para tipo gateway
+  private baseUrl: string;
+
+  constructor(
+    private http: HttpClient,
+    private apiConfigService: ApiConfigService
+  ) {
+    // Obtener URL base del servicio de configuración
+    this.baseUrl = this.apiConfigService.getBaseUrl();
+  }
+
+  /**
+   * Obtener todos los tipos de gateway
+   */
+  getTipoGateways(filters?: {
+    activo?: boolean;
+    nombre?: string;
+  }): Observable<TipoGatewayCrudResponse> {
+    let params = new HttpParams();
     
-    private readonly httpOptions = {
-        headers: new HttpHeaders({
-            'Content-Type': 'application/json'
-        })
+    if (filters?.activo !== undefined) {
+      params = params.set('activo', filters.activo.toString());
+    }
+    
+    if (filters?.nombre) {
+      params = params.set('nombre', filters.nombre);
+    }
+
+    const url = `${this.baseUrl}/api/admtipogateway/v1`;
+    return this.http.get<TipoGatewayCrudResponse>(url, { params });
+  }
+
+  /**
+   * Crear un nuevo tipo de gateway
+   */
+  createTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
+    const payload: TipoGatewayRequest = {
+      action: 'IN',
+      nombre: tipogateway.nombre,
+      descripcion: tipogateway.descripcion,
+      activo: tipogateway.activo,
+      configuracion: tipogateway.configuracion
     };
 
-    constructor(
-        private http: HttpClient,
-        private apiConfig: ApiConfigService,
-        private sessionService: SessionService
-    ) {
-        console.log('🚀 TipoGatewayService inicializado');
-        console.log('🔗 Usando endpoint ID:', this.ENDPOINT_ID);
+    const url = `${this.baseUrl}/api/admtipogateway/v1`;
+    return this.http.post<TipoGatewayCrudSingleResponse>(url, payload);
+  }
+
+  /**
+   * Actualizar un tipo de gateway existente
+   */
+  updateTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
+    const payload: TipoGatewayRequest = {
+      action: 'UP',
+      id_tipogateway: tipogateway.id_tipogateway,
+      nombre: tipogateway.nombre,
+      descripcion: tipogateway.descripcion,
+      activo: tipogateway.activo,
+      configuracion: tipogateway.configuracion
+    };
+
+    const url = `${this.baseUrl}/api/admtipogateway/v1`;
+    return this.http.post<TipoGatewayCrudSingleResponse>(url, payload);
+  }
+
+  /**
+   * Eliminar un tipo de gateway
+   */
+  deleteTipoGateway(id: number): Observable<TipoGatewayCrudSingleResponse> {
+    const payload: TipoGatewayRequest = {
+      action: 'DL',
+      id_tipogateway: id
+    };
+
+    const url = `${this.baseUrl}/api/admtipogateway/v1`;
+    return this.http.post<TipoGatewayCrudSingleResponse>(url, payload);
+  }
+
+  /**
+   * Guardar tipo de gateway (crear o actualizar automáticamente)
+   */
+  saveTipoGateway(tipogateway: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
+    if (tipogateway.id_tipogateway) {
+      return this.updateTipoGateway(tipogateway);
+    } else {
+      return this.createTipoGateway(tipogateway);
     }
+  }
 
-    /**
-     * Obtener URL del endpoint de tipo gateway
-     */
-    private getTipoGatewayUrl(): Observable<string> {
-        return new Observable(observer => {
-            const endpoint = this.apiConfig.getEndpointById(this.ENDPOINT_ID);
-            if (endpoint) {
-                console.log(`📡 URL obtenida para TipoGateway (ID ${this.ENDPOINT_ID}):`, endpoint.url);
-                observer.next(endpoint.url);
-                observer.complete();
-            } else {
-                console.error(`❌ No se encontró endpoint con ID ${this.ENDPOINT_ID}`);
-                observer.error(new Error(`Endpoint con ID ${this.ENDPOINT_ID} no encontrado`));
-            }
-        });
-    }
+  /**
+   * Obtener un tipo de gateway por ID
+   */
+  getTipoGatewayById(id: number): Observable<TipoGatewayCrudSingleResponse> {
+    const payload: TipoGatewayRequest = {
+      action: 'SL',
+      id_tipogateway: id
+    };
 
-    /**
-     * GET - Obtener todos los tipos de gateway
-     */
-    getTipoGateways(): Observable<TipoGatewayCrudResponse> {
-        console.log('📋 Obteniendo lista de tipos de gateway...');
-
-        const payload: TipoGatewayRequest = {
-            action: 'SL', // SELECT
-            ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
-        };
-
-        console.log('📤 Payload para obtener tipos de gateway:', payload);
-
-        return this.getTipoGatewayUrl().pipe(
-            switchMap(url => 
-                this.http.post<TipoGatewayCrudResponse>(url, payload, this.httpOptions)
-            ),
-            map(response => {
-                console.log('✅ Tipos de gateway obtenidos:', response.data?.length || 0, 'items');
-                return response;
-            }),
-            catchError(error => {
-                console.error('❌ Error al obtener tipos de gateway:', error);
-                return throwError(() => new Error('Error al cargar tipos de gateway'));
-            })
-        );
-    }
-
-    /**
-     * POST - Crear nuevo tipo de gateway
-     */
-    createTipoGateway(item: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
-        console.log('➕ Creando nuevo tipo de gateway:', item);
-
-        const payload: TipoGatewayRequest = {
-            action: 'IN', // INSERT
-            nombre: item.nombre ?? undefined,
-            clave: item.clave ?? undefined,
-            tipo_deposito: item.tipo_deposito ?? undefined,
-            estado: item.estado ?? undefined,
-            swActivo: item.swActivo ?? undefined,
-            idj: item.idj ?? undefined,
-            sw: item.sw ?? undefined,
-            ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
-        };
-
-        console.log('📤 Payload para crear tipo de gateway:', payload);
-
-        return this.getTipoGatewayUrl().pipe(
-            switchMap(url => 
-                this.http.post<TipoGatewayCrudSingleResponse>(url, payload, this.httpOptions)
-            ),
-            map(response => {
-                console.log('✅ Tipo de gateway creado exitosamente:', response.data);
-                return response;
-            }),
-            catchError(error => {
-                console.error('❌ Error al crear tipo de gateway:', error);
-                return throwError(() => new Error('Error al crear tipo de gateway'));
-            })
-        );
-    }
-
-    /**
-     * PUT - Actualizar tipo de gateway existente
-     */
-    updateTipoGateway(item: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
-        console.log('✏️ Actualizando tipo de gateway:', item);
-
-        if (!item.id) {
-            return throwError(() => new Error('ID es requerido para actualizar'));
-        }
-
-        const payload: TipoGatewayRequest = {
-            action: 'UP', // UPDATE
-            id: item.id,
-            nombre: item.nombre ?? undefined,
-            clave: item.clave ?? undefined,
-            tipo_deposito: item.tipo_deposito ?? undefined,
-            estado: item.estado ?? undefined,
-            swActivo: item.swActivo ?? undefined,
-            idj: item.idj ?? undefined,
-            sw: item.sw ?? undefined,
-            ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
-        };
-
-        console.log('📤 Payload para actualizar tipo de gateway:', payload);
-
-        return this.getTipoGatewayUrl().pipe(
-            switchMap(url => 
-                this.http.post<TipoGatewayCrudSingleResponse>(url, payload, this.httpOptions)
-            ),
-            map(response => {
-                console.log('✅ Tipo de gateway actualizado exitosamente:', response.data);
-                return response;
-            }),
-            catchError(error => {
-                console.error('❌ Error al actualizar tipo de gateway:', error);
-                return throwError(() => new Error('Error al actualizar tipo de gateway'));
-            })
-        );
-    }
-
-    /**
-     * DELETE - Eliminar tipo de gateway
-     */
-    deleteTipoGateway(id: number): Observable<TipoGatewayCrudSingleResponse> {
-        console.log('🗑️ Eliminando tipo de gateway con ID:', id);
-
-        const payload: TipoGatewayRequest = {
-            action: 'DE', // DELETE
-            id: id,
-            ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
-        };
-
-        console.log('📤 Payload para eliminar tipo de gateway:', payload);
-
-        return this.getTipoGatewayUrl().pipe(
-            switchMap(url => 
-                this.http.post<TipoGatewayCrudSingleResponse>(url, payload, this.httpOptions)
-            ),
-            map(response => {
-                console.log('✅ Tipo de gateway eliminado exitosamente');
-                return response;
-            }),
-            catchError(error => {
-                console.error('❌ Error al eliminar tipo de gateway:', error);
-                return throwError(() => new Error('Error al eliminar tipo de gateway'));
-            })
-        );
-    }
-
-    /**
-     * POST - Crear/Actualizar tipo de gateway (detecta automáticamente)
-     */
-    saveTipoGateway(item: TipoGatewayFormItem): Observable<TipoGatewayCrudSingleResponse> {
-        // Determinar si es creación o actualización
-        const hasId = item.id && item.id !== null && item.id !== undefined;
-        const action = hasId ? 'actualizar' : 'crear';
-        
-        console.log('🔍 Determinando acción:', {
-            id: item.id,
-            hasId,
-            action,
-            itemKeys: Object.keys(item)
-        });
-        
-        if (hasId) {
-            return this.updateTipoGateway(item);
-        } else {
-            return this.createTipoGateway(item);
-        }
-    }
-
-    /**
-     * GET - Obtener un tipo de gateway por ID
-     */
-    getTipoGatewayById(id: number): Observable<TipoGatewayCrudSingleResponse> {
-        console.log('🔍 Obteniendo tipo de gateway por ID:', id);
-
-        const payload: TipoGatewayRequest = {
-            action: 'SL', // SELECT
-            id: id,
-            ...this.sessionService.getApiPayloadBase() // usr, id_session - REGLA OBLIGATORIA
-        };
-
-        console.log('📤 Payload para obtener tipo de gateway por ID:', payload);
-
-        return this.getTipoGatewayUrl().pipe(
-            switchMap(url => 
-                this.http.post<TipoGatewayCrudSingleResponse>(url, payload, this.httpOptions)
-            ),
-            map(response => {
-                console.log('✅ Tipo de gateway obtenido por ID:', response.data);
-                return response;
-            }),
-            catchError(error => {
-                console.error('❌ Error al obtener tipo de gateway por ID:', error);
-                return throwError(() => new Error('Error al obtener tipo de gateway'));
-            })
-        );
-    }
-
-    /**
-     * Método de debug para verificar configuración
-     */
-    debugService(): void {
-        console.log('🔧 TipoGatewayService - Configuración:');
-        console.log('  - Endpoint ID:', this.ENDPOINT_ID);
-        console.log('  - Sesión actual:', this.sessionService.getSession());
-        
-        const endpoint = this.apiConfig.getEndpointById(this.ENDPOINT_ID);
-        if (endpoint) {
-            console.log('  - URL endpoint:', endpoint.url);
-        } else {
-            console.log('  - ❌ Endpoint no encontrado');
-        }
-    }
+    const url = `${this.baseUrl}/api/admtipogateway/v1`;
+    return this.http.post<TipoGatewayCrudSingleResponse>(url, payload);
+  }
 }

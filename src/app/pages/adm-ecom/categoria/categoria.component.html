@@ -1,0 +1,680 @@
+<div class="card">
+    <p-toast></p-toast>
+
+    <!-- Toast para confirmaciones -->
+    <p-toast key="confirm" [baseZIndex]="5000">
+        <ng-template let-message pTemplate="message">
+            <div class="w-full" >
+                <!-- Icono de advertencia -->
+                <div class="flex align-items-center mb-3">
+                    <i class="pi pi-exclamation-triangle text-2xl text-orange-500 mr-3"></i>
+                    <div class="font-semibold text-lg text-gray-800">{{ message.summary }}</div>
+                </div>
+
+                <!-- Mensaje descriptivo -->
+                <div class="mb-4 text-gray-700 leading-relaxed">
+                    {{ message.detail }}
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-content-end gap-2 pt-3 border-top-1 border-gray-200">
+                    <p-button
+                        label="Cancelar"
+                        icon="pi pi-times"
+                        size="small"
+                        [text]="true"
+                        severity="contrast"
+                        (onClick)="messageService.clear('confirm')"
+                        class="px-3 py-2"
+                    ></p-button>
+                    <p-button
+                        label="Eliminar"
+                        icon="pi pi-trash"
+                        size="small"
+                        severity="danger"
+                        (onClick)="procesarEliminacionCategoria(message.data)"
+                        class="px-3 py-2"
+                    ></p-button>
+                </div>
+            </div>
+        </ng-template>
+    </p-toast>
+
+    <!-- Header con filtro por proyecto -->
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold mb-4">📂 Administración de Categorías</h1>
+        <div class="flex gap-4 items-end">
+            <div class="flex-1">
+                <p-floatLabel variant="on">
+                    <p-select
+                        [(ngModel)]="proyectoSeleccionadoId"
+                        [options]="proyectos"
+                        [optionLabel]="getDisplayField()"
+                        optionValue="id_proy"
+                        placeholder="Selecciona un proyecto..."
+                        class="w-full"
+                        (onChange)="onProyectoChange($event)"
+                        [loading]="loadingProyectos"
+                    ></p-select>
+                    <!-- <label>Proyecto *</label> -->
+                </p-floatLabel>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje cuando no hay proyecto seleccionado -->
+    <div *ngIf="!proyectoSeleccionado" class="text-center py-12 text-gray-500">
+        <i class="pi pi-arrow-up text-4xl mb-4 text-blue-400"></i>
+        <h3 class="text-lg font-semibold mb-2">Selecciona un Proyecto</h3>
+        <p>Elige un proyecto del selector superior para ver las categorías disponibles.</p>
+    </div>
+
+    <!-- Sección de Tabs -->
+    <p-tabs *ngIf="proyectoSeleccionado" [(value)]="activeTabIndex" (onTabChange)="onTabChange($event)"> <!-- activeTabIndex: {{ activeTabIndex }} -->
+        <p-tablist>
+            <p-tab value="0">
+                Categorías (Nivel 1)
+                <p-badge
+                    *ngIf="categorias.length > 0"
+                    [value]="categorias.length.toString()"
+                    severity="info"
+                    size="small"
+                    class="ml-2 text-xs"
+                ></p-badge>
+            </p-tab>
+            <p-tab value="1">
+                Subcategorías (Nivel 2)
+                <p-badge
+                    *ngIf="categoriasNivel2.length > 0"
+                    [value]="categoriasNivel2.length.toString()"
+                    severity="info"
+                    size="small"
+                    class="ml-2 text-xs"
+                ></p-badge>
+            </p-tab>
+        </p-tablist>
+
+        <p-tabpanels>
+            <!-- Tab Nivel 1 -->
+            <p-tabpanel value="0">
+                <div class="p-4">
+                    <!-- Tabla de categorías -->
+                    <p-table
+                        #dtCategorias
+                        [value]="categorias"
+                        [paginator]="true"
+                        [rows]="10"
+                        [showCurrentPageReport]="true"
+                        responsiveLayout="scroll"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} categorías"
+                        [rowsPerPageOptions]="[10, 25, 50]"
+                        [globalFilterFields]="['id_cat', 'id_categoria', 'nombre', 'nivel']"
+                        dataKey="id_cat"
+                        [sortMode]="'multiple'"
+                        [filterDelay]="300"
+                        [loading]="loadingCategorias"
+                    >
+                        <!-- Caption con controles -->
+                        <ng-template #caption>
+                            <div class="flex flex-wrap gap-2 items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        pInputText
+                                        type="text"
+                                        (input)="onGlobalFilter(dtCategorias, $event)"
+                                        placeholder="Buscar categorías..."
+                                        class="w-full sm:w-80"
+                                    />
+                                </div>
+                                <div class="flex gap-2 items-center">
+                                    <!-- Botones de filtro por estado -->
+                                    <div class="flex gap-1 mr-4">
+                                        <button
+                                            *ngFor="let estado of estadoOptions"
+                                            (click)="onEstadoFiltroClick(estado.value)"
+                                            pButton
+                                            raised
+                                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                                            [label]="estado.label"
+                                            pTooltip="Filtrar por {{ estado.label }}"
+                                        ></button>
+                                    </div>
+                                    <!-- Separador visual -->
+                                    <div class="w-px bg-gray-300 mx-2"></div>
+                                    <!-- Botones de acción -->
+                                    <button
+                                        (click)="cargarCategorias()"
+                                        pButton
+                                        raised
+                                        icon="pi pi-refresh"
+                                        [loading]="loadingCategorias"
+                                        pTooltip="Actualizar"
+                                    ></button>
+                                    <button
+                                        (click)="openCategoriaForm()"
+                                        pButton
+                                        raised
+                                        icon="pi pi-plus"
+                                        pTooltip="Nueva Categoría"
+                                        [disabled]="!proyectoSeleccionado"
+                                    ></button>
+                                </div>
+                            </div>
+                        </ng-template>
+
+                        <!-- Headers -->
+                        <ng-template #header>
+                            <tr>
+                                <th pSortableColumn="id_cat" style="width: 100px">ID <p-sortIcon field="id_cat"></p-sortIcon></th>
+                                <th pSortableColumn="nombre" style="min-width: 250px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+                                <th pSortableColumn="estado" style="width: 120px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                                <th pSortableColumn="fecha_mod" style="min-width: 150px">Fecha Modificación <p-sortIcon field="fecha_mod"></p-sortIcon></th>
+                                <th style="width: 150px">Acciones</th>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Body -->
+                        <ng-template #body let-categoria>
+                            <tr class="cursor-pointer hover:bg-gray-50 transition-colors">
+                                <!-- ID -->
+                                <td class="text-center font-mono text-sm cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+                                    (click)="seleccionarCategoriaPadreDesdeTabla(categoria)"
+                                    title="Clic para ver subcategorías">
+                                    {{ getCategoriaId(categoria) }}
+                                </td>
+
+                                <!-- Nombre -->
+                                <td>
+                                    <span class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors text-blue-600 hover:text-blue-800 hover:underline"
+                                          (click)="seleccionarCategoriaPadreDesdeTabla(categoria)"
+                                          title="Clic para ver subcategorías">
+                                        {{ categoria.nombre | titlecase }}
+                                    </span>
+                                </td>
+
+                                <!-- Estado -->
+                                <td>
+                                    <p-tag
+                                        [value]="getEstadoLabel(categoria.estado)"
+                                        [severity]="getEstadoSeverity(categoria.estado)"
+                                        (click)="toggleEstado(categoria); $event.stopPropagation()"
+                                        class="cursor-pointer hover:opacity-80 transition-opacity"
+                                        title="Clic para cambiar"
+                                    ></p-tag>
+                                </td>
+
+                                <!-- Fecha Modificación -->
+                                <td class="text-sm text-gray-600">
+                                    {{ getCategoriaFechaMod(categoria) | date:'dd/MM/yyyy HH:mm' }}
+                                </td>
+
+                                <!-- Acciones -->
+                                <td (click)="$event.stopPropagation()">
+                                    <div class="flex gap-1">
+                                        <button
+                                            pButton
+                                            icon="pi pi-pencil"
+                                            (click)="openCategoriaForm(categoria)"
+                                            class="p-button-sm p-button-text p-button-warning"
+                                            pTooltip="Editar Categoría"
+                                        ></button>
+                                        <button
+                                            pButton
+                                            icon="pi pi-trash"
+                                            (click)="eliminarCategoria(categoria)"
+                                            class="p-button-sm p-button-text p-button-danger"
+                                            pTooltip="Eliminar Categoría"
+                                        ></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabpanel>
+
+            <!-- Tab Nivel 2 -->
+            <p-tabpanel value="1">
+                <div class="p-4">
+                    <!-- Selector de categoría padre -->
+                    <div class="mb-6">
+                        <p-floatLabel variant="on">
+                            <p-select
+                                [(ngModel)]="categoriaPadreSeleccionadaId"
+                                [options]="categoriasPadre"
+                                optionLabel="nombre"
+                                optionValue="id_cat"
+                                placeholder="Seleccionar categoría padre"
+                                class="w-full"
+                                (onChange)="onCategoriaPadreChange($event)"
+                                [disabled]="!proyectoSeleccionado"
+                            ></p-select>
+                            <!-- <label>Categoría Padre *</label> -->
+                        </p-floatLabel>
+                        <small *ngIf="categoriaPadreSeleccionada" class="text-blue-600 mt-1 block">
+                            Mostrando subcategorías de: <strong>{{ categoriaPadreSeleccionada.nombre }}</strong>
+                        </small>
+                    </div>
+
+                    <!-- Tabla de subcategorías -->
+                    <p-table
+                        #dtCategoriasNivel2
+                        [value]="categoriasNivel2"
+                        [paginator]="true"
+                        [rows]="15"
+                        [showCurrentPageReport]="true"
+                        responsiveLayout="scroll"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} subcategorías"
+                        [rowsPerPageOptions]="[15, 30, 50]"
+                        [globalFilterFields]="['id_cat', 'id_categoria', 'nombre', 'nombre_cat_padre']"
+                        dataKey="id_cat"
+                        [sortMode]="'multiple'"
+                        [filterDelay]="300"
+                        [loading]="loadingCategoriasNivel2"
+                        *ngIf="categoriaPadreSeleccionada"
+                    >
+                        <!-- Caption con controles -->
+                        <ng-template #caption>
+                            <div class="flex flex-wrap gap-2 items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        pInputText
+                                        type="text"
+                                        (input)="onGlobalFilter(dtCategoriasNivel2, $event)"
+                                        placeholder="Buscar subcategorías..."
+                                        class="w-full sm:w-80"
+                                    />
+                                </div>
+                                <div class="flex gap-2 items-center">
+                                    <!-- Botones de filtro por estado -->
+                                    <div class="flex gap-1 mr-4">
+                                        <button
+                                            *ngFor="let estado of estadoOptions"
+                                            (click)="onEstadoFiltroClick(estado.value)"
+                                            pButton
+                                            raised
+                                            [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
+                                            [label]="estado.label"
+                                            pTooltip="Filtrar por {{ estado.label }}"
+                                        ></button>
+                                    </div>
+                                    <!-- Separador visual -->
+                                    <div class="w-px bg-gray-300 mx-2"></div>
+                                    <!-- Botones de acción -->
+                                    <button
+                                        (click)="cargarCategoriasNivel2()"
+                                        pButton
+                                        raised
+                                        icon="pi pi-refresh"
+                                        [loading]="loadingCategoriasNivel2"
+                                        pTooltip="Actualizar"
+                                    ></button>
+                                    <button
+                                        (click)="openCategoriaForm()"
+                                        pButton
+                                        raised
+                                        icon="pi pi-plus"
+                                        pTooltip="Nueva Subcategoría"
+                                        [disabled]="!categoriaPadreSeleccionada"
+                                    ></button>
+                                </div>
+                            </div>
+                        </ng-template>
+
+                        <!-- Headers -->
+                        <ng-template #header>
+                            <tr>
+                                <th pSortableColumn="id_cat" style="width: 100px">ID <p-sortIcon field="id_cat"></p-sortIcon></th>
+                                <th pSortableColumn="nombre" style="min-width: 200px">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+                                <th pSortableColumn="nombre_cat_padre" style="min-width: 200px">Categoría Padre <p-sortIcon field="nombre_cat_padre"></p-sortIcon></th>
+                                <th pSortableColumn="estado" style="width: 120px">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                                <th pSortableColumn="fecha_mod" style="min-width: 150px">Fecha Modificación <p-sortIcon field="fecha_mod"></p-sortIcon></th>
+                                <th style="width: 150px">Acciones</th>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Body -->
+                        <ng-template #body let-categoria>
+                            <tr class="cursor-pointer hover:bg-gray-50 transition-colors">
+                                <!-- ID -->
+                                <td class="text-center font-mono text-sm">{{ getCategoriaId(categoria) }}</td>
+
+                                <!-- Nombre -->
+                                <td>
+                                    <span class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors">
+                                        {{ categoria.nombre | titlecase }}
+                                    </span>
+                                </td>
+
+                                <!-- Categoría Padre -->
+                                <td>
+                                    <p-tag
+                                        [value]="getNombreCategoriaPadre(categoria)"
+                                        severity="secondary"
+                                    ></p-tag>
+                                </td>
+
+                                <!-- Estado -->
+                                <td>
+                                    <p-tag
+                                        [value]="getEstadoLabel(categoria.estado)"
+                                        [severity]="getEstadoSeverity(categoria.estado)"
+                                        (click)="toggleEstado(categoria); $event.stopPropagation()"
+                                        class="cursor-pointer hover:opacity-80 transition-opacity"
+                                        title="Clic para cambiar"
+                                    ></p-tag>
+                                </td>
+
+                                <!-- Fecha Modificación -->
+                                <td class="text-sm text-gray-600">
+                                    {{ getCategoriaFechaMod(categoria) | date:'dd/MM/yyyy HH:mm' }}
+                                </td>
+
+                                <!-- Acciones -->
+                                <td (click)="$event.stopPropagation()">
+                                    <div class="flex gap-1">
+                                        <button
+                                            pButton
+                                            icon="pi pi-pencil"
+                                            (click)="openCategoriaForm(categoria)"
+                                            class="p-button-sm p-button-text p-button-warning"
+                                            pTooltip="Editar Subcategoría"
+                                        ></button>
+                                        <button
+                                            pButton
+                                            icon="pi pi-trash"
+                                            (click)="eliminarCategoria(categoria)"
+                                            class="p-button-sm p-button-text p-button-danger"
+                                            pTooltip="Eliminar Subcategoría"
+                                        ></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+
+                    <!-- Mensaje cuando no hay categoría padre seleccionada -->
+                    <div *ngIf="!categoriaPadreSeleccionada" class="text-center py-12 text-gray-500">
+                        <i class="pi pi-arrow-up text-4xl mb-4 text-blue-400"></i>
+                        <h3 class="text-lg font-semibold mb-2">Selecciona una Categoría Padre</h3>
+                        <p>Elige una categoría padre del selector superior para ver sus subcategorías.</p>
+                    </div>
+                </div>
+            </p-tabpanel>
+        </p-tabpanels>
+    </p-tabs>
+</div>
+
+<!-- Modal de formulario CRUD -->
+<p-dialog
+    [(visible)]="showCategoriaModal"
+    [header]="isEditingCategoria ? 'Editar Categoría' : 'Nueva Categoría'"
+    [modal]="true"
+    [style]="{width: '900px', maxWidth: '95vw'}"
+    [draggable]="false"
+    [resizable]="false"
+
+    styleClass="categoria-form-dialog"
+>
+    <form (ngSubmit)="saveCategoria()" class="p-6">
+        <!-- Proyecto seleccionado (compacto en la parte superior) -->
+        <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200" *ngIf="proyectoSeleccionado">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-building text-blue-600"></i>
+                    <span class="text-sm font-medium text-blue-900">Proyecto:</span>
+                    <span class="text-sm text-blue-800">{{ getProyectoNombre(proyectoSeleccionado) }}</span>
+                </div>
+                <div class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                    ID: {{ proyectoSeleccionado.id_proy }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Campos principales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- ID de la categoria (solo en edición) -->
+            <div *ngIf="isEditingCategoria && categoriaSeleccionada" class="col-span-1 md:col-span-2 lg:col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [value]="getCategoriaId(categoriaSeleccionada)"
+                        readonly
+                        class="w-full bg-gray-50"
+                    />
+                    <label>ID Categoría</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Nombre -->
+            <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="categoriaForm.nombre"
+                        name="nombre"
+                        placeholder="Nombre descriptivo de la categoría"
+                        class="w-full"
+                        maxlength="100"
+                        required
+                    />
+                    <label>Nombre *</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Nivel (select bloqueado) -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <p-select
+                        [(ngModel)]="categoriaForm.nivel"
+                        name="nivel"
+                        [options]="nivelOptions"
+                        [optionLabel]="'label'"
+                        optionValue="value"
+                        [disabled]="true"
+                        class="w-full"
+                        inputId="nivel"
+                    ></p-select>
+                    <label>Nivel</label>
+                </p-floatLabel>
+            </div>
+
+            <!-- Categoría Padre (solo para nivel 2) -->
+            <div class="col-span-1" *ngIf="categoriaForm.nivel === 2">
+                <p-floatLabel variant="on">
+                    <p-select
+                        [(ngModel)]="categoriaForm.id_cat_padre"
+                        name="id_cat_padre"
+                        [options]="categoriasPadreDisponibles"
+                        optionLabel="nombre"
+                        optionValue="id_cat"
+                        placeholder="Selecciona categoría padre"
+                        class="w-full"
+                        [required]="categoriaForm.nivel === 2"
+                        [loading]="loadingCategoriasPadre"
+                    ></p-select>
+                    <label>Categoría Padre *</label>
+                </p-floatLabel>
+                <small *ngIf="categoriasPadreDisponibles.length === 0 && !loadingCategoriasPadre && categoriaForm.nivel === 2" class="text-orange-600 mt-1 block">
+                    <i class="pi pi-exclamation-triangle mr-1"></i>
+                    No hay categorías padre disponibles
+                </small>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-span-1 md:col-span-2 lg:col-span-1 flex items-center gap-4">
+                <p-tag
+                    [value]="getEstadoLabel(categoriaForm.estado)"
+                    [severity]="getEstadoSeverity(categoriaForm.estado)"
+                    (click)="categoriaForm.estado = categoriaForm.estado === 'A' ? 'I' : 'I'"
+                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                    pTooltip="Activar/desactivar categoría"
+                ></p-tag>
+                <label class="text-sm text-gray-600">Estado</label>
+            </div>
+        </div>
+
+        <!-- Campos de imágenes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- URL Imagen Web -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="categoriaForm.url_img_web"
+                        name="url_img_web"
+                        placeholder="https://ejemplo.com/imagen-web.jpg"
+                        class="w-full"
+                        maxlength="500"
+                    />
+                    <label>URL Imagen Web</label>
+                </p-floatLabel>
+
+                <!-- Preview de imagen web -->
+                <div class="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="text-xs text-gray-600 mb-2">Preview - Ecommerce Web</div>
+                    <div class="flex items-center justify-center h-20 bg-white rounded border">
+                        <img
+                            *ngIf="isValidImageUrl(categoriaForm.url_img_web)"
+                            [src]="categoriaForm.url_img_web"
+                            alt="Preview Web"
+                            class="max-h-full max-w-full object-contain rounded"
+                            (error)="onImageError($event)"
+                            (load)="onImageLoad($event)"
+                            style="display: none;"
+                        />
+                        <div *ngIf="!isValidImageUrl(categoriaForm.url_img_web)" class="text-xs text-gray-400 text-center">
+                            <i class="pi pi-image text-lg mb-1 block"></i>
+                            Sin imagen o URL inválida
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL Imagen App -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="categoriaForm.url_img_app"
+                        name="url_img_app"
+                        placeholder="https://ejemplo.com/imagen-app.jpg"
+                        class="w-full"
+                        maxlength="500"
+                    />
+                    <label>URL Imagen App</label>
+                </p-floatLabel>
+
+                <!-- Preview de imagen app -->
+                <div class="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="text-xs text-gray-600 mb-2">Preview - Ecommerce App</div>
+                    <div class="flex items-center justify-center h-20 bg-white rounded border">
+                        <img
+                            *ngIf="isValidImageUrl(categoriaForm.url_img_app)"
+                            [src]="categoriaForm.url_img_app"
+                            alt="Preview App"
+                            class="max-h-full max-w-full object-contain rounded"
+                            (error)="onImageError($event)"
+                            (load)="onImageLoad($event)"
+                            style="display: none;"
+                        />
+                        <div *ngIf="!isValidImageUrl(categoriaForm.url_img_app)" class="text-xs text-gray-400 text-center">
+                            <i class="pi pi-image text-lg mb-1 block"></i>
+                            Sin imagen o URL inválida
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campos de miniaturas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- URL Miniatura Web -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="categoriaForm.url_min_web"
+                        name="url_min_web"
+                        placeholder="https://ejemplo.com/miniatura-web.jpg"
+                        class="w-full"
+                        maxlength="500"
+                    />
+                    <label>URL Miniatura Web</label>
+                </p-floatLabel>
+
+                <!-- Preview de miniatura web -->
+                <div class="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="text-xs text-gray-600 mb-2">Preview Miniatura - Web</div>
+                    <div class="flex items-center justify-center h-16 bg-white rounded border">
+                        <img
+                            *ngIf="isValidImageUrl(categoriaForm.url_min_web)"
+                            [src]="categoriaForm.url_min_web"
+                            alt="Preview Miniatura Web"
+                            class="max-h-full max-w-full object-contain rounded"
+                            (error)="onImageError($event)"
+                            (load)="onImageLoad($event)"
+                            style="display: none;"
+                        />
+                        <div *ngIf="!isValidImageUrl(categoriaForm.url_min_web)" class="text-xs text-gray-400 text-center">
+                            <i class="pi pi-image text-lg mb-1 block"></i>
+                            Sin miniatura o URL inválida
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL Miniatura App -->
+            <div class="col-span-1">
+                <p-floatLabel variant="on">
+                    <input
+                        pInputText
+                        [(ngModel)]="categoriaForm.url_min_app"
+                        name="url_min_app"
+                        placeholder="https://ejemplo.com/miniatura-app.jpg"
+                        class="w-full"
+                        maxlength="500"
+                    />
+                    <label>URL Miniatura App</label>
+                </p-floatLabel>
+
+                <!-- Preview de miniatura app -->
+                <div class="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="text-xs text-gray-600 mb-2">Preview Miniatura - App</div>
+                    <div class="flex items-center justify-center h-16 bg-white rounded border">
+                        <img
+                            *ngIf="isValidImageUrl(categoriaForm.url_min_app)"
+                            [src]="categoriaForm.url_min_app"
+                            alt="Preview Miniatura App"
+                            class="max-h-full max-w-full object-contain rounded"
+                            (error)="onImageError($event)"
+                            (load)="onImageLoad($event)"
+                            style="display: none;"
+                        />
+                        <div *ngIf="!isValidImageUrl(categoriaForm.url_min_app)" class="text-xs text-gray-400 text-center">
+                            <i class="pi pi-image text-lg mb-1 block"></i>
+                            Sin miniatura o URL inválida
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+            <p-button
+                type="button"
+                (onClick)="closeCategoriaForm()"
+                label="Cancelar"
+                class="p-button-text"
+            ></p-button>
+            <p-button
+                type="submit"
+                [label]="isEditingCategoria ? 'Actualizar' : 'Crear'"
+                [disabled]="!categoriaForm.nombre.trim() || savingCategoria"
+                [loading]="savingCategoria"
+                class="p-button-success"
+            ></p-button>
+        </div>
+    </form>
+</p-dialog>

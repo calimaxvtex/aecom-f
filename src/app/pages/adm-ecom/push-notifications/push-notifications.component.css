@@ -1,0 +1,87 @@
+/* Estilos específicos para el componente Push Notifications */
+
+.compact-filter-button {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    min-width: auto;
+}
+
+.push-notification-form-dialog .p-dialog-content {
+    padding: 0;
+}
+
+.push-notification-form-dialog .p-dialog-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.push-notification-form-dialog .p-dialog-header .p-dialog-title {
+    font-weight: 600;
+}
+
+/* Estilos para la tabla */
+.p-datatable .p-datatable-tbody > tr:hover {
+    background-color: #f8fafc;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Estilos para los botones de acción */
+.p-button-sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Estilos para los tags de estado */
+.p-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Estilos para el input de búsqueda */
+.p-inputtext {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+}
+
+.p-inputtext:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Estilos para el textarea */
+.p-inputtextarea {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+    resize: vertical;
+}
+
+.p-inputtextarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Estilos para el datepicker */
+.p-datepicker {
+    width: 100%;
+}
+
+.p-datepicker .p-inputtext {
+    width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .compact-filter-button {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.5rem;
+    }
+}
+

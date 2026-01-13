@@ -1,43 +1,52 @@
-/**
- * Configuración de entorno para PRODUCCIÓN
- * Este archivo se usa cuando se ejecuta en modo producción
- */
 export const environment = {
   production: true,
+  mode: 'production',
   
-  // URLs de la API
-  apiUrl: 'https://ec.calimax.digital',
-  apiUrlImg: 'https://ec.calimax.digital',
-  //apiUrlImg: 'http://10.10.254.127:3013',
+  // URLs de API
+  apiUrl: 'https://api.calimax.digital',
+  apiUrlImg: 'https://images.calimax.digital',
   
   // Configuración de autenticación
-  bypassAuth: false,  // NO bypass en producción - autenticación requerida
+  bypassAuth: false,
+  mockDataEnabled: false,
   
   // Configuración de debug
   debugMode: false,
   enableLogs: false,
-  
-  // Configuración de cache
-  cacheEnabled: true,
-  cacheExpiryMinutes: 60,
-  
-  // Configuración de interceptors
   enableApiMonitor: false,
   enableHttpLogging: false,
   
-  // Configuración de desarrollo
-  mockDataEnabled: false,
+  // Herramientas de desarrollo
   devToolsEnabled: false,
+  errorReportingEnabled: true,
+  performanceMonitoring: true,
+  
+  // Configuración específica de producción
+  productionMode: true,
+  allowTestData: false,
+  enableExtraLogging: false,
+  
+  // Configuración de caché
+  cacheEnabled: true,
+  cacheTimeout: 1800000, // 30 minutos
   
   // Configuración de timeouts
-  apiTimeout: 15000, // 15 segundos
-  uploadTimeout: 30000, // 30 segundos para uploads
+  apiTimeout: 30000,
+  requestTimeout: 15000,
   
   // Configuración de paginación
   defaultPageSize: 20,
-  maxPageSize: 200,
+  maxPageSize: 100,
   
   // Configuración de validación
   enableFormValidation: true,
-  enableRealTimeValidation: false
+  enableRealTimeValidation: false,
+  
+  // Configuración de notificaciones
+  enableNotifications: true,
+  notificationTimeout: 3000,
+  
+  // Configuración de analytics
+  enableAnalytics: true,
+  analyticsId: 'PROD-ANALYTICS-ID'
 };

@@ -1,18 +1,13 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
+import { SessionService } from '../services/session/session.service';
 import { environment } from '../../../environments/environment';
-import { SessionService } from '@/core/services/session.service';
 
-/**
- * Guard de autenticación para proteger rutas
- * Implementa bypass para desarrollo y verificación real para producción
- */
 @Injectable({
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  
+
   constructor(
     private sessionService: SessionService,
     private router: Router
@@ -21,56 +16,38 @@ export class AuthGuard implements CanActivate {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
-  ): Observable<boolean> | Promise<boolean> | boolean {
+  ): boolean {
     
-    // 🚀 BYPASS para desarrollo
-    if (environment.production === false && environment.bypassAuth) {
-      console.log('🔓 [DEV] Bypass de autenticación activado');
-      console.log('🔓 [DEV] Acceso permitido a:', state.url);
+    // 🔧 BYPASS PARA DESARROLLO
+    if (!environment.production && environment.bypassAuth) {
+      console.log('🔓 AuthGuard: Bypass activado para desarrollo');
       
-      // Crear sesión mock para desarrollo si no existe
-      this.createMockSessionIfNeeded();
+      // Crear sesión mock si no existe
+      if (!this.sessionService.isLoggedIn()) {
+        console.log('👤 Creando sesión mock para desarrollo');
+        this.sessionService.setUser({
+          id: 1,
+          username: 'dev_user',
+          email: 'dev@example.com',
+          name: 'Usuario Desarrollo',
+          role: 'admin'
+        });
+      }
+      
       return true;
     }
 
-    // 🔒 Verificación real de autenticación
-    const isLoggedIn = this.sessionService.isLoggedIn();
-    
-    if (!isLoggedIn) {
-      console.log('🔒 [AUTH] Usuario no autenticado, redirigiendo al login');
-      console.log('🔒 [AUTH] URL solicitada:', state.url);
-      
-      // Guardar la URL solicitada para redirigir después del login
-      this.router.navigate(['/login'], { 
-        queryParams: { returnUrl: state.url } 
-      });
-      return false;
+    // 🔐 VERIFICACIÓN REAL DE AUTENTICACIÓN
+    if (this.sessionService.isLoggedIn()) {
+      return true;
     }
-    
-    console.log('✅ [AUTH] Usuario autenticado, acceso permitido');
-    return true;
-  }
 
-  /**
-   * Crea una sesión mock para desarrollo si no existe
-   */
-  private createMockSessionIfNeeded(): void {
-    const currentSession = this.sessionService.getSession();
+    // 🚫 REDIRECCIÓN A LOGIN
+    console.log('🔒 AuthGuard: Usuario no autenticado, redirigiendo a login');
+    this.router.navigate(['/login'], { 
+      queryParams: { returnUrl: state.url } 
+    });
     
-    if (!currentSession || !currentSession.isLoggedIn) {
-      const mockUser = {
-        usuario: 'dev_user',
-        id_session: 999999,
-        nombre: 'Usuario de Desarrollo',
-        email: 'dev@calimax.com',
-        isLoggedIn: true
-      };
-
-      // Establecer sesión mock
-      this.sessionService.setSession(mockUser);
-      console.log('👤 [DEV] Sesión mock creada:', mockUser);
-    } else {
-      console.log('👤 [DEV] Sesión existente encontrada:', currentSession);
-    }
+    return false;
   }
 }

@@ -83,7 +83,7 @@
                         <p-select [(ngModel)]="Cp.sucursal" [options]="sucursales"
                             (ngModelChange)="onInlineChange(Cp, 'sucursal')" (keyup.enter)="saveInline(Cp, 'sucursal')"
                             (keyup.escape)="cancelInlineEdit()" class="w-full"
-                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">                         
+                            [panelStyle]="{ 'z-index': 3000, maxHeight: '300px' }">                         
                         </p-select>  
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"
@@ -119,7 +119,7 @@
                         <p-select [(ngModel)]="Cp.colonia" [options]="colonias"
                             (ngModelChange)="onInlineChange(Cp, 'colonia')" (keyup.enter)="saveInline(Cp, 'colonia')"
                             (keyup.escape)="cancelInlineEdit()" class="w-full"
-                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">
+                            [panelStyle]="{ 'z-index': 3000, maxHeight: '300px' }">
                             </p-select>
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"
@@ -147,7 +147,7 @@
                             (ngModelChange)="onInlineChange(Cp, 'municipio')"
                             (keyup.enter)="saveInline(Cp, 'municipio')" (keyup.escape)="cancelInlineEdit()"
                             class="w-full"     [scrollHeight]="'150px'"
-                            [panelStyle]="{ 'z-index': 3000, overflowY: auto, maxHeight: '300px' }">
+                            [panelStyle]="{ 'z-index': 3000, maxHeight: '300px' }">
                         </p-select>
 
                         <button *ngIf="hasChanges" pButton icon="pi pi-check"

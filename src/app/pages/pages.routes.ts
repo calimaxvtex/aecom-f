@@ -103,6 +103,11 @@ export default [
         path: 'adm-ecom/recetas',
         data: { breadcrumb: 'Recetas', proy: 1 },
         loadComponent: () => import('./adm-ecom/recetas/receta.component').then(c => c.RecetaComponent)
+    },
+    {
+        path: 'adm-ecom/cp',
+        data: { breadcrumb: 'Cobertura sucursales', proy: 1 },
+        loadComponent: () => import('./adm-ecom/cp/cp.component').then(c => c.CpComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

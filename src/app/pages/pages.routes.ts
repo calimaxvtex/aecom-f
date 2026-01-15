@@ -108,6 +108,11 @@ export default [
         path: 'adm-ecom/cp',
         data: { breadcrumb: 'Cobertura sucursales', proy: 1 },
         loadComponent: () => import('./adm-ecom/cp/cp.component').then(c => c.CpComponent)
+    },
+    {
+        path: 'adm-ecom/cupones',
+        data: { breadcrumb: 'Cupones y clientes', proy: 1 },
+        loadComponent: () => import('./adm-ecom/cupones/cupones.component').then(c => c.CuponesComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

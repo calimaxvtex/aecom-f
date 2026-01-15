@@ -158,6 +158,10 @@ export class ApiConfigService {
         return API_URLS.CP_CRUD;
     }
 
+    getCuponCrudUrl(): string {
+        return API_URLS.CUPON_CRUD;
+    }
+
     // Método para cambiar URL en tiempo de ejecución
     setBaseUrl(url: string): void {
         this.baseUrl = url;

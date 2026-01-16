@@ -580,8 +580,6 @@
 
 :host ::ng-deep .p-floatlabel input:focus + label,
 :host ::ng-deep .p-floatlabel input:not(:placeholder-shown) + label,
-:host ::ng-deep .p-floatlabel textarea:focus + label,
-:host ::ng-deep .p-floatlabel textarea:not(:placeholder-shown) + label,
 :host ::ng-deep .p-floatlabel .p-inputmask:focus + label,
 :host ::ng-deep .p-floatlabel .p-inputmask:not(.p-inputmask-empty) + label,
 :host ::ng-deep .p-floatlabel .p-select:focus + label,
@@ -594,7 +592,6 @@
 }
 
 :host ::ng-deep .p-floatlabel input,
-:host ::ng-deep .p-floatlabel textarea,
 :host ::ng-deep .p-floatlabel .p-inputmask input,
 :host ::ng-deep .p-floatlabel .p-select {
     padding-top: 1rem;
@@ -608,11 +605,11 @@
     font-weight: 500;
 }
 
-/* Mejorar apariencia de textarea */
+/* Mejorar apariencia de textarea 
 :host ::ng-deep .p-floatlabel textarea {
     min-height: 80px;
     resize: vertical;
-}
+}*/
 
 /* Estilos para botones tag personalizados */
 :host ::ng-deep .p-tag {
@@ -657,25 +654,6 @@
     font-size: 0.875rem !important;
 }
 
-:host ::ng-deep .small-calendar .p-datepicker-calendar {
-    width: 100% !important;
-}
-
-:host ::ng-deep .small-calendar .p-datepicker-header {
-    padding: 0.5rem !important;
-}
-
-:host ::ng-deep .small-calendar .p-datepicker-calendar table {
-    font-size: 0.8rem !important;
-}
-
-:host ::ng-deep .small-calendar .p-datepicker-calendar .p-datepicker-weekday {
-    padding: 0.25rem !important;
-}
-
-:host ::ng-deep .small-calendar .p-datepicker-calendar .p-datepicker-other-month {
-    color: #9ca3af !important;
-}
 
 /* Asegurar que el calendario se muestre por encima de otros elementos */
 :host ::ng-deep .small-calendar {
@@ -688,3 +666,17 @@
     display: inline-block;
     vertical-align: middle;
 }
+textarea[pTextarea] {
+    border: 1px solid var(--surface-border);
+    background-color: #f1f5f9 !important;
+    border-radius: 6px;
+    padding: 0.75rem;
+}
+
+/* Inputs de texto PrimeNG 
+.p-inputtext {
+    background-color: #ffffff !important;
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+
+}*/

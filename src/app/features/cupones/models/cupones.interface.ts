@@ -38,7 +38,6 @@ export interface CuponSingleResponse {
 
 // Interfaces para operaciones CRUD
 export interface CreateCuponRequest {
-    id_cupon: number,
     codigo: string,
     descripcion: string,
     estado: 'A'| 'B'|'I',

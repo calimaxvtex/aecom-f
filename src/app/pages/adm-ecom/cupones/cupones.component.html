@@ -11,11 +11,8 @@
                 <span class="flex items-center gap-2">
                     <i class="pi pi-users"></i>
                     Clientes
-                    <p-tag
-                            *ngIf="cuponSeleccionado"
-                            [value]="cuponSeleccionado.codigo"
-                            severity="info"
-                            class="text-xs ml-2">
+                    <p-tag *ngIf="cuponSeleccionado" [value]="cuponSeleccionado.codigo" severity="info"
+                        class="text-xs ml-2">
                     </p-tag>
                 </span>
             </p-tab>
@@ -25,36 +22,25 @@
             <!-- TAB CUPONES -->
             <p-tabpanel value="0">
 
-                <p-table
-                    #dtCupon
-                    [value]="filteredCupones"
-                    [loading]="loadingCupones"
-                    [paginator]="true"
-                    [rows]="10"
-                    [showCurrentPageReport]="true"
-                    responsiveLayout="scroll"
+                <p-table #dtCupon [value]="filteredCupones" [loading]="loadingCupones" [paginator]="true" [rows]="10"
+                    [showCurrentPageReport]="true" responsiveLayout="scroll"
                     currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                    [rowsPerPageOptions]="[10,25,50]"
-                    [globalFilterFields]="[
+                    [rowsPerPageOptions]="[10,25,50]" [globalFilterFields]="[
                         'id_cupon',
                         'codigo',
                         'descripcion',
+                        'id_promo',
                         'limite',
                         'importe_minimo',
                         'estado'
-                    ]"
-                    selectionMode="single"
-                    [(selection)]="cuponSeleccionado"
-                    (onRowSelect)="onCuponSelect($event)"
-                    
-                >
+                    ]" selectionMode="single" [(selection)]="cuponSeleccionado" (onRowSelect)="onCuponSelect($event)">
 
                     <!-- Caption con controles -->
                     <ng-template #caption>
                         <div class="flex flex-wrap gap-2 items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <input pInputText type="text" (input)="onGlobalFilter(dtCupon, $event)" placeholder="Buscar cupón..."
-                                    class="w-full sm:w-80" />
+                                <input pInputText type="text" (input)="onGlobalFilter(dtCupon, $event)"
+                                    placeholder="Buscar cupón..." class="w-full sm:w-80" />
                             </div>
                             <div class="flex gap-2 items-center">
                                 <!-- Botones de filtro por estado
@@ -67,10 +53,10 @@
                                 <!-- Separador visual -->
                                 <div class="w-px bg-gray-300 mx-2"></div>
                                 <!-- Botones de acción -->
-                                <button (click)="loadCupones()" pButton raised icon="pi pi-refresh" [loading]="loadingCupones"
-                                    pTooltip="Actualizar" class="p-button-outlined"></button>
-                                <button (click)="openCuponForm()" pButton raised icon="pi pi-plus" pTooltip="Agregar cupón"
-                                    class=""></button>
+                                <button (click)="loadCupones()" pButton raised icon="pi pi-refresh"
+                                    [loading]="loadingCupones" pTooltip="Actualizar" class="p-button-outlined"></button>
+                                <button (click)="openCuponForm()" pButton raised icon="pi pi-plus"
+                                    pTooltip="Agregar cupón" class=""></button>
                             </div>
                         </div>
                     </ng-template>
@@ -79,9 +65,12 @@
                         <tr>
                             <th pSortableColumn="id_cupon">Id <p-sortIcon field="id"></p-sortIcon></th>
                             <th pSortableColumn="codigo">Código <p-sortIcon field="codigo"></p-sortIcon></th>
-                            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+                            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon>
+                            </th>
+                            <th pSortableColumn="id_promo">Id promo <p-sortIcon field="id_promo"></p-sortIcon></th>
                             <th pSortableColumn="limite">Límite <p-sortIcon field="limite"></p-sortIcon></th>
-                            <th pSortableColumn="importe_minimo">Importe mínimo <p-sortIcon field="importe_minimo"></p-sortIcon></th>
+                            <th pSortableColumn="importe_minimo">Importe mínimo <p-sortIcon
+                                    field="importe_minimo"></p-sortIcon></th>
                             <th pSortableColumn="estado">Estado <p-sortIcon field="estado"></p-sortIcon></th>
                             <th>Acciones</th>
                         </tr>
@@ -89,34 +78,37 @@
 
                     <!-- BODY -->
                     <ng-template #body let-cupon>
-                        <tr
-                        [   class.bg-blue-50]="cupon === cuponSeleccionado"
+                        <tr [ class.bg-blue-50]="cupon === cuponSeleccionado"
                             [class.collection-inactive]="cupon.estado === 'B'"
                             class="cursor-pointer hover:bg-gray-50 transition-colors"
-                            (click)="onCuponSelect({ data: cupon })"
-                            (dblclick)="onCuponDoubleClick(cupon)"
-                        >
+                            (click)="onCuponSelect({ data: cupon })" (dblclick)="onCuponDoubleClick(cupon)">
                             <td>{{ cupon.id_cupon }}</td>
                             <td>{{ cupon.codigo }}</td>
                             <td>{{ cupon.descripcion }}</td>
+                            <td>{{ cupon.id_promo }}</td>
                             <td>{{ cupon.limite }}</td>
                             <td>{{ cupon.importe_minimo }}</td>
                             <!--<td>{{ cupon.estado }}</td>-->
                             <!-- Estado - TOGGLE -->
                             <td>
-                                <p-tag [value]="getEstadoLabel(cupon.estado)" [severity]="getEstadoSeverity(cupon.estado)"
-                                (click)="toggleEstado(cupon); $event.stopPropagation()"
-                                class="cursor-pointer hover:opacity-80 transition-opacity" title="Clic para cambiar"></p-tag>
+                                <p-tag [value]="getEstadoLabel(cupon.estado)"
+                                    [severity]="getEstadoSeverity(cupon.estado)"
+                                    (click)="toggleEstado(cupon); $event.stopPropagation()"
+                                    class="cursor-pointer hover:opacity-80 transition-opacity"
+                                    title="Clic para cambiar"></p-tag>
                             </td>
                             <!-- Acciones -->
                             <td (click)="$event.stopPropagation()">
                                 <div class="flex gap-1">
-                                    <button pButton icon="pi pi-eye" (click)="openCpForm(Cp)"
-                                        class="p-button-sm p-button-text p-button-warning" pTooltip="Ver cupón"></button>
-                                    <button pButton icon="pi pi-pencil" (click)="openCpForm(Cp)"
-                                        class="p-button-sm p-button-text p-button-warning" pTooltip="Editar cupón"></button>
-                                    <button pButton icon="pi pi-trash" (click)="eliminarCupon(cupon); $event.stopPropagation()"
-                                        class="p-button-sm p-button-text p-button-danger" pTooltip="Eliminar cupón"></button>
+                                    <!-- <button pButton icon="pi pi-eye" (click)="openCuponForm(cupon)"
+                                        class="p-button-sm p-button-text p-button-warning" pTooltip="Ver cupón"></button>-->
+                                    <button pButton icon="pi pi-pencil" (click)="openCuponForm(cupon)"
+                                        class="p-button-sm p-button-text p-button-warning"
+                                        pTooltip="Ver o editar cupón"></button>
+                                    <button pButton icon="pi pi-trash"
+                                        (click)="eliminarCupon(cupon); $event.stopPropagation()"
+                                        class="p-button-sm p-button-text p-button-danger"
+                                        pTooltip="Eliminar cupón"></button>
                                 </div>
                             </td>
                         </tr>
@@ -135,24 +127,17 @@
 
             </p-tabpanel>
 
-             <!-- ================= TAB CLIENTES ================= -->
-             <p-tabpanel value="1">
+            <!-- ================= TAB CLIENTES ================= -->
+            <p-tabpanel value="1">
                 <div class="mb-2 text-sm text-gray-600">
                     Cupón seleccionado:
                     <strong>{{ cuponSeleccionado?.codigo || 'Ninguno' }}</strong>
                 </div>
 
-                <p-table
-                    #dtClientes
-                    [value]="filteredCuponClientes"
-                    [loading]="loadingCupond"
-                    [paginator]="true"
-                    [rows]="10"
-                    [showCurrentPageReport]="true"
-                    responsiveLayout="scroll"
+                <p-table #dtClientes [value]="filteredCuponClientes" [loading]="loadingCupond" [paginator]="true"
+                    [rows]="10" [showCurrentPageReport]="true" responsiveLayout="scroll"
                     currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                    [rowsPerPageOptions]="[10,25,50]"
-                    [globalFilterFields]="[
+                    [rowsPerPageOptions]="[10,25,50]" [globalFilterFields]="[
                         'id_cliente',
                         'NOMBRE',
                         'AP_PATERNO',
@@ -161,38 +146,28 @@
                         'fecha',
                         'id_orden',
                         'estado_orden'
-                    ]"
-                >
+                    ]">
                     <ng-template #caption>
                         <div class="flex flex-wrap gap-2 items-center justify-between">
-                            <input
-                                pInputText
-                                type="text"
-                                (input)="onGlobalFilter(dtClientes, $event)"
-                                placeholder="Buscar clientes..."
-                                class="w-full sm:w-80"
-                            />
+                            <input pInputText type="text" (input)="onGlobalFilter(dtClientes, $event)"
+                                placeholder="Buscar clientes..." class="w-full sm:w-80" />
                             <div class="flex gap-1">
-                                <p-button
-                                    icon="pi pi-refresh"
-                                    (onClick)="refreshCupondData()"
-                                    [loading]="loadingCupond"
-                                    styleClass="p-button-sm p-button-primary p-button-raised"
-                                    pTooltip="Recargar datos"
-                                    tooltipPosition="top"
-                                    tooltipStyleClass="custom-tooltip"
-                                ></p-button>
+                                <p-button icon="pi pi-refresh" (onClick)="refreshCupondData()" [loading]="loadingCupond"
+                                    styleClass="p-button-sm p-button-primary p-button-raised" pTooltip="Recargar datos"
+                                    tooltipPosition="top" tooltipStyleClass="custom-tooltip"></p-button>
                             </div>
                         </div>
                     </ng-template>
                     <ng-template #header>
                         <tr>
-                            <th pSortableColumn="id_cliente">Id cliente <p-sortIcon field="id_cliente"></p-sortIcon></th>
+                            <th pSortableColumn="id_cliente">Id cliente <p-sortIcon field="id_cliente"></p-sortIcon>
+                            </th>
                             <th pSortableColumn="NOMBRE">Nombre <p-sortIcon field="NOMBRE"></p-sortIcon></th>
                             <th pSortableColumn="estado">Estado <p-sortIcon field="estado"></p-sortIcon></th>
                             <th pSortableColumn="fecha">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
                             <th pSortableColumn="id_orden">Id orden <p-sortIcon field="id_orden"></p-sortIcon></th>
-                            <th pSortableColumn="estado_orden">Estado de orden <p-sortIcon field="estado_orden"></p-sortIcon></th>
+                            <th pSortableColumn="estado_orden">Estado de orden <p-sortIcon
+                                    field="estado_orden"></p-sortIcon></th>
                         </tr>
                     </ng-template>
 
@@ -202,7 +177,7 @@
                             <td>{{ formatearNombreCompleto(cli.NOMBRE,cli.AP_PATERNO,cli.AP_MATERNO)}}</td>
                             <td>
                                 <p-tag [value]="getEstadoLabelC(cli.estado)" [severity]="getEstadoSeverityC(cli.estado)"
-                                title="Clic para cambiar"></p-tag>
+                                    class="w-20"></p-tag>
                             </td>
                             <td>{{ formatDate(cli.fecha) }}</td>
                             <td>{{ cli.id_orden }}</td>
@@ -223,32 +198,16 @@
     </p-tabs>
 </div>
 <!-- Diálogo de confirmación personalizado -->
-<p-dialog
-    header="{{confirmHeader}}"
-    [(visible)]="showConfirmDialog"
-    [modal]="true"
-    [style]="{width: '450px'}"
-    [closable]="true"
-    (onHide)="cancelarConfirmacion()"
->
+<p-dialog header="{{confirmHeader}}" [(visible)]="showConfirmDialog" [modal]="true" [style]="{width: '450px'}"
+    [closable]="true" (onHide)="cancelarConfirmacion()">
     <div class="flex align-items-center gap-3 mb-3">
         <i class="pi pi-exclamation-triangle text-orange-500 text-2xl"></i>
         <span class="text-lg">{{confirmMessage}}</span>
     </div>
 
     <div class="flex justify-content-end gap-2 mt-4">
-        <p-button
-            label="Cancelar"
-            icon="pi pi-times"
-            severity="secondary"
-            (onClick)="cancelarConfirmacion()"
-        ></p-button>
-        <p-button
-            label="Sí, Confirmar"
-            icon="pi pi-check"
-            severity="danger"
-            (onClick)="confirmarAccion()"
-        ></p-button>
+        <p-button label="Cancelar" icon="pi pi-times" severity="secondary" (click)="closeCuponesForm()"></p-button>
+        <p-button label="Sí, Confirmar" icon="pi pi-check" severity="danger" (onClick)="confirmarAccion()"></p-button>
     </div>
 </p-dialog>
 
@@ -257,7 +216,7 @@
 
 <!-- Modal de confirmación personalizado -->
 <p-dialog header="{{confirmHeader}}" [(visible)]="showConfirmDialog" [modal]="true" [style]="{width: '450px'}"
-    [closable]="true" (onHide)="cancelarConfirmacion()">
+    [dismissableMask]="true" [closable]="true" (onHide)="cancelarConfirmacion()">
     <div class="flex align-items-center gap-3 mb-3">
         <i class="pi pi-exclamation-triangle text-orange-500 text-2xl"></i>
         <span class="text-lg">{{confirmMessage}}</span>
@@ -279,135 +238,146 @@
 </p-dialog>-->
 
 <!-- Modal maqueta -->
-<p-dialog
-    [(visible)]="showCuponModal"
-    header="Cupón"
-    [modal]="true"
-    [style]="{ width: '900px', maxWidth: '95vw' }"
-    [draggable]="false"
-    [resizable]="false"
-    styleClass="push-notification-form-dialog"
->
+<p-dialog [(visible)]="showCuponModal" [header]="isEditingCupon ? 'Editar cupón' : 'Nuevo cupón'" [modal]="true"
+    [dismissableMask]="true" [style]="{ width: '900px', maxWidth: '95vw' }" [draggable]="false" [resizable]="false"
+    [closable]="true" [closeOnEscape]="true" [(visible)]="showCuponModal" (onHide)="onCuponModalHide()">
+    <form [formGroup]="CuponesForm" (ngSubmit)="saveCupon()">
 
-    <div class="p-6">
+        <div class="p-6">
 
-        <!-- Campos -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Campos -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-            <!-- Código -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <input pInputText class="w-full" />
+                <!-- Código -->
+                <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Código</label>
-                </p-floatLabel>
-            </div>
+                    <input pInputText class="w-full" formControlName="codigo" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        El código es obligatorio
+                    </small>
+                </div>
 
-            <!-- Estado -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <p-select class="w-full"></p-select>
-                    <label>Estado</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- Descripción -->
-            <div class="col-span-1 md:col-span-2">
-                <p-floatLabel variant="on">
-                    <textarea pTextarea rows="3" class="w-full"></textarea>
-                    <label>Descripción</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- Fecha inicio -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <p-datepicker
-                        [showIcon]="true"
-                        dateFormat="dd/mm/yy"
-                        styleClass="w-full"
-                    ></p-datepicker>
-                    <label>Fecha inicio</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- Fecha fin -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <p-datepicker
-                        [showIcon]="true"
-                        dateFormat="dd/mm/yy"
-                        styleClass="w-full"
-                    ></p-datepicker>
-                    <label>Fecha fin</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- ID Promo -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <input pInputText class="w-full" />
+                <!-- ID Promo< -->
+                <div class="text-sm font-medium mb-1 col-span-1">
                     <label>ID Promo</label>
-                </p-floatLabel>
-            </div>
+                    <input pInputText type="number" class="w-full" formControlName="id_promo" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        ID promo es obligatorio
+                    </small>
+                </div>
 
-            <!-- Límite -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <input pInputText type="number" class="w-full" />
-                    <label>Límite</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- Tipo cupón -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <p-select class="w-full"></p-select>
+                <!-- Tipo cupón -->
+                <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Tipo cupón</label>
-                </p-floatLabel>
-            </div>
+                    <input pInputText type="number" class="w-full" formControlName="tipo_cupon" [min]="1" [max]="4" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        El tipo de cupón es obligatorio
+                    </small>
+                </div>
 
-            <!-- Importe mínimo -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <input pInputText type="number" class="w-full" />
+
+                <!-- Descripción -->
+                <div class="text-sm font-medium mb-1 col-span-1 md:col-span-3">
+                    <label>Descripción</label>
+                    <textarea pTextarea rows="3" class="w-full p-inputtextarea resize-none text-sm font-medium"
+                        formControlName="descripcion" maxlength="150"></textarea>
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        La descripción es obligatoria
+                    </small>
+                </div>
+
+                <!-- Fecha inicio -->
+                <div class="text-sm font-medium mb-1 col-span-1">
+                    <label>Fecha inicio</label>
+                    <p-datepicker [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full"
+                        (onShow)="disableModalClose = true" (onHide)="disableModalClose = false" [minDate]="minDate"
+                        formControlName="fecha_ini"></p-datepicker>
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        Fecha de inicio es obligatoria
+                    </small>
+                </div>
+
+                <!-- Fecha fin -->
+                <div class="text-sm font-medium mb-1 col-span-1">
+                    <label>Fecha fin</label>
+                    <p-datepicker [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full"
+                        (onShow)="disableModalClose = true" (onHide)="disableModalClose = false"
+                        formControlName="fecha_fin"></p-datepicker>
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        Fecha de fin es obligatoria
+                    </small>
+                </div>
+
+                <!-- Estado -->
+                <div class="text-sm font-medium mb-1 col-span-1">
+                    <div class="flex flex-col">
+                        <div><label>Estado</label></div>
+                        <div><p-tag [value]="CuponesForm.get('estado')?.value === 'A' ? 'Activo' : 'Inactivo'"
+                                [severity]="CuponesForm.get('estado')?.value === 'A' ? 'success' : 'danger'"
+                                (click)="toggleState()"
+                                class="cursor-pointer hover:opacity-80 transition-opacity w-20 h-12"
+                                pTooltip="Presione para cambiar estado"></p-tag>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Límite -->
+                <div class="text-sm font-medium mb-1 col-span-1">
+                    <label>Límite</label>
+                    <input pInputText type="number" class="w-full" formControlName="limite" [min]="1" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        El límite es obligatorio
+                    </small>
+                </div>
+
+
+                <!-- Importe mínimo -->
+                <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Importe mínimo</label>
-                </p-floatLabel>
-            </div>
+                    <!--<input pInputText type="number" class="w-full"  formControlName="importe_minimo"/>-->
+                    <p-inputnumber mode="decimal" class="w-full" formControlName="importe_minimo" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        El importe mínimo es obligatorio
+                    </small>
+                </div>
 
-            <!-- URL mínima -->
-            <div class="col-span-1 md:col-span-2">
-                <p-floatLabel variant="on">
-                    <input pInputText class="w-full" />
-                    <label>URL mínima</label>
-                </p-floatLabel>
-            </div>
-
-            <!-- Valor descuento -->
-            <div class="col-span-1">
-                <p-floatLabel variant="on">
-                    <input pInputText type="number" class="w-full" />
+                <!-- Valor descuento -->
+                <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Valor descuento</label>
-                </p-floatLabel>
+                    <input pInputText class="w-full" formControlName="valor_desc" />
+                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                        class="text-red-500">
+                        El valor de descuento es obligatorio
+                    </small>
+                </div>
+
+
+                <!-- URL -->
+                <div class="text-sm font-medium mb-1 col-span-1 md:col-span-3">
+                    <label>URL</label>
+                    <input pInputText class="w-full" formControlName="url_min" />
+                </div>
+
+
+
+            </div>
+
+            <!-- Botones -->
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <p-button type="button" label="Cancelar" [text]="true" (click)="closeCuponesForm()"></p-button>
+
+                <p-button type="submit" [label]="isEditingCupon ? 'Actualizar' : 'Crear'"
+                    class="p-button-primary"></p-button>
             </div>
 
         </div>
-
-        <!-- Footer -->
-        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
-            <p-button
-                type="button"
-                label="Cancelar"
-                icon="pi pi-times"
-                severity="secondary"
-                [text]="true"
-            ></p-button>
-
-            <p-button
-                type="button"
-                label="Guardar"
-                icon="pi pi-save"
-            ></p-button>
-        </div>
-
-    </div>
+    </form>
 </p-dialog>

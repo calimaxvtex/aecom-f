@@ -18,6 +18,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { CheckboxModule } from 'primeng/checkbox'; // Para checkboxes de selección múltiple
+import { InputNumberModule } from 'primeng/inputnumber';
 // import { SplitButtonModule } from 'primeng/splitbutton'; // Ya no se usa, filtros ahora son botones
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
@@ -57,6 +58,7 @@ import { CuponItem } from '@/features/cupones/models';
         TooltipModule,  // Para tooltips
         ConfirmDialogModule,  // Para confirmación de cambios
         // Import del ItemsComponent
+        InputNumberModule
     ],
     providers: [MessageService]
 })
@@ -66,8 +68,11 @@ export class CuponesComponent implements OnInit {
     filteredCupones: any[] = [];
     loadingCupones = false;
 
+    //estado de carga cupones
+    savingCupones = false;
+
     // ID de colección seleccionada para pasar al CuponesdComponent
-    selectedCuponId : number | null = null;
+    selectedCuponId: number | null = null;
 
 
     activeTabIndex = 0;
@@ -80,7 +85,7 @@ export class CuponesComponent implements OnInit {
     loadingCupond = false;
     savingCupond = false;
     deletingCupond = false;
-    cupondDataLoaded = false; 
+    cupondDataLoaded = false;
 
     // Datos COLLD
     cupondClientes: any[] = [];
@@ -97,13 +102,17 @@ export class CuponesComponent implements OnInit {
     // Estados del formulario
     CuponesForm!: FormGroup;
     isEditingCupon = false;
-    
+
     // Selección múltiple
     multiSelectMode = false;
     selectedCupondClientes: any[] = [];
     selectedCupondClientesMap: { [key: number]: boolean } = {};
     selectAllCupond = false;
 
+
+    disableModalClose = false;
+
+    minDate = new Date();
     constructor(
         private fb: FormBuilder,
         private cuponService: CuponService,
@@ -118,6 +127,41 @@ export class CuponesComponent implements OnInit {
             document.removeEventListener('click', this.modalClickListener);
             this.modalClickListener = null;
         }
+    }
+    private addModalClickListener(): void {
+        // Remover listener anterior si existe
+        this.removeModalClickListener();
+        // Esperar a que el modal esté completamente renderizado
+        setTimeout(() => {
+            this.modalElement = document.querySelector('.p-dialog') as HTMLElement;
+
+            if (!this.modalElement) return;
+            // Agregar listener al documento
+            this.modalClickListener = (event: Event) => {
+                // Solo procesar si el modal está abierto
+                if (!this.showCuponModal || !this.modalElement) return;
+
+                const target = event.target as HTMLElement;
+
+                // Si el clic fue fuera del modal completo, cerrar
+                if (!this.modalElement.contains(target)) {
+                    this.handleClickOutside();
+                }
+            };
+
+            document.addEventListener('click', this.modalClickListener);
+        }, 200); // Aumentar el delay para asegurar que el DOM esté listo
+    }
+    private handleClickOutside(): void {
+        if (this.disableModalClose) {
+            return; // 👈 NO cerrar modal
+        }
+        // Remover listener inmediatamente
+        this.removeModalClickListener();
+        // Cerrar modal
+        this.closeCuponesForm();
+        // Resetear referencia
+        this.modalElement = null;
     }
 
     ngOnInit(): void {
@@ -195,32 +239,145 @@ export class CuponesComponent implements OnInit {
         });
     }
 
-    saveCupon():void {
-        console.log('hola')
+    saveCupon(): void {
         if (this.CuponesForm.invalid) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Formulario inválido',
+                detail: 'Por favor complete todos los campos requeridos',
+                life: 3000
+            });
             return;
-          }
-        
-          const payload = this.CuponesForm.value;
-          console.log('Cupón a guardar:', payload);
+        }
+        this.savingCupones = true;
+        const formValue = this.CuponesForm.getRawValue();
+        if (this.isEditingCupon && this.cuponSeleccionado) {
+            const updateData = {
+                id_cupon: this.cuponSeleccionado.id_cupon,
+                codigo: formValue.codigo,
+                id_promo: formValue.id_promo,
+                tipo_cupon: formValue.tipo_cupon,
+                descripcion: formValue.descripcion,
+                estado: formValue.estado,
+                url_min: formValue.url_min,
+                fecha_ini: formValue.fecha_ini,
+                fecha_fin: formValue.fecha_fin,
+                limite: formValue.limite,
+                importe_minimo: formValue.importe_minimo,
+                valor_desc: formValue.valor_desc
+            };
+
+            this.cuponService.updateCupon(updateData).subscribe({
+                next: (response) => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Éxito',
+                        detail: 'Cupón actualizado correctamente'
+                    });
+                    this.closeCuponesForm();
+                    this.loadCupones();
+                    this.savingCupones = false;
+                },
+                error: (error) => {
+                    console.error('Error al actualizar el cupón:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: error?.mensaje || 'Error al actualizar el cupón',
+                        life: 5000
+                    });
+                    this.savingCupones = false;
+                }
+            });
+        } else {
+            const createData = {
+                codigo: formValue.codigo,
+                id_promo: formValue.id_promo,
+                tipo_cupon: formValue.tipo_cupon,
+                descripcion: formValue.descripcion,
+                estado: formValue.estado,
+                url_min: formValue.url_min,
+                fecha_ini: formValue.fecha_ini,
+                fecha_fin: formValue.fecha_fin,
+                limite: formValue.limite,
+                importe_minimo: formValue.importe_minimo,
+                valor_desc: formValue.valor_desc
+            };
+
+            this.cuponService.createCuponection(createData).subscribe({
+                next: (response) => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Éxito',
+                        detail: 'Cupón creado correctamente'
+                    });
+                    this.closeCuponesForm();
+                    this.loadCupones();
+                    this.savingCupones = false;
+                },
+                error: (error) => {
+                    console.error('Error al crear cupón:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: error.mensaje || 'Error al crear el cupón',
+                        life: 5000
+                    });
+                    this.savingCupones = false;
+                }
+            });
+        }
+
+        const payload = this.CuponesForm.value;
+        console.log('Cupón a guardar:', payload);
     }
 
-    closeCuponesForm(): void {
-        this.showCuponModal = false;
-        this.CuponesForm.reset();
-        this.cuponSeleccionado = null;
-        this.isEditingCupon = false;
-        
-        // Limpiar event listener y referencias del modal
-        this.removeModalClickListener();
-        this.modalElement = null;
-    }
     // ========== FORMULARIO ==========
-    
+
     openCuponForm(cupon?: CuponItem): void {
+        this.isEditingCupon = !!cupon;
+
+        if (cupon) {
+            this.cuponSeleccionado = cupon;
+
+            this.CuponesForm.patchValue({
+                codigo: cupon.codigo,
+                id_promo: cupon.id_promo,
+                tipo_cupon: cupon.tipo_cupon,
+                descripcion: cupon.descripcion,
+                estado: cupon.estado,
+                url_min: cupon.url_min,
+                fecha_ini: cupon.fecha_ini ? new Date(cupon.fecha_ini) : null,
+                fecha_fin: cupon.fecha_fin ? new Date(cupon.fecha_fin) : null,
+                limite: cupon.limite,
+                importe_minimo: cupon.importe_minimo,
+                valor_desc: cupon.valor_desc
+            });
+            this.CuponesForm.get('codigo')?.disable();
+
+        } else {
+            this.cuponSeleccionado = null;
+
+            this.CuponesForm.reset({
+                codigo: '',
+                id_promo: null,
+                tipo_cupon: 1,
+                descripcion: '',
+                estado: 'A',
+                url_min: 'https://imagenes.calimaxjs.com/img/banners/upload_banner20251028/avatar-mandado-max-optz.png',
+                fecha_ini: null,
+                fecha_fin: null,
+                limite: null,
+                importe_minimo: null,
+                valor_desc: null
+            });
+            this.CuponesForm.get('codigo')?.enable();
+        }
+
         this.showCuponModal = true;
-        //this.addModalClickListener();
+        this.addModalClickListener();
     }
+
     estadosCupon = [
         { label: 'Inicial', value: 'I' },
         { label: 'Activo', value: 'A' },
@@ -228,29 +385,25 @@ export class CuponesComponent implements OnInit {
         { label: 'Cancelado', value: 'C' },
         { label: 'Baja', value: 'B' }
     ];
-      
-    tiposCupon = [
-        { label: 'Monto fijo', value: 1 },
-        { label: 'Porcentaje', value: 2 }
-    ];
+
 
     initializeForm(): void {
         this.CuponesForm = this.fb.group({
-            codigo: [''],
-            descripcion: [''],
-            estado: ['I'],
-            fecha_ini: [null],
-            fecha_fin: [null],
-            id_promo: [null],
-            limite: [null],
-            tipo_cupon: [null],
-            importe_minimo: [null],
-            url_min: [''],
-            valor_desc: [null]
-          });
+            codigo: [String, [Validators.required]],
+            descripcion: [String, [Validators.required]],
+            estado: ['A', [Validators.required]],
+            fecha_ini: [Validators.required],
+            fecha_fin: [Validators.required],
+            id_promo: [Number, [Validators.required]],
+            limite: [Number, [Validators.required]],
+            tipo_cupon: [Number, [Validators.required]],
+            importe_minimo: [Number, [Validators.required]],
+            url_min: [String, [Validators.required]],
+            valor_desc: [Number, [Validators.required]]
+        });
     }
-      
-      
+
+
 
     /*onCuponSelect(event: any): void {
         const nuevoCupon = event.data;
@@ -279,39 +432,39 @@ export class CuponesComponent implements OnInit {
         }
     }*/
     onCuponSelect(event: any): void {
-    const nuevoCupon = event.data;
+        const nuevoCupon = event.data;
 
-    const cuponCambiado =
-        this.cuponSeleccionado?.id_cupon !== nuevoCupon?.id_cupon;
+        const cuponCambiado =
+            this.cuponSeleccionado?.id_cupon !== nuevoCupon?.id_cupon;
 
-    this.cuponSeleccionado = nuevoCupon;
-    this.selectedCuponId = nuevoCupon?.id_cupon || null;
+        this.cuponSeleccionado = nuevoCupon;
+        this.selectedCuponId = nuevoCupon?.id_cupon || null;
 
-    if (cuponCambiado) {
-        this.cupondDataLoaded = false;
-        this.cupondClientes = [];
-        this.filteredCuponClientes = [];
+        if (cuponCambiado) {
+            this.cupondDataLoaded = false;
+            this.cupondClientes = [];
+            this.filteredCuponClientes = [];
 
-        this.multiSelectMode = false;
-        this.selectedCupondClientes = [];
-        this.selectedCupondClientesMap = {};
-        this.selectAllCupond = false;
+            this.multiSelectMode = false;
+            this.selectedCupondClientes = [];
+            this.selectedCupondClientesMap = {};
+            this.selectAllCupond = false;
 
-        /*if (this.activeTabIndex === 1) {
-            this.cargarClientesPorCupon();
-        }*/
-        // Cambiar al tab de Items
-        //this.activeTabIndex = 1;
+            /*if (this.activeTabIndex === 1) {
+                this.cargarClientesPorCupon();
+            }*/
+            // Cambiar al tab de Items
+            //this.activeTabIndex = 1;
 
-        // Forzar carga inmediata si es necesario
-        if (!this.cupondDataLoaded || cuponCambiado) {
-            this.cargarClientesPorCupon();
+            // Forzar carga inmediata si es necesario
+            if (!this.cupondDataLoaded || cuponCambiado) {
+                this.cargarClientesPorCupon();
+            }
         }
     }
-    }
 
 
-    onCuponDoubleClick(cupon: CuponItem){
+    onCuponDoubleClick(cupon: CuponItem) {
         const cuponCambiado = this.cuponSeleccionado?.id_cupon !== cupon.id_cupon;
 
         this.cuponSeleccionado = cupon;
@@ -338,7 +491,7 @@ export class CuponesComponent implements OnInit {
             this.cargarClientesPorCupon();
         }
     }
-    
+
 
     onGlobalFilter(table: any, event: Event): void {
         const input = event.target as HTMLInputElement;
@@ -347,7 +500,7 @@ export class CuponesComponent implements OnInit {
 
     onTabClick(tabIndex: number): void {
         this.activeTabIndex = tabIndex;
-    
+
         // Tab 1 = Clientes del cupón
         if (tabIndex === 1) {
             if (!this.cuponSeleccionado) {
@@ -359,18 +512,18 @@ export class CuponesComponent implements OnInit {
                 });
                 return;
             }
-    
+
             if (!this.cupondDataLoaded) {
                 this.cargarClientesPorCupon();
             }
         }
     }
 
-     // ✅ MÉTODO PÚBLICO PARA FORZAR RECARGA MANUAL
-     refreshCupondData(): void {
+    // ✅ MÉTODO PÚBLICO PARA FORZAR RECARGA MANUAL
+    refreshCupondData(): void {
         if (this.cuponSeleccionado) {
-            this.loadingCupond = true; 
-            this.cupondDataLoaded = false; 
+            this.loadingCupond = true;
+            this.cupondDataLoaded = false;
 
             // Resetear selección múltiple
             this.multiSelectMode = false;
@@ -389,22 +542,22 @@ export class CuponesComponent implements OnInit {
             });
         }
     }
-    
+
     cargarClientesPorCupon(): void {
         console.log('Cargando clientes para cupón:', this.cuponSeleccionado?.id_cupon);
 
         if (!this.cuponSeleccionado?.id_cupon) {
             return;
         }
-    
+
         this.loadingCupond = true;
         this.cupondDataLoaded = false;
-    
+
         this.cupondService.getClientesPorCupon(this.cuponSeleccionado.id_cupon)
             .subscribe({
                 next: (response) => {
                     const responseData = Array.isArray(response) ? response[0] : response;
-    
+
                     if (
                         responseData &&
                         responseData.statuscode === 200 &&
@@ -416,16 +569,16 @@ export class CuponesComponent implements OnInit {
                         this.cupondClientes = [];
                         this.filteredCuponClientes = [];
                     }
-    
+
                     this.cupondDataLoaded = true;
                     this.loadingCupond = false;
                 },
                 error: (error) => {
                     console.error('Error al cargar clientes del cupón:', error);
-    
+
                     this.loadingCupond = false;
                     this.cupondDataLoaded = true;
-    
+
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
@@ -439,38 +592,38 @@ export class CuponesComponent implements OnInit {
     getEstadoLabel(estado: string): string {
         return estado === 'A' ? 'Activo' : 'Inactivo';
     }
-    
+
     getEstadoSeverity(estado: string): 'success' | 'danger' {
         return estado === 'A' ? 'success' : 'danger';
     }
 
     getEstadoLabelC(estado: string): string {
         switch (estado) {
-          case 'I': return 'Creado';
-          case 'A': return 'Activado';
-          case 'R': return 'Utilizado';
-          case 'C': return 'Cancelado';
-          case 'B': return 'Surtido';
-          default: return 'Desconocido';
+            case 'I': return 'Creado';
+            case 'A': return 'Activado';
+            case 'R': return 'Utilizado';
+            case 'C': return 'Cancelado';
+            case 'B': return 'Surtido';
+            default: return 'Desconocido';
         }
-      }
-      
+    }
+
     getEstadoSeverityC(estado: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
         switch (estado) {
-          case 'I': return 'info';
-          case 'A': return 'success';
-          case 'R': return 'secondary';
-          case 'C': return 'danger';
-          case 'B': return 'warn';
-          default: return 'info';
+            case 'I': return 'info';
+            case 'A': return 'success';
+            case 'R': return 'secondary';
+            case 'C': return 'danger';
+            case 'B': return 'warn';
+            default: return 'info';
         }
-      }
+    }
 
     // ========== TOGGLE ESTADO ==========
-    
+
     toggleEstado(cupon: CuponItem): void {
         const nuevoEstado = cupon.estado === 'A' ? 'B' : 'A';
-        
+
         if (nuevoEstado === 'B') {
             this.confirmMessage = `¿Está seguro que desea cambiar el estado del cupón "${cupon.codigo}"?`;
             this.confirmHeader = 'Confirmar desactivación';
@@ -483,15 +636,15 @@ export class CuponesComponent implements OnInit {
 
     private procesarCambioEstado(cupon: CuponItem, nuevoEstado: 'A' | 'B'): void {
         const estadoAnterior = cupon.estado;
-        
+
         cupon.estado = nuevoEstado;
-        
+
         const body = {
             id_cupon: cupon.id_cupon,
             estado: nuevoEstado
         };
-        console.log('Bodyy: ',body);
-        
+        console.log('Bodyy: ', body);
+
         this.cuponService.updateCupon(body).subscribe({
             next: () => {
                 this.messageService.add({
@@ -502,7 +655,7 @@ export class CuponesComponent implements OnInit {
             },
             error: (error) => {
                 cupon.estado = estadoAnterior;
-                
+
                 console.error('Error al cambiar estado:', error);
                 this.messageService.add({
                     severity: 'error',
@@ -513,8 +666,8 @@ export class CuponesComponent implements OnInit {
             }
         });
     }
-      
-    
+
+
     toggleState() {
         const estadoActual = this.CuponesForm.get('estado')?.value;
         this.CuponesForm.patchValue({
@@ -528,7 +681,7 @@ export class CuponesComponent implements OnInit {
         apPaterno?: string | null,
         apMaterno?: string | null
     ): string {
-    
+
         const partes = [nombre, apPaterno, apMaterno]
             .filter(p => p && p.trim() !== '')
             .map(p =>
@@ -540,27 +693,27 @@ export class CuponesComponent implements OnInit {
                     )
                     .join(' ')
             );
-    
+
         return partes.join(' ');
     }
 
     formatDate(fecha: string | Date | null): string {
         if (!fecha) {
-          return '';
+            return '';
         }
-      
+
         const date = new Date(fecha);
-      
+
         if (isNaN(date.getTime())) {
-          return '';
+            return '';
         }
-      
+
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
-      
+
         return `${day}/${month}/${year}`;
-      }
+    }
 
     // ========== CONFIRMACIONES ==========
 
@@ -573,10 +726,17 @@ export class CuponesComponent implements OnInit {
 
     cancelarConfirmacion(): void {
         this.showConfirmDialog = false;
-        this.confirmMessage = '';
-        this.confirmHeader = '';
         this.accionConfirmada = null;
     }
-      
 
+    closeCuponesForm(): void {
+        this.showCuponModal = false;
+    }
+
+    onCuponModalHide(): void {
+        this.CuponesForm.reset();
+        this.cuponSeleccionado = null;
+        this.isEditingCupon = false;
+        this.modalElement = null;
+    }
 }

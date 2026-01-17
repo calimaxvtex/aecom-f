@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // PrimeNG Modules (standalone)
 import { TabsModule } from 'primeng/tabs';
 import { TableModule } from 'primeng/table';
-// import { RowReorderModule } from 'primeng/rowreorder'; // Comentado temporalmente
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
@@ -17,16 +16,16 @@ import { InputMaskModule } from 'primeng/inputmask';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { CheckboxModule } from 'primeng/checkbox'; // Para checkboxes de selección múltiple
+import { CheckboxModule } from 'primeng/checkbox'; 
 import { InputNumberModule } from 'primeng/inputnumber';
-// import { SplitButtonModule } from 'primeng/splitbutton'; // Ya no se usa, filtros ahora son botones
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { CuponService } from '@/features/cupones/services/cupones.service';
-import { CupondService } from '@/features/cupones/services/cuponesd.service';
+import { CupondService } from '@/features/cupones/services/cuponesclientes.service';
+import { SessionService } from '@/core/services/session.service';
 import { CuponItem } from '@/features/cupones/models';
 
 @Component({
@@ -40,7 +39,6 @@ import { CuponItem } from '@/features/cupones/models';
         ReactiveFormsModule,
         TabsModule,
         TableModule,
-        // RowReorderModule,  // Para funcionalidades de reordenamiento - comentado temporalmente
         ButtonModule,
         InputTextModule,
         DialogModule,
@@ -52,12 +50,10 @@ import { CuponItem } from '@/features/cupones/models';
         DatePickerModule,
         ToggleSwitchModule,
         FloatLabelModule,
-        CheckboxModule, // Para checkboxes de selección múltiple
-        // SplitButtonModule, // Ya no se usa, filtros ahora son botones
-        CardModule,  // Para las tarjetas de información
-        TooltipModule,  // Para tooltips
-        ConfirmDialogModule,  // Para confirmación de cambios
-        // Import del ItemsComponent
+        CheckboxModule, 
+        CardModule,  
+        TooltipModule,  
+        ConfirmDialogModule,  
         InputNumberModule
     ],
     providers: [MessageService]
@@ -67,6 +63,15 @@ export class CuponesComponent implements OnInit {
     cupones: any[] = [];
     filteredCupones: any[] = [];
     loadingCupones = false;
+
+    // Filtros
+    estadoFiltro: string = 'A';
+    estadoFiltroSeleccionado: string = 'A';
+    estadoOptions: { label: string; value: string }[] = [
+        { label: 'Activos', value: 'A' },
+        { label: 'Inactivos', value: 'R' },
+        { label: 'Todos', value: '' }
+    ];
 
     //estado de carga cupones
     savingCupones = false;
@@ -109,15 +114,28 @@ export class CuponesComponent implements OnInit {
     selectedCupondClientesMap: { [key: number]: boolean } = {};
     selectAllCupond = false;
 
-
     disableModalClose = false;
-
     minDate = new Date();
+
+    // Edición inline
+    editingCell: string | null = null;
+    originalValue: any = null;
+    hasChanges = false;
+
+
+    editingField: string | null = null;
+    editingCupon: CuponItem | null = null;
+
+    // Control de estado temporal del ToggleSwitch
+    toggleStates: { [key: string]: boolean } = {};
+
     constructor(
         private fb: FormBuilder,
         private cuponService: CuponService,
         private cupondService: CupondService,
-        private messageService: MessageService
+        private sessionService: SessionService,
+        private messageService: MessageService,
+        private cdr: ChangeDetectorRef,
     ) {
         this.initializeForm();
     }
@@ -166,6 +184,7 @@ export class CuponesComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadCupones();
+        this.toggleValue();
     }
 
     ngOnDestroy() {
@@ -188,6 +207,17 @@ export class CuponesComponent implements OnInit {
                 if (Array.isArray(data)) {
                     this.cupones = data;
                     this.filteredCupones = [...data];
+
+                     // Aplicar filtro de estado en el frontend
+                     this.filterCpByState();
+                     // Mensaje de carga exitosa
+                     const stateText = this.estadoFiltro === 'A' ? 'activos' : this.estadoFiltro === 'R' ? 'inactivos' : 'todos';
+                     this.messageService.add({
+                         severity: 'success',
+                         summary: 'Datos Cargados',
+                         detail: `${this.cupones.length} cupones totales, mostrando ${this.filteredCupones.length} ${stateText}.`,
+                         life: 3000
+                     });
                 } else {
                     this.cupones = [];
                     this.filteredCupones = [];
@@ -239,6 +269,70 @@ export class CuponesComponent implements OnInit {
         });
     }
 
+    // ========== MÉTODOS DE UI ==========
+
+    onGlobalFilter(table: any, event: Event): void {
+        const input = event.target as HTMLInputElement;
+        table.filterGlobal(input.value, 'contains');
+    }
+    
+    filterCpByState(): void {
+        if (this.estadoFiltro === '') {
+            // Mostrar todas las sucursales
+            this.filteredCupones = [...this.cupones];
+        } else {
+            // Filtrar por estado específico
+            this.filteredCupones = this.cupones.filter(cupones =>
+                cupones.estado === this.estadoFiltro
+            );
+        }
+    }
+
+    onEstadoFiltroClick(estadoValue: string): void {
+        // Si se hace click en el mismo botón, resetear el filtro
+        if (this.estadoFiltroSeleccionado === estadoValue) {
+            this.estadoFiltroSeleccionado = 'A';
+            this.estadoFiltro = 'A';
+        } else {
+            // Cambiar al nuevo filtro
+            this.estadoFiltroSeleccionado = estadoValue;
+            this.estadoFiltro = estadoValue;
+        }
+        const stateText = this.estadoFiltro === 'A' ? 'Activos' : this.estadoFiltro === 'R' ? 'Inactivos' : 'Todos';
+        // Aplicar filtro
+        if (this.cupones.length > 0) {
+            // Forzar detección de cambios antes de filtrar
+            this.cdr.detectChanges();
+            this.filterCpByState();
+            const mensaje = estadoValue === this.estadoFiltroSeleccionado
+            ? `Filtro aplicado: ${stateText}`
+            : `Filtro reseteado a: Activos`;
+            
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Filtro Aplicado',
+                detail: mensaje,
+                life: 1500
+            });
+        } else {
+            if (this.cuponSeleccionado) {
+                this.loadCupones();
+            }
+        }
+    }
+
+    private toggleValue(): void {
+        // Toggle → estado ('A' | 'R')
+        this.CuponesForm.get('estadoToggle')?.valueChanges.subscribe(value => {
+            this.CuponesForm.get('estado')?.setValue(value ? 'A' : 'R', { emitEvent: false });
+        });
+
+        // estado → Toggle (modo editar)
+        this.CuponesForm.get('estado')?.valueChanges.subscribe(value => {
+            this.CuponesForm.get('estadoToggle')?.setValue(value === 'A', { emitEvent: false });
+        });
+    }
+
     saveCupon(): void {
         if (this.CuponesForm.invalid) {
             this.messageService.add({
@@ -260,12 +354,13 @@ export class CuponesComponent implements OnInit {
                 descripcion: formValue.descripcion,
                 estado: formValue.estado,
                 url_min: formValue.url_min,
-                fecha_ini: formValue.fecha_ini,
-                fecha_fin: formValue.fecha_fin,
+                fecha_ini: this.normalizeDateOnly(formValue.fecha_ini),
+                fecha_fin: this.normalizeDateOnly(formValue.fecha_fin),
                 limite: formValue.limite,
                 importe_minimo: formValue.importe_minimo,
                 valor_desc: formValue.valor_desc
             };
+            console.log('Datos a actualizar:' , updateData)
 
             this.cuponService.updateCupon(updateData).subscribe({
                 next: (response) => {
@@ -297,8 +392,8 @@ export class CuponesComponent implements OnInit {
                 descripcion: formValue.descripcion,
                 estado: formValue.estado,
                 url_min: formValue.url_min,
-                fecha_ini: formValue.fecha_ini,
-                fecha_fin: formValue.fecha_fin,
+                fecha_ini: this.normalizeDateOnlyRequired(formValue.fecha_ini),
+                fecha_fin: this.normalizeDateOnlyRequired(formValue.fecha_fin),
                 limite: formValue.limite,
                 importe_minimo: formValue.importe_minimo,
                 valor_desc: formValue.valor_desc
@@ -381,7 +476,7 @@ export class CuponesComponent implements OnInit {
     estadosCupon = [
         { label: 'Inicial', value: 'I' },
         { label: 'Activo', value: 'A' },
-        { label: 'Utilizado', value: 'R' },
+        { label: 'Aplicado', value: 'R' },
         { label: 'Cancelado', value: 'C' },
         { label: 'Baja', value: 'B' }
     ];
@@ -391,6 +486,7 @@ export class CuponesComponent implements OnInit {
         this.CuponesForm = this.fb.group({
             codigo: [String, [Validators.required]],
             descripcion: [String, [Validators.required]],
+            estadoToggle: [true],
             estado: ['A', [Validators.required]],
             fecha_ini: [Validators.required],
             fecha_fin: [Validators.required],
@@ -490,12 +586,6 @@ export class CuponesComponent implements OnInit {
         if (!this.cupondDataLoaded || cuponCambiado) {
             this.cargarClientesPorCupon();
         }
-    }
-
-
-    onGlobalFilter(table: any, event: Event): void {
-        const input = event.target as HTMLInputElement;
-        table.filterGlobal(input.value, 'contains');
     }
 
     onTabClick(tabIndex: number): void {
@@ -601,7 +691,7 @@ export class CuponesComponent implements OnInit {
         switch (estado) {
             case 'I': return 'Creado';
             case 'A': return 'Activado';
-            case 'R': return 'Utilizado';
+            case 'R': return 'Aplicado';
             case 'C': return 'Cancelado';
             case 'B': return 'Surtido';
             default: return 'Desconocido';
@@ -622,9 +712,9 @@ export class CuponesComponent implements OnInit {
     // ========== TOGGLE ESTADO ==========
 
     toggleEstado(cupon: CuponItem): void {
-        const nuevoEstado = cupon.estado === 'A' ? 'B' : 'A';
+        const nuevoEstado = cupon.estado === 'A' ? 'R' : 'A';
 
-        if (nuevoEstado === 'B') {
+        if (nuevoEstado === 'R') {
             this.confirmMessage = `¿Está seguro que desea cambiar el estado del cupón "${cupon.codigo}"?`;
             this.confirmHeader = 'Confirmar desactivación';
             this.accionConfirmada = () => this.procesarCambioEstado(cupon, nuevoEstado);
@@ -634,7 +724,7 @@ export class CuponesComponent implements OnInit {
         }
     }
 
-    private procesarCambioEstado(cupon: CuponItem, nuevoEstado: 'A' | 'B'): void {
+    private procesarCambioEstado(cupon: CuponItem, nuevoEstado: 'A' | 'R'): void {
         const estadoAnterior = cupon.estado;
 
         cupon.estado = nuevoEstado;
@@ -671,7 +761,7 @@ export class CuponesComponent implements OnInit {
     toggleState() {
         const estadoActual = this.CuponesForm.get('estado')?.value;
         this.CuponesForm.patchValue({
-            estado: estadoActual === 'A' ? 'B' : 'A'
+            estado: estadoActual === 'A' ? 'R' : 'A'
         });
         this.CuponesForm.markAsDirty();
     }
@@ -738,5 +828,127 @@ export class CuponesComponent implements OnInit {
         this.cuponSeleccionado = null;
         this.isEditingCupon = false;
         this.modalElement = null;
+    }
+
+    editInlineCupon(cupon: CuponItem, field: string): void {
+        this.editingCell = cupon.id_cupon + '_' + field;
+        this.editingField = field;
+        this.editingCupon = cupon;
+        this.originalValue = (cupon as any)[field];
+    }
+
+    cancelInlineEdit(): void {
+        if (this.editingCupon && this.editingField !== null) {
+            (this.editingCupon as any)[this.editingField] = this.originalValue;
+        }
+    
+        this.editingCell = null;
+        this.editingField = null;
+        this.editingCupon = null;
+        this.originalValue = null;
+    }
+    
+
+    saveInlineCupon(cupon: CuponItem, field: string): void {
+        if ((cupon as any)[field] === this.originalValue) {
+            this.cancelInlineEdit();
+            return;
+        }
+        console.log('intentando guardar...')
+        const sessionBase = this.sessionService.getApiPayloadBase();
+
+        this.cuponService.updateCupon({
+            id_cupon: cupon.id_cupon,
+            [field]: (cupon as any)[field],
+            ...sessionBase
+        }).subscribe({
+            next: (response) => {
+                const responseData = Array.isArray(response) ? response[0] : response;
+
+                if (responseData && responseData.statuscode === 200) {
+                    this.editingCell = null;
+                    this.originalValue = null;
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Campo Actualizado',
+                        detail: `Campo ${field} actualizado correctamente`
+                    });
+                } else {
+                    // Revertir el cambio local
+                    (cupon as any)[field] = this.originalValue;
+                    this.editingCell = null;
+                    this.originalValue = null;
+
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: (responseData && responseData.mensaje) || 'Error al actualizar el campo',
+                        life: 5000
+                    });
+                }
+            },
+            error: (error) => {
+                console.error('Error al actualizar campo:', error);
+
+                // Revertir el cambio local
+                (cupon as any)[field] = this.originalValue;
+                this.editingCell = null;
+                this.originalValue = null;
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error?.mensaje || 'Error al actualizar',
+                    life: 5000
+                });
+            }
+        });
+
+    }
+
+    isInlineSaveDisabled(value: any): boolean {
+        return value === null || value === undefined || value.toString().trim() === '';
+    }
+
+    normalizeDateOnly(date: Date | string | undefined): string | undefined {
+        if (!date) return undefined;
+    
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString().split('T')[0];
+    }
+
+    normalizeDateOnlyRequired(date: Date | string): string {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().split('T')[0];
+    }
+    
+    getCollectionToggleState(cupon: CuponItem): boolean {
+        // Usar el estado temporal si existe, sino usar el estado real
+        const tempState = this.toggleStates[cupon.id_cupon];
+        return tempState !== undefined ? tempState : cupon.estado === 'A';
+    }
+    onToggleSwitchChange(isChecked: boolean, cupon: CuponItem): void {
+       
+
+        const valorActual = cupon.estado;
+        const nuevoEstado = isChecked ? 'A' : 'R';
+
+        // Si el valor no cambió, no hacer nada
+        if ((nuevoEstado === 'A' && valorActual === 'A') || (nuevoEstado === 'R' && valorActual === 'R')) {
+            return;
+        }
+
+        // Para activación, hacer el cambio directamente
+        if (nuevoEstado === 'A') {
+            this.procesarCambioEstado(cupon, 'A');
+            return;
+        } else {
+            delete this.toggleStates[cupon.id_cupon];
+            this.procesarCambioEstado(cupon, 'R');
+        }
+
     }
 }

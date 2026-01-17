@@ -3,7 +3,7 @@ export interface CuponItem {
     id_cupon: number,
     codigo: string,
     descripcion: string,
-    estado: 'A'| 'B'|'I',
+    estado: 'A'| 'R',
     fecha_ini: string,
     fecha_fin: string,
     id_promo: number,
@@ -40,7 +40,7 @@ export interface CuponSingleResponse {
 export interface CreateCuponRequest {
     codigo: string,
     descripcion: string,
-    estado: 'A'| 'B'|'I',
+    estado: 'A'| 'R',
     fecha_ini: string,
     fecha_fin: string,
     id_promo: number,

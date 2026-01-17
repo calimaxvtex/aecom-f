@@ -42,21 +42,22 @@
                                 <input pInputText type="text" (input)="onGlobalFilter(dtCupon, $event)"
                                     placeholder="Buscar cupón..." class="w-full sm:w-80" />
                             </div>
-                            <div class="flex gap-2 items-center">
-                                <!-- Botones de filtro por estado
+                            <div class="flex gap-1 items-center">
+                                <!-- Botones de filtro por estado -->
                                 <div class="flex gap-1 mr-4">
-                                    <button *ngFor="let estado of estadoOptions" (click)="onEstadoFiltroClick(estado.value)" pButton
-                                        raised
+                                    <button *ngFor="let estado of estadoOptions"
+                                        (click)="onEstadoFiltroClick(estado.value)" pButton raised
                                         [class]="estadoFiltroSeleccionado === estado.value ? 'p-button-success compact-filter-button' : 'p-button-outlined compact-filter-button'"
                                         [label]="estado.label" pTooltip="Filtrar por {{ estado.label }}"></button>
-                                </div> -->
-                                <!-- Separador visual -->
-                                <div class="w-px bg-gray-300 mx-2"></div>
-                                <!-- Botones de acción -->
-                                <button (click)="loadCupones()" pButton raised icon="pi pi-refresh"
-                                    [loading]="loadingCupones" pTooltip="Actualizar" class="p-button-outlined"></button>
-                                <button (click)="openCuponForm()" pButton raised icon="pi pi-plus"
-                                    pTooltip="Agregar cupón" class=""></button>
+                                </div>
+                                <div class="flex gap-1">
+                                    <!-- Botones de acción -->
+                                    <button (click)="loadCupones()" pButton raised icon="pi pi-refresh"
+                                        [loading]="loadingCupones" pTooltip="Actualizar"
+                                        class="p-button-outlined order-0 sm:order-1"></button>
+                                    <button (click)="openCuponForm()" pButton raised icon="pi pi-plus"
+                                        pTooltip="Agregar cupón" class="order-0 sm:order-1"></button>
+                                </div>
                             </div>
                         </div>
                     </ng-template>
@@ -77,17 +78,100 @@
                     </ng-template>
 
                     <!-- BODY -->
+                    <!--(dblclick)="onCuponDoubleClick(cupon)"-->
                     <ng-template #body let-cupon>
                         <tr [ class.bg-blue-50]="cupon === cuponSeleccionado"
                             [class.collection-inactive]="cupon.estado === 'B'"
                             class="cursor-pointer hover:bg-gray-50 transition-colors"
-                            (click)="onCuponSelect({ data: cupon })" (dblclick)="onCuponDoubleClick(cupon)">
+                            (click)="onCuponSelect({ data: cupon })">
                             <td>{{ cupon.id_cupon }}</td>
                             <td>{{ cupon.codigo }}</td>
-                            <td>{{ cupon.descripcion }}</td>
-                            <td>{{ cupon.id_promo }}</td>
-                            <td>{{ cupon.limite }}</td>
-                            <td>{{ cupon.importe_minimo }}</td>
+                            <td>
+                                <span *ngIf="editingCell !== cupon.id_cupon + '_descripcion'"
+                                    (click)="editInlineCupon(cupon, 'descripcion'); $event.stopPropagation()"
+                                    class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                    title="Clic para editar">
+                                    {{ cupon.descripcion }}
+                                </span>
+                                <div *ngIf="editingCell === cupon.id_cupon + '_descripcion'"
+                                    class="inline-edit-container">
+                                    <input pInputText type="text" maxlength="150" [(ngModel)]="cupon.descripcion"
+                                        (keyup.enter)="saveInlineCupon(cupon, 'descripcion')"
+                                        (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
+                                        (focus)="input.select()" autofocus placeholder="Descripción del cupón" />
+                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'descripcion')"
+                                        [disabled]="isInlineSaveDisabled(cupon.descripcion)"
+                                        class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                        pTooltip="Guardar"></button>
+                                    <button pButton icon="pi pi-undo" (click)="cancelInlineEdit()"
+                                        class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                        pTooltip="Deshacer"></button>
+                                </div>
+                            </td>
+                            <td>
+                                <span *ngIf="editingCell !== cupon.id_cupon + '_id_promo'"
+                                    (click)="editInlineCupon(cupon, 'id_promo'); $event.stopPropagation()"
+                                    class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                    title="Clic para editar">
+                                    {{ cupon.id_promo }}
+                                </span>
+                                <div *ngIf="editingCell === cupon.id_cupon + '_id_promo'" class="inline-edit-container">
+                                    <input pInputText type="number" [(ngModel)]="cupon.id_promo"
+                                        (keyup.enter)="saveInlineCupon(cupon, 'id_promo')"
+                                        (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
+                                        (focus)="input.select()" autofocus placeholder="id_promo del cupón" />
+                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'id_promo')"
+                                        [disabled]="isInlineSaveDisabled(cupon.id_promo)"
+                                        class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                        pTooltip="Guardar"></button>
+                                    <button pButton icon="pi pi-undo" (click)="cancelInlineEdit()"
+                                        class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                        pTooltip="Deshacer"></button>
+                                </div>
+                            </td>
+                            <td>
+                                <span *ngIf="editingCell !== cupon.id_cupon + '_limite'"
+                                    (click)="editInlineCupon(cupon, 'limite'); $event.stopPropagation()"
+                                    class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                    title="Clic para editar">
+                                    {{ cupon.limite }}
+                                </span>
+                                <div *ngIf="editingCell === cupon.id_cupon + '_limite'" class="inline-edit-container">
+                                    <input pInputText type="number" [(ngModel)]="cupon.limite" [min]="1"
+                                        (keyup.enter)="saveInlineCupon(cupon, 'limite')"
+                                        (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
+                                        (focus)="input.select()" autofocus placeholder="limite del cupón" />
+                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'limite')"
+                                        [disabled]="isInlineSaveDisabled(cupon.limite)"
+                                        class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                        pTooltip="Guardar"></button>
+                                    <button pButton icon="pi pi-undo" (click)="cancelInlineEdit()"
+                                        class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                        pTooltip="Deshacer"></button>
+                                </div>
+                            </td>
+                            <td>
+                                <span *ngIf="editingCell !== cupon.id_cupon + '_importe_minimo'"
+                                    (click)="editInlineCupon(cupon, 'importe_minimo'); $event.stopPropagation()"
+                                    class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                                    title="Clic para editar">
+                                    {{ cupon.importe_minimo }}
+                                </span>
+                                <div *ngIf="editingCell === cupon.id_cupon + '_importe_minimo'"
+                                    class="inline-edit-container">
+                                    <input pInputText type="number" [(ngModel)]="cupon.importe_minimo" [min]="1"
+                                        (keyup.enter)="saveInlineCupon(cupon, 'importe_minimo')"
+                                        (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
+                                        (focus)="input.select()" autofocus placeholder="Importe mínimo del cupón" />
+                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'limite')"
+                                        [disabled]="isInlineSaveDisabled(cupon.importe_minimo)"
+                                        class="p-button-sm p-button-success p-button-text inline-action-btn"
+                                        pTooltip="Guardar"></button>
+                                    <button pButton icon="pi pi-undo" (click)="cancelInlineEdit()"
+                                        class="p-button-sm p-button-secondary p-button-text inline-action-btn"
+                                        pTooltip="Deshacer"></button>
+                                </div>
+                            </td>
                             <!--<td>{{ cupon.estado }}</td>-->
                             <!-- Estado - TOGGLE -->
                             <td>
@@ -105,7 +189,7 @@
                                     <button pButton icon="pi pi-pencil" (click)="openCuponForm(cupon)"
                                         class="p-button-sm p-button-text p-button-warning"
                                         pTooltip="Ver o editar cupón"></button>
-                                    <button pButton icon="pi pi-trash"
+                                    <button *ngIf="cupon.estado === 'A'" pButton icon="pi pi-trash"
                                         (click)="eliminarCupon(cupon); $event.stopPropagation()"
                                         class="p-button-sm p-button-text p-button-danger"
                                         pTooltip="Eliminar cupón"></button>
@@ -262,7 +346,7 @@
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>ID Promo</label>
                     <input pInputText type="number" class="w-full" formControlName="id_promo" />
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('id_promo')?.invalid && CuponesForm.get('id_promo')?.touched"
                         class="text-red-500">
                         ID promo es obligatorio
                     </small>
@@ -271,8 +355,8 @@
                 <!-- Tipo cupón -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Tipo cupón</label>
-                    <input pInputText type="number" class="w-full" formControlName="tipo_cupon" [min]="1" [max]="4" />
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <input pInputText type="number" class="w-full" formControlName="tipo_cupon" [min]="1" [max]="3" />
+                    <small *ngIf="CuponesForm.get('tipo_cupon')?.invalid && CuponesForm.get('tipo_cupon')?.touched"
                         class="text-red-500">
                         El tipo de cupón es obligatorio
                     </small>
@@ -284,7 +368,7 @@
                     <label>Descripción</label>
                     <textarea pTextarea rows="3" class="w-full p-inputtextarea resize-none text-sm font-medium"
                         formControlName="descripcion" maxlength="150"></textarea>
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('descripcion')?.invalid && CuponesForm.get('descripcion')?.touched"
                         class="text-red-500">
                         La descripción es obligatoria
                     </small>
@@ -294,9 +378,9 @@
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Fecha inicio</label>
                     <p-datepicker [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full"
-                        (onShow)="disableModalClose = true" (onHide)="disableModalClose = false" [minDate]="minDate"
+                        (onShow)="disableModalClose = true" (onHide)="disableModalClose = false"
                         formControlName="fecha_ini"></p-datepicker>
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('fecha_ini')?.invalid && CuponesForm.get('fecha_ini')?.touched"
                         class="text-red-500">
                         Fecha de inicio es obligatoria
                     </small>
@@ -308,7 +392,7 @@
                     <p-datepicker [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full"
                         (onShow)="disableModalClose = true" (onHide)="disableModalClose = false"
                         formControlName="fecha_fin"></p-datepicker>
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('fecha_fin')?.invalid && CuponesForm.get('fecha_fin')?.touched"
                         class="text-red-500">
                         Fecha de fin es obligatoria
                     </small>
@@ -318,20 +402,27 @@
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <div class="flex flex-col">
                         <div><label>Estado</label></div>
-                        <div><p-tag [value]="CuponesForm.get('estado')?.value === 'A' ? 'Activo' : 'Inactivo'"
+                        <!-- <div><p-tag [value]="CuponesForm.get('estado')?.value === 'A' ? 'Activo' : 'Inactivo'"
                                 [severity]="CuponesForm.get('estado')?.value === 'A' ? 'success' : 'danger'"
                                 (click)="toggleState()"
                                 class="cursor-pointer hover:opacity-80 transition-opacity w-20 h-12"
                                 pTooltip="Presione para cambiar estado"></p-tag>
+                        </div>-->
+                        <!-- Estado -->
+                        <div class="pt-2">
+                            <p-toggleSwitch formControlName="estadoToggle" pTooltip="Inactivo/Activo"
+                                class="status-toggle">
+                            </p-toggleSwitch>
                         </div>
                     </div>
                 </div>
+
 
                 <!-- Límite -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Límite</label>
                     <input pInputText type="number" class="w-full" formControlName="limite" [min]="1" />
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('limite')?.invalid && CuponesForm.get('limite')?.touched"
                         class="text-red-500">
                         El límite es obligatorio
                     </small>
@@ -343,7 +434,8 @@
                     <label>Importe mínimo</label>
                     <!--<input pInputText type="number" class="w-full"  formControlName="importe_minimo"/>-->
                     <p-inputnumber mode="decimal" class="w-full" formControlName="importe_minimo" />
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small
+                        *ngIf="CuponesForm.get('importe_minimo')?.invalid && CuponesForm.get('importe_minimo')?.touched"
                         class="text-red-500">
                         El importe mínimo es obligatorio
                     </small>
@@ -353,7 +445,7 @@
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Valor descuento</label>
                     <input pInputText class="w-full" formControlName="valor_desc" />
-                    <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
+                    <small *ngIf="CuponesForm.get('valor_desc')?.invalid && CuponesForm.get('valor_desc')?.touched"
                         class="text-red-500">
                         El valor de descuento es obligatorio
                     </small>
@@ -372,9 +464,11 @@
 
             <!-- Botones -->
             <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
-                <p-button type="button" label="Cancelar" [text]="true" (click)="closeCuponesForm()"></p-button>
+                <p-button type="button" label="Cancelar" [text]="true" (click)="closeCuponesForm()"
+                    class="p-button-text"></p-button>
 
                 <p-button type="submit" [label]="isEditingCupon ? 'Actualizar' : 'Crear'"
+                    [disabled]=" !CuponesForm.valid || savingCupones || (isEditingCupon && CuponesForm.pristine)"
                     class="p-button-primary"></p-button>
             </div>
 

@@ -229,13 +229,29 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
 
         console.log('🔄 Usuario cambió tipo de componente a:', tipoSeleccionado);
 
+        // Validar que hay página seleccionada
+        if (!this.paginaSeleccionada) {
+            console.warn('⚠️ No hay página seleccionada - no se puede obtener canal');
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Advertencia',
+                detail: 'Debe seleccionar una página primero'
+            });
+            return;
+        }
+
         // ✅ Limpiar lista ANTES de cargar nuevos datos
         this.componentesDisponibles = [];
         this.nuevoComponente.id_ref = 0;
 
+        // ✅ Obtener canal de la página seleccionada
+        const canal = this.paginaSeleccionada.canal;
+        console.log('📋 Canal de la página seleccionada:', canal);
+
         // ✅ Usar PaginaDetService para obtener componentes disponibles por tipo
         // Este servicio usa el endpoint correcto (paginas_det) con el payload especificado
-        this.paginaDetService.getComponentesPorTipo(tipoSeleccionado).subscribe({
+        // Ahora incluye el canal en el payload
+        this.paginaDetService.getComponentesPorTipo(tipoSeleccionado, canal).subscribe({
             next: (response) => {
                 console.log('✅ Componentes obtenidos para tipo', tipoSeleccionado + ':', response.data?.length || 0, 'componentes');
                 console.log('📋 Estructura de respuesta:', response);
@@ -651,9 +667,12 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
             id_ref_original: this.originalValue
         });
 
-        // Cargar componentes disponibles según el tipo
+        // Cargar componentes disponibles según el tipo y canal
         this.componentesDisponiblesInline = [];
-        this.paginaDetService.getComponentesPorTipo(componente.tipo_comp).subscribe({
+        // ✅ Obtener canal del componente (viene de la página asociada)
+        const canal = componente.canal || (this.paginaSeleccionada?.canal);
+        console.log('📋 Canal para edición inline:', canal);
+        this.paginaDetService.getComponentesPorTipo(componente.tipo_comp, canal).subscribe({
             next: (response) => {
                 console.log('✅ Componentes obtenidos para edición inline:', response.data?.length || 0);
 

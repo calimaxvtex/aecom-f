@@ -404,21 +404,27 @@ export class PaginaDetService {
      * Payload: {"action": "SL", "tipo_comp": "[TIPO_COM]", "usr": "[USUARIO]", "id_session": [ID_SESSION]}
      * @param tipo_comp Tipo de componente seleccionado por el usuario (carrusel, categoria, vitrina, etc.)
      */
-    getComponentesPorTipo(tipo_comp: string): Observable<any> {
-        console.log('🔍 Consultando componentes por tipo:', tipo_comp);
+    getComponentesPorTipo(tipo_comp: string, canal?: string): Observable<any> {
+        console.log('🔍 Consultando componentes por tipo:', tipo_comp, 'canal:', canal);
 
         return this.getPaginasDetUrl().pipe(
             switchMap(url => {
                 // ✅ Payload con tipo_comp dinámico según selección del usuario y datos de sesión
-                const payload = {
+                const payload: any = {
                     action: 'SL',
                     tipo_comp: tipo_comp,
                     ...this.getSessionData() // ✅ Usar datos de sesión reales (usr, id_session)
                 };
 
+                // ✅ Agregar canal si está disponible
+                if (canal) {
+                    payload.canal = canal;
+                }
+
                 console.log('📤 Payload enviado:', payload);
                 console.log('🔗 URL destino:', url);
                 console.log('📋 Tipo de componente solicitado:', tipo_comp);
+                console.log('📋 Canal:', canal || 'No especificado');
 
                 return this.http.post<any>(url, payload).pipe(
                     map((response: any) => {

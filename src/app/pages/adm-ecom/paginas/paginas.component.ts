@@ -107,11 +107,11 @@ export class PaginasComponent implements OnInit, OnDestroy {
         porCanal: { WEB: 0, APP: 0 }
     };
 
-    // Filtro por canal (estilo banners)
-    canalFiltroSeleccionado: string = '';
+    // Filtro por canal (estilo banners) - Fijado en APP por defecto
+    canalFiltroSeleccionado: string = 'APP';
     canalesOptions: { label: string; value: string }[] = [
-        { label: 'Web', value: 'WEB' },
-        { label: 'App', value: 'APP' }
+        { label: 'App', value: 'APP' },
+        { label: 'Web', value: 'WEB' }
     ];
 
 

@@ -235,6 +235,33 @@ p-table ::ng-deep .p-datatable-table-container {
     min-width: 100%;
 }
 
+// ===== ESTILOS PARA BOTONES DE FILTRO COMPACTOS (Igual que banners) =====
+
+/* Estilos para botones de filtro compactos */
+:host ::ng-deep .compact-filter-button.p-button {
+    padding: 0.25rem 0.5rem !important;
+    min-height: 1.75rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.25 !important;
+    border-radius: 0.25rem !important;
+}
+
+:host ::ng-deep .compact-filter-button.p-button .p-button-label {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+:host ::ng-deep .compact-filter-button.p-button-success {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+:host ::ng-deep .compact-filter-button.p-button-outlined {
+    background-color: transparent !important;
+    border-color: #d1d5db !important;
+    color: #6b7280 !important;
+}
+
 // ===== ESTILOS PARA SISTEMA DE TABS =====
 
 .p-tabs {

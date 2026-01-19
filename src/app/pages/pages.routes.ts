@@ -108,6 +108,11 @@ export default [
         path: 'adm-ecom/paginas',
         data: { breadcrumb: 'Páginas', proy: 1 },
         loadComponent: () => import('./adm-ecom/paginas/paginas.component').then(c => c.PaginasComponent)
+    },
+    {
+        path: 'adm-ecom/cp',
+        data: { breadcrumb: 'Cobertura sucursales', proy: 1 },
+        loadComponent: () => import('./adm-ecom/cp/cp.component').then(c => c.CpComponent)
     }
     //,    { path: '**', redirectTo: '/notfound' }
 ] as Routes;

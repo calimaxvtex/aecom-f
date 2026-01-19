@@ -1,13 +1,14 @@
 export const environment = {
   production: true,
+  mode: 'production',
 
-  // URLs de la API
+  // URLs de API
   apiUrl: 'https://ec.calimax.digital',
   apiUrlImg: 'https://ec.calimax.digital',
-  //apiUrlImg: 'http://10.10.254.127:3013',
 
   // Configuración de autenticación
-  bypassAuth: false,  // NO bypass en producción - autenticación requerida
+  bypassAuth: false,
+  mockDataEnabled: false,
 
   // Configuración de debug
   debugMode: false,
@@ -21,17 +22,27 @@ export const environment = {
   enableApiMonitor: false,
   enableHttpLogging: false,
 
-  // Configuración de desarrollo
-  mockDataEnabled: false,
+  // Herramientas de desarrollo
   devToolsEnabled: false,
+  errorReportingEnabled: true,
+  performanceMonitoring: true,
+
+  // Configuración específica de producción
+  productionMode: true,
+  allowTestData: false,
+  enableExtraLogging: false,
+
+  // Configuración de caché
+  cacheEnabled: true,
+  cacheTimeout: 1800000, // 30 minutos
 
   // Configuración de timeouts
-  apiTimeout: 15000, // 15 segundos
-  uploadTimeout: 30000, // 30 segundos para uploads
+  apiTimeout: 30000,
+  requestTimeout: 15000,
 
   // Configuración de paginación
   defaultPageSize: 20,
-  maxPageSize: 200,
+  maxPageSize: 100,
 
   // Configuración de validación
   enableFormValidation: true,

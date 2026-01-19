@@ -153,6 +153,10 @@ export class ApiConfigService {
     getPushNotificationCrudUrl(): string {
         return API_URLS.PUSH_NOTIFICATION_CRUD;
     }
+    
+    getCpCrudUrl(): string {
+        return API_URLS.CP_CRUD;
+    }
 
     getPaginasCrudUrl(): string {
         return API_URLS.PAGINAS_CRUD;

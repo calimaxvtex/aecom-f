@@ -149,14 +149,22 @@ export class PaginaDetService {
 
         return this.getPaginasDetUrl().pipe(
             switchMap(url => {
+                // Filtrar cualquier campo adicional que no debería enviarse
+                const { estado, ...paginaDetClean } = paginaDet as any;
+
                 // Payload específico según requerimiento del usuario
-                const payload = {
+                const payload: any = {
                     action: 'IN' as const,
-                    id_pag: paginaDet.id_pag.toString(), // Convertir a string como en el ejemplo
-                    tipo_comp: paginaDet.tipo_comp,
-                    id_ref: paginaDet.id_ref,
+                    id_pag: paginaDetClean.id_pag?.toString() || paginaDet.id_pag.toString(), // Convertir a string como en el ejemplo
+                    tipo_comp: paginaDetClean.tipo_comp || paginaDet.tipo_comp,
+                    id_ref: paginaDetClean.id_ref || paginaDet.id_ref,
                     ...this.getSessionData()
                 };
+
+                // Si viene estado en el request, normalizarlo a número (aunque normalmente no debería venir)
+                if (estado !== undefined && estado !== null) {
+                    payload.estado = (estado === 'A' || estado === 'a' || estado === 1) ? 1 : 0;
+                }
 
                 console.log('📤 Payload para agregar componente a página:', payload);
                 console.log('📤 Payload esperado:');
@@ -223,11 +231,25 @@ export class PaginaDetService {
 
         return this.getPaginasDetUrl().pipe(
             switchMap(url => {
-                const payload = {
+                // Normalizar y filtrar el payload para evitar enviar campos no deseados
+                const { estado, ...paginaDetClean } = paginaDet as any;
+
+                const payload: any = {
                     action: 'UP' as const, // Update según convenciones del proyecto
-                    ...paginaDet,
+                    id_pagd: paginaDet.id_pagd,
                     ...this.getSessionData()
                 };
+
+                // Solo incluir campos válidos si existen
+                if (paginaDetClean.id_pag !== undefined) payload.id_pag = paginaDetClean.id_pag;
+                if (paginaDetClean.tipo_comp !== undefined) payload.tipo_comp = paginaDetClean.tipo_comp;
+                if (paginaDetClean.id_ref !== undefined) payload.id_ref = paginaDetClean.id_ref;
+
+                // Si se necesita actualizar el estado, convertirlo a número
+                if (estado !== undefined && estado !== null) {
+                    // Convertir estado string a número: 'A'/'a' -> 1, otros -> 0
+                    payload.estado = (estado === 'A' || estado === 'a' || estado === 1) ? 1 : 0;
+                }
 
                 console.log('📤 Payload para actualizar detalle de página:', payload);
 

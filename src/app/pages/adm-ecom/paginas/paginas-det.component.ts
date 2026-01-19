@@ -849,4 +849,19 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
         this.componentesDisponiblesInline = [];
     }
 
+    // ========== MÉTODOS DE UTILIDAD ==========
+
+    /**
+     * Verifica si un componente está activo según su estado
+     * Estado activo: 1 (number) o 'A'/'a' (string)
+     * Estado inactivo: 0, null, undefined, 'I', 'i' u otros valores
+     */
+    isComponenteActivo(estado?: number | string): boolean {
+        if (estado === undefined || estado === null) {
+            return false; // Si no hay estado, considerar inactivo
+        }
+        // Verificar si es activo: 1 (number) o 'A'/'a' (string)
+        return estado === '1' || estado === 'A' || estado === 'a';
+    }
+
 }

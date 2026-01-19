@@ -50,7 +50,11 @@
     </ng-template>
 
     <ng-template #body let-componente let-editing="editing" let-ri="rowIndex">
-      <tr [pReorderableRow]="ri">
+      <tr 
+        [pReorderableRow]="ri"
+        [class.componente-inactive]="!isComponenteActivo(componente.estado)"
+        class="cursor-pointer hover:bg-gray-50 transition-colors"
+      >
         <!-- Columna del handle de arrastre -->
         <td class="text-center">
           <div class="drag-handle-container">

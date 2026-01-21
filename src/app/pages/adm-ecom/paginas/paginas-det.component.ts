@@ -482,6 +482,8 @@ export class PaginasDetComponent implements OnInit, OnDestroy, OnChanges {
             componentes.map((item, index) => {
                 item.orden = index + 1;
             });
+
+            this.componentes = componentes;
         }
     }
 

@@ -15,7 +15,6 @@ export const environment = {
   enableLogs: false,
 
   // Configuración de cache
-  cacheEnabled: true,
   cacheExpiryMinutes: 60,
 
   // Configuración de interceptors

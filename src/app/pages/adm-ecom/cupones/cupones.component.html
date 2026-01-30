@@ -32,7 +32,9 @@
                         'id_promo',
                         'limite',
                         'importe_minimo',
-                        'estado'
+                        'estado',
+                        'total_activados',
+                        'total_aplicado'
                     ]" selectionMode="single" [(selection)]="cuponSeleccionado" (onRowSelect)="onCuponSelect($event)">
 
                     <!-- Caption con controles -->
@@ -64,15 +66,15 @@
                     <!-- HEADER -->
                     <ng-template #header>
                         <tr>
-                            <th pSortableColumn="id_cupon">Id <p-sortIcon field="id"></p-sortIcon></th>
-                            <th pSortableColumn="codigo">Código <p-sortIcon field="codigo"></p-sortIcon></th>
-                            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon>
-                            </th>
-                            <th pSortableColumn="id_promo">Id promo <p-sortIcon field="id_promo"></p-sortIcon></th>
-                            <th pSortableColumn="limite">Límite <p-sortIcon field="limite"></p-sortIcon></th>
-                            <th pSortableColumn="importe_minimo">Importe mínimo <p-sortIcon
-                                    field="importe_minimo"></p-sortIcon></th>
-                            <th pSortableColumn="estado">Estado <p-sortIcon field="estado"></p-sortIcon></th>
+                            <th pSortableColumn="id_cupon"><span class="th-content">Id <p-sortIcon field="id"></p-sortIcon></span></th>
+                            <th pSortableColumn="codigo"><span class="th-content">Código <p-sortIcon field="codigo"></p-sortIcon></span></th>
+                            <th pSortableColumn="descripcion"><span class="th-content">Descripción <p-sortIcon field="descripcion"></p-sortIcon></span></th>
+                            <th pSortableColumn="total_activados"><span class="th-content">Activados <p-sortIcon field="total_activados"></p-sortIcon></span></th>
+                            <th pSortableColumn="total_aplicado"><span class="th-content">Aplicados <p-sortIcon field="total_aplicado"></p-sortIcon></span></th>
+                            <!--<th pSortableColumn="id_promo">Id promo <p-sortIcon field="id_promo"></p-sortIcon></th>-->
+                            <th pSortableColumn="limite"><span class="th-content">Límite <p-sortIcon field="limite"></p-sortIcon></span></th>
+                            <th pSortableColumn="importe_minimo"><span class="th-content">Importe mínimo <p-sortIcon field="importe_minimo"></p-sortIcon></span></th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </ng-template>
@@ -94,7 +96,7 @@
                                     {{ cupon.descripcion }}
                                 </span>
                                 <div *ngIf="editingCell === cupon.id_cupon + '_descripcion'"
-                                    class="inline-edit-container">
+                                    class="inline-edit-container" #inlineContainer>
                                     <input pInputText type="text" maxlength="150" [(ngModel)]="cupon.descripcion"
                                         (keyup.enter)="saveInlineCupon(cupon, 'descripcion')"
                                         (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
@@ -108,7 +110,9 @@
                                         pTooltip="Deshacer"></button>
                                 </div>
                             </td>
-                            <td>
+                            <td>{{ cupon.total_activados }}</td>
+                            <td>{{ cupon.total_aplicado }}</td>
+                            <!--<td>
                                 <span *ngIf="editingCell !== cupon.id_cupon + '_id_promo'"
                                     (click)="editInlineCupon(cupon, 'id_promo'); $event.stopPropagation()"
                                     class="editable-cell cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors"
@@ -128,7 +132,7 @@
                                         class="p-button-sm p-button-secondary p-button-text inline-action-btn"
                                         pTooltip="Deshacer"></button>
                                 </div>
-                            </td>
+                            </td>-->
                             <td>
                                 <span *ngIf="editingCell !== cupon.id_cupon + '_limite'"
                                     (click)="editInlineCupon(cupon, 'limite'); $event.stopPropagation()"
@@ -136,7 +140,7 @@
                                     title="Clic para editar">
                                     {{ cupon.limite }}
                                 </span>
-                                <div *ngIf="editingCell === cupon.id_cupon + '_limite'" class="inline-edit-container">
+                                <div *ngIf="editingCell === cupon.id_cupon + '_limite'" class="inline-edit-container" #inlineContainer>
                                     <input pInputText type="number" [(ngModel)]="cupon.limite" [min]="1"
                                         (keyup.enter)="saveInlineCupon(cupon, 'limite')"
                                         (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
@@ -158,12 +162,12 @@
                                     {{ cupon.importe_minimo }}
                                 </span>
                                 <div *ngIf="editingCell === cupon.id_cupon + '_importe_minimo'"
-                                    class="inline-edit-container">
+                                    class="inline-edit-container" #inlineContainer>
                                     <input pInputText type="number" [(ngModel)]="cupon.importe_minimo" [min]="1"
                                         (keyup.enter)="saveInlineCupon(cupon, 'importe_minimo')"
                                         (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
                                         (focus)="input.select()" autofocus placeholder="Importe mínimo del cupón" />
-                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'limite')"
+                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'importe_minimo')"
                                         [disabled]="isInlineSaveDisabled(cupon.importe_minimo)"
                                         class="p-button-sm p-button-success p-button-text inline-action-btn"
                                         pTooltip="Guardar"></button>
@@ -432,8 +436,8 @@
                 <!-- Importe mínimo -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Importe mínimo</label>
-                    <!--<input pInputText type="number" class="w-full"  formControlName="importe_minimo"/>-->
-                    <p-inputnumber mode="decimal" class="w-full" formControlName="importe_minimo" />
+                    <input pInputText type="number" class="w-full"  formControlName="importe_minimo"/>
+                    <!--<p-inputnumber mode="decimal" class="w-full" formControlName="importe_minimo" />-->
                     <small
                         *ngIf="CuponesForm.get('importe_minimo')?.invalid && CuponesForm.get('importe_minimo')?.touched"
                         class="text-red-500">

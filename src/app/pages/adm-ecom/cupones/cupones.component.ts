@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -115,7 +115,6 @@ export class CuponesComponent implements OnInit {
     selectAllCupond = false;
 
     disableModalClose = false;
-    minDate = new Date();
 
     // Edición inline
     editingCell: string | null = null;
@@ -139,6 +138,11 @@ export class CuponesComponent implements OnInit {
     ) {
         this.initializeForm();
     }
+    @ViewChild('inlineContainer') inlineContainer!: ElementRef;
+
+    // Event listener para cerrar modal al hacer clic fuera
+    private modalClickListener: ((event: Event) => void) | null = null;
+    private modalElement: HTMLElement | null = null;
 
     private removeModalClickListener(): void {
         if (this.modalClickListener) {
@@ -191,17 +195,11 @@ export class CuponesComponent implements OnInit {
         this.removeModalClickListener();
     }
 
-    // Event listener para cerrar modal al hacer clic fuera
-    private modalClickListener: ((event: Event) => void) | null = null;
-    private modalElement: HTMLElement | null = null;
-
     loadCupones(): void {
         this.loadingCupones = true;
 
         this.cuponService.getAllRecords().subscribe({
             next: (response: any) => {
-                console.log('Respuesta API:', response);
-
                 const data = Array.isArray(response) ? response[0]?.data : response?.data;
 
                 if (Array.isArray(data)) {
@@ -249,7 +247,6 @@ export class CuponesComponent implements OnInit {
     private procesarEliminacionCupon(cupon: CuponItem): void {
         this.cuponService.deleteCupon(cupon.id_cupon).subscribe({
             next: (response: any) => {
-                console.log('Registro eliminado:', response);
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Eliminado',
@@ -268,6 +265,18 @@ export class CuponesComponent implements OnInit {
             }
         });
     }
+
+    @HostListener('document:click', ['$event'])
+    onClickOutside(event: MouseEvent) {
+        if (!this.editingCell) return;
+
+        const clickedInside = this.inlineContainer?.nativeElement.contains(event.target);
+
+        if (!clickedInside) {
+            this.cancelInlineEdit();
+        }
+    }
+
 
     // ========== MÉTODOS DE UI ==========
 
@@ -360,7 +369,6 @@ export class CuponesComponent implements OnInit {
                 importe_minimo: formValue.importe_minimo,
                 valor_desc: formValue.valor_desc
             };
-            console.log('Datos a actualizar:' , updateData)
 
             this.cuponService.updateCupon(updateData).subscribe({
                 next: (response) => {
@@ -424,14 +432,12 @@ export class CuponesComponent implements OnInit {
         }
 
         const payload = this.CuponesForm.value;
-        console.log('Cupón a guardar:', payload);
     }
 
     // ========== FORMULARIO ==========
 
     openCuponForm(cupon?: CuponItem): void {
         this.isEditingCupon = !!cupon;
-
         if (cupon) {
             this.cuponSeleccionado = cupon;
 
@@ -559,35 +565,6 @@ export class CuponesComponent implements OnInit {
         }
     }
 
-
-    onCuponDoubleClick(cupon: CuponItem) {
-        const cuponCambiado = this.cuponSeleccionado?.id_cupon !== cupon.id_cupon;
-
-        this.cuponSeleccionado = cupon;
-        this.selectedCuponId = cupon.id_cupon;
-
-        // ✅ Si cambió la colección, resetear el estado de carga COLLD
-        if (cuponCambiado) {
-            this.cupondDataLoaded = false;
-            this.cupondClientes = [];
-            this.filteredCuponClientes = [];
-
-            // Resetear selección múltiple
-            this.multiSelectMode = false;
-            this.selectedCupondClientes = [];
-            this.selectedCupondClientesMap = {};
-            this.selectAllCupond = false;
-        }
-
-        // Cambiar al tab de Items
-        this.activeTabIndex = 1;
-
-        // Forzar carga inmediata si es necesario
-        if (!this.cupondDataLoaded || cuponCambiado) {
-            this.cargarClientesPorCupon();
-        }
-    }
-
     onTabClick(tabIndex: number): void {
         this.activeTabIndex = tabIndex;
 
@@ -609,7 +586,6 @@ export class CuponesComponent implements OnInit {
         }
     }
 
-    // ✅ MÉTODO PÚBLICO PARA FORZAR RECARGA MANUAL
     refreshCupondData(): void {
         if (this.cuponSeleccionado) {
             this.loadingCupond = true;
@@ -623,7 +599,7 @@ export class CuponesComponent implements OnInit {
 
             this.cargarClientesPorCupon();
         } else {
-            console.warn('⚠️ No hay cupón seleccionado para refrescar');
+            console.warn('No hay cupón seleccionado para refrescar');
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Sin selección',
@@ -634,8 +610,6 @@ export class CuponesComponent implements OnInit {
     }
 
     cargarClientesPorCupon(): void {
-        console.log('Cargando clientes para cupón:', this.cuponSeleccionado?.id_cupon);
-
         if (!this.cuponSeleccionado?.id_cupon) {
             return;
         }
@@ -733,7 +707,6 @@ export class CuponesComponent implements OnInit {
             id_cupon: cupon.id_cupon,
             estado: nuevoEstado
         };
-        console.log('Bodyy: ', body);
 
         this.cuponService.updateCupon(body).subscribe({
             next: () => {
@@ -854,7 +827,6 @@ export class CuponesComponent implements OnInit {
             this.cancelInlineEdit();
             return;
         }
-        console.log('intentando guardar...')
         const sessionBase = this.sessionService.getApiPayloadBase();
 
         this.cuponService.updateCupon({

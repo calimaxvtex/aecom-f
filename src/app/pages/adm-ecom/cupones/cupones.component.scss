@@ -44,40 +44,6 @@
     margin: 0 !important;
 }
 
-/* Estilos para select en edición inline */
-.inline-select .p-select {
-    height: 2rem !important;
-    min-height: 2rem !important;
-    vertical-align: middle !important;
-    display: inline-block !important;
-}
-
-.inline-select .p-select .p-select-label {
-    font-size: 0.875rem !important;
-    line-height: 1.5 !important;
-    padding: 0.125rem 0.5rem !important;
-    vertical-align: middle !important;
-    height: 1.5rem !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-.inline-select .p-select .p-select-dropdown {
-    width: 1.5rem !important;
-    height: 1.5rem !important;
-    vertical-align: middle !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-/* Estilos para el panel del dropdown */
-.inline-select .p-select-panel {
-    min-width: 120px !important;
-    max-width: 200px !important;
-}
-
 /* Ajuste adicional para el contenedor inline */
 .inline-edit-container {
     display: flex !important;
@@ -115,32 +81,6 @@
     background: #a8a8a8;
 }
 
-/* Estilos mejorados para el handle de arrastre */
-.drag-handle-container {
-    padding: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 40px;
-}
-
-.drag-handle {
-    cursor: move !important;
-    color: #6b7280 !important;
-    font-size: 16px !important;
-    padding: 8px !important;
-    border-radius: 4px !important;
-    transition: all 0.2s ease !important;
-    display: inline-block !important;
-    min-width: 20px !important;
-    text-align: center !important;
-}
-
-.drag-handle:hover {
-    color: #3b82f6 !important;
-    background-color: #f3f4f6 !important;
-    transform: scale(1.1) !important;
-}
 
 /* Estilo para la fila mientras se arrastra */
 .p-datatable .p-datatable-tbody > tr.p-highlight {
@@ -671,4 +611,11 @@ textarea[pTextarea] {
     background-color: #f1f5f9 !important;
     border-radius: 6px;
     padding: 0.75rem;
+}
+
+.p-datatable .th-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
 }

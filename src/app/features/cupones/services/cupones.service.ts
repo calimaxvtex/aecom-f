@@ -31,8 +31,6 @@ export class CuponService {
         return this.http.post<CuponResponse>(url, body).pipe(
             map(response => {
                 const responseData = Array.isArray(response) ? response[0] : response;
-                console.log('Esta es la respuesta', responseData)
-
                 if (responseData && responseData.statuscode && responseData.statuscode !== 200) {
                     throw new Error(responseData.mensaje || `Error del servidor: ${responseData.statuscode}`);
                 }
@@ -123,7 +121,7 @@ export class CuponService {
                     // Caso 2: Backend regresa objeto directo
                     responseData = response;
                 } else {
-                    console.warn('⚠️ Respuesta inesperada en update:', response);
+                    console.warn('Respuesta inesperada en update:', response);
                     responseData = null;
                 }
                 // Verificar si hay error del backend

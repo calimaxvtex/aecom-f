@@ -286,7 +286,7 @@ export class CompService {
 
                 console.log('📤 Payload para actualizar componente:', payload);
 
-                        return this.http.post<ComponenteRawArrayResponse>(url, payload).pipe(
+                return this.http.post<ComponenteRawArrayResponse>(url, payload).pipe(
                     map((response: any) => {
                         console.log('✅ === RESPUESTA RECIBIDA DEL BACKEND (ACTUALIZAR) ===');
                         console.log('✅ Respuesta completa SIN PROCESAR:', JSON.stringify(response, null, 2));

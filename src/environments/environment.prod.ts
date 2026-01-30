@@ -13,6 +13,11 @@ export const environment = {
   // Configuración de debug
   debugMode: false,
   enableLogs: false,
+
+  // Configuración de cache
+  cacheExpiryMinutes: 60,
+
+  // Configuración de interceptors
   enableApiMonitor: false,
   enableHttpLogging: false,
 

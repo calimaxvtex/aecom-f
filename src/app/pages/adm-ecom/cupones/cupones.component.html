@@ -82,7 +82,7 @@
                     <!-- BODY -->
                     <!--(dblclick)="onCuponDoubleClick(cupon)"-->
                     <ng-template #body let-cupon>
-                        <tr [ class.bg-blue-50]="cupon === cuponSeleccionado"
+                        <tr [class.bg-blue-50]="cupon === cuponSeleccionado"
                             [class.collection-inactive]="cupon.estado === 'B'"
                             class="cursor-pointer hover:bg-gray-50 transition-colors"
                             (click)="onCuponSelect({ data: cupon })">

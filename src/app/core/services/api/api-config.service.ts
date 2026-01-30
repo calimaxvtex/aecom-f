@@ -158,6 +158,14 @@ export class ApiConfigService {
         return API_URLS.CP_CRUD;
     }
 
+    getPaginasCrudUrl(): string {
+        return API_URLS.PAGINAS_CRUD;
+    }
+
+    getPaginasDetCrudUrl(): string {
+        return API_URLS.PAGINAS_DET_CRUD;
+    }
+
     getCuponCrudUrl(): string {
         return API_URLS.CUPON_CRUD;
     }

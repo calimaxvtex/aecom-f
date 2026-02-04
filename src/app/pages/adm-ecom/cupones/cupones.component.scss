@@ -611,6 +611,7 @@ textarea[pTextarea] {
     background-color: #f1f5f9 !important;
     border-radius: 6px;
     padding: 0.75rem;
+    font-size:small;
 }
 
 .p-datatable .th-content {
@@ -619,3 +620,18 @@ textarea[pTextarea] {
     gap: 0.25rem;
     white-space: nowrap;
 }
+
+.p-inputtext::placeholder {
+    color: #9c9999;
+}
+
+.p-inputtextarea::placeholder {
+    color: #9c9999;
+}  
+
+.estado-tag {
+    width: 80px;       
+    height: 42px;
+    display: flex;
+    justify-content: center;
+}  

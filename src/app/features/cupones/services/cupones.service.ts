@@ -174,7 +174,22 @@ export class CuponService {
                 }));
             })
         );
-    }    /**
+    } 
+    validarIdPromo(idPromo: number): Observable<CuponResponse> {
+        const body: any = {
+          action: 'VLDT',
+          id_promo: idPromo,
+          ...this.getSessionData()
+        };
+      
+        const url = this.apiConfigService.getCuponCrudUrl();
+      
+        return this.http.post<CuponResponse>(url, body).pipe(
+          map(resp => resp),
+          catchError(err => throwError(() => err))
+        );
+      }      
+    /**
      * Método helper para obtener datos de sesión (REGLA CRÍTICA DEL PROYECTO)
      */
     private getSessionData(): { usr?: string | number; id_session?: number } {

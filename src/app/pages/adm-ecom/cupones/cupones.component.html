@@ -389,8 +389,8 @@
                         </small>
 
 
-                        <small *ngIf="CuponesForm.get('id_promo')?.errors?.promoInvalida" class="text-red-500">
-                            {{ CuponesForm.get('id_promo')?.errors?.promoInvalida }}
+                        <small *ngIf="CuponesForm.get('id_promo')?.errors?.['promoInvalida']" class="text-red-500">
+                            {{ CuponesForm.get('id_promo')?.errors?.['promoInvalida'] }}
                         </small>
                     </div>
                 </div>

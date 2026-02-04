@@ -1,6 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, filter, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 // PrimeNG Modules (standalone)
 import { TabsModule } from 'primeng/tabs';
@@ -16,7 +18,7 @@ import { InputMaskModule } from 'primeng/inputmask';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { CheckboxModule } from 'primeng/checkbox'; 
+import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
@@ -50,10 +52,10 @@ import { CuponItem } from '@/features/cupones/models';
         DatePickerModule,
         ToggleSwitchModule,
         FloatLabelModule,
-        CheckboxModule, 
-        CardModule,  
-        TooltipModule,  
-        ConfirmDialogModule,  
+        CheckboxModule,
+        CardModule,
+        TooltipModule,
+        ConfirmDialogModule,
         InputNumberModule
     ],
     providers: [MessageService]
@@ -63,6 +65,7 @@ export class CuponesComponent implements OnInit {
     cupones: any[] = [];
     filteredCupones: any[] = [];
     loadingCupones = false;
+    idPromoOriginal: number | null = null;
 
     // Filtros
     estadoFiltro: string = 'A';
@@ -127,6 +130,8 @@ export class CuponesComponent implements OnInit {
 
     // Control de estado temporal del ToggleSwitch
     toggleStates: { [key: string]: boolean } = {};
+    conteoEstadosBackend: { estado: string; total: number }[] = [];
+    estadoCards: { label: string; value: string; total: number }[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -185,14 +190,69 @@ export class CuponesComponent implements OnInit {
         // Resetear referencia
         this.modalElement = null;
     }
+    private destroy$ = new Subject<void>();
 
     ngOnInit(): void {
         this.loadCupones();
         this.toggleValue();
+        this.setupUppercase();
+        this.initValidacionIdPromo();
+        /*this.CuponesForm.get('id_promo')?.valueChanges
+        .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        filter(val => val && val !== this.idPromoOriginal)
+    )
+        .subscribe(idPromo => {
+        this.validarPromoEnFormulario(idPromo);
+        });*/
+    }
+
+    private initValidacionIdPromo(): void {
+        const control = this.CuponesForm.get('id_promo');
+
+        if (!control) return;
+
+        control.valueChanges
+            .pipe(
+                debounceTime(400),
+                distinctUntilChanged(),
+                filter(val => val && val !== this.idPromoOriginal),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(idPromo => {
+                this.validarPromoEnFormulario(idPromo);
+            });
     }
 
     ngOnDestroy() {
         this.removeModalClickListener();
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    setupUppercase() {
+        this.CuponesForm.get('codigo')?.valueChanges.subscribe(value => {
+            if (value) {
+                this.CuponesForm.get('codigo')?.setValue(
+                    value.toUpperCase(),
+                    { emitEvent: false }
+                );
+            }
+        });
+    }
+    validarPromoEnFormulario(idPromo: number) {
+        this.cuponService.validarIdPromo(idPromo).subscribe(resp => {
+
+            if (resp.statuscode === 200) {
+                this.CuponesForm.get('id_promo')?.setErrors(null);
+            } else {
+                this.CuponesForm.get('id_promo')?.setErrors({
+                    promoInvalida: resp.mensaje
+                });
+            }
+
+        });
     }
 
     loadCupones(): void {
@@ -206,16 +266,16 @@ export class CuponesComponent implements OnInit {
                     this.cupones = data;
                     this.filteredCupones = [...data];
 
-                     // Aplicar filtro de estado en el frontend
-                     this.filterCpByState();
-                     // Mensaje de carga exitosa
-                     const stateText = this.estadoFiltro === 'A' ? 'activos' : this.estadoFiltro === 'R' ? 'inactivos' : 'todos';
-                     this.messageService.add({
-                         severity: 'success',
-                         summary: 'Datos Cargados',
-                         detail: `${this.cupones.length} cupones totales, mostrando ${this.filteredCupones.length} ${stateText}.`,
-                         life: 3000
-                     });
+                    // Aplicar filtro de estado en el frontend
+                    this.filterCpByState();
+                    // Mensaje de carga exitosa
+                    const stateText = this.estadoFiltro === 'A' ? 'activos' : this.estadoFiltro === 'R' ? 'inactivos' : 'todos';
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Datos Cargados',
+                        detail: `${this.cupones.length} cupones totales, mostrando ${this.filteredCupones.length} ${stateText}.`,
+                        life: 3000
+                    });
                 } else {
                     this.cupones = [];
                     this.filteredCupones = [];
@@ -284,7 +344,7 @@ export class CuponesComponent implements OnInit {
         const input = event.target as HTMLInputElement;
         table.filterGlobal(input.value, 'contains');
     }
-    
+
     filterCpByState(): void {
         if (this.estadoFiltro === '') {
             // Mostrar todas las sucursales
@@ -314,9 +374,9 @@ export class CuponesComponent implements OnInit {
             this.cdr.detectChanges();
             this.filterCpByState();
             const mensaje = estadoValue === this.estadoFiltroSeleccionado
-            ? `Filtro aplicado: ${stateText}`
-            : `Filtro reseteado a: Activos`;
-            
+                ? `Filtro aplicado: ${stateText}`
+                : `Filtro reseteado a: Activos`;
+
             this.messageService.add({
                 severity: 'success',
                 summary: 'Filtro Aplicado',
@@ -393,6 +453,7 @@ export class CuponesComponent implements OnInit {
                 }
             });
         } else {
+            this.idPromoOriginal = null;
             const createData = {
                 codigo: formValue.codigo,
                 id_promo: formValue.id_promo,
@@ -440,7 +501,7 @@ export class CuponesComponent implements OnInit {
         this.isEditingCupon = !!cupon;
         if (cupon) {
             this.cuponSeleccionado = cupon;
-
+            this.idPromoOriginal = cupon.id_promo;
             this.CuponesForm.patchValue({
                 codigo: cupon.codigo,
                 id_promo: cupon.id_promo,
@@ -505,34 +566,6 @@ export class CuponesComponent implements OnInit {
         });
     }
 
-
-
-    /*onCuponSelect(event: any): void {
-        const nuevoCupon = event.data;
-
-        console.log('se le dio click a la row')
-    
-        this.cuponSeleccionado = nuevoCupon;
-        this.selectedCuponId = nuevoCupon?.id_cupon || null;
-
-        console.log('id_cupon de la row:',this.selectedCuponId)
-
-        const cuponCambiado = this.cuponSeleccionado?.id_cupon !== nuevoCupon?.id_cupon;
-        
-        console.log('Cupon cambiado:', cuponCambiado)
-
-
-        if (cuponCambiado) {
-            this.cupondDataLoaded = false;
-            this.cupondClientes = [];
-            this.filteredCuponClientes = [];
-
-            this.multiSelectMode = false;
-            this.selectedCupondClientes = [];
-            this.selectedCupondClientesMap = {};
-            this.selectAllCupond = false;
-        }
-    }*/
     onCuponSelect(event: any): void {
         const nuevoCupon = event.data;
 
@@ -551,12 +584,6 @@ export class CuponesComponent implements OnInit {
             this.selectedCupondClientes = [];
             this.selectedCupondClientesMap = {};
             this.selectAllCupond = false;
-
-            /*if (this.activeTabIndex === 1) {
-                this.cargarClientesPorCupon();
-            }*/
-            // Cambiar al tab de Items
-            //this.activeTabIndex = 1;
 
             // Forzar carga inmediata si es necesario
             if (!this.cupondDataLoaded || cuponCambiado) {
@@ -608,6 +635,22 @@ export class CuponesComponent implements OnInit {
             });
         }
     }
+    private construirCardsEstado(): void {
+        // Protección por si el backend no manda nada
+        const conteo = this.conteoEstadosBackend || [];
+
+        this.estadoCards = this.estadosCupon.map(estado => {             
+          const encontrado = conteo.find(
+            c => c.estado === estado.value
+          );
+      
+          return {
+            label: estado.label,
+            value: estado.value,
+            total: encontrado ? encontrado.total : 0
+          };
+        });
+      }      
 
     cargarClientesPorCupon(): void {
         if (!this.cuponSeleccionado?.id_cupon) {
@@ -620,23 +663,20 @@ export class CuponesComponent implements OnInit {
         this.cupondService.getClientesPorCupon(this.cuponSeleccionado.id_cupon)
             .subscribe({
                 next: (response) => {
-                    const responseData = Array.isArray(response) ? response[0] : response;
-
-                    if (
-                        responseData &&
-                        responseData.statuscode === 200 &&
-                        Array.isArray(responseData.data)
-                    ) {
-                        this.cupondClientes = responseData.data;
-                        this.filteredCuponClientes = [...this.cupondClientes];
-                    } else {
-                        this.cupondClientes = [];
-                        this.filteredCuponClientes = [];
-                    }
-
+                    console.log('Response completa:', response);
+                
+                    //Clientes
+                    this.cupondClientes = response.data.clientes || [];
+                    this.filteredCuponClientes = [...this.cupondClientes];
+                
+                    //Conteo por estado
+                    this.conteoEstadosBackend = response.data.conteo_estados || [];
+                    this.construirCardsEstado();
+                
+                    //UI
                     this.cupondDataLoaded = true;
                     this.loadingCupond = false;
-                },
+                },                
                 error: (error) => {
                     console.error('Error al cargar clientes del cupón:', error);
 
@@ -814,13 +854,13 @@ export class CuponesComponent implements OnInit {
         if (this.editingCupon && this.editingField !== null) {
             (this.editingCupon as any)[this.editingField] = this.originalValue;
         }
-    
+
         this.editingCell = null;
         this.editingField = null;
         this.editingCupon = null;
         this.originalValue = null;
     }
-    
+
 
     saveInlineCupon(cupon: CuponItem, field: string): void {
         if ((cupon as any)[field] === this.originalValue) {
@@ -885,25 +925,25 @@ export class CuponesComponent implements OnInit {
 
     normalizeDateOnly(date: Date | string | undefined): string | undefined {
         if (!date) return undefined;
-    
+
         const d = new Date(date);
         d.setHours(0, 0, 0, 0);
         return d.toISOString().split('T')[0];
     }
 
     normalizeDateOnlyRequired(date: Date | string): string {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString().split('T')[0];
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString().split('T')[0];
     }
-    
+
     getCollectionToggleState(cupon: CuponItem): boolean {
         // Usar el estado temporal si existe, sino usar el estado real
         const tempState = this.toggleStates[cupon.id_cupon];
         return tempState !== undefined ? tempState : cupon.estado === 'A';
     }
+    
     onToggleSwitchChange(isChecked: boolean, cupon: CuponItem): void {
-       
 
         const valorActual = cupon.estado;
         const nuevoEstado = isChecked ? 'A' : 'R';

@@ -94,14 +94,22 @@ export interface CupondRawResponse {
     mensaje: string;
     data: string; // ← El backend devuelve data como string JSON
 }
-
-// Respuesta procesada (data como array ya parseado)
 export interface CupondResponse {
     statuscode: number;
     mensaje: string;
-    data: CupondItem[]; // ← Después del parsing, data es array
+    data: CupondData;
+  }
+  
+// Respuesta procesada (data como array ya parseado)
+export interface CupondData {
+    clientes: CupondItem[];
+    conteo_estados: ConteoEstado[];
+  }
+  
+export interface ConteoEstado {
+    estado: string;
+    total: number;
 }
-
 // Array de respuestas crudas del backend
 export interface CupondRawArrayResponse extends Array<
 CupondArrayResponse

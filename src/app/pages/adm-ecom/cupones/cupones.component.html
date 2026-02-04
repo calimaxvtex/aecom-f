@@ -66,14 +66,21 @@
                     <!-- HEADER -->
                     <ng-template #header>
                         <tr>
-                            <th pSortableColumn="id_cupon"><span class="th-content">Id <p-sortIcon field="id"></p-sortIcon></span></th>
-                            <th pSortableColumn="codigo"><span class="th-content">Código <p-sortIcon field="codigo"></p-sortIcon></span></th>
-                            <th pSortableColumn="descripcion"><span class="th-content">Descripción <p-sortIcon field="descripcion"></p-sortIcon></span></th>
-                            <th pSortableColumn="total_activados"><span class="th-content">Activados <p-sortIcon field="total_activados"></p-sortIcon></span></th>
-                            <th pSortableColumn="total_aplicado"><span class="th-content">Aplicados <p-sortIcon field="total_aplicado"></p-sortIcon></span></th>
+                            <th pSortableColumn="id_cupon"><span class="th-content">Id <p-sortIcon
+                                        field="id"></p-sortIcon></span></th>
+                            <th pSortableColumn="codigo"><span class="th-content">Código <p-sortIcon
+                                        field="codigo"></p-sortIcon></span></th>
+                            <th pSortableColumn="descripcion"><span class="th-content">Descripción <p-sortIcon
+                                        field="descripcion"></p-sortIcon></span></th>
+                            <th pSortableColumn="total_activados"><span class="th-content">Activados <p-sortIcon
+                                        field="total_activados"></p-sortIcon></span></th>
+                            <th pSortableColumn="total_aplicado"><span class="th-content">Aplicados <p-sortIcon
+                                        field="total_aplicado"></p-sortIcon></span></th>
                             <!--<th pSortableColumn="id_promo">Id promo <p-sortIcon field="id_promo"></p-sortIcon></th>-->
-                            <th pSortableColumn="limite"><span class="th-content">Límite <p-sortIcon field="limite"></p-sortIcon></span></th>
-                            <th pSortableColumn="importe_minimo"><span class="th-content">Importe mínimo <p-sortIcon field="importe_minimo"></p-sortIcon></span></th>
+                            <th pSortableColumn="limite"><span class="th-content">Límite de uso <p-sortIcon
+                                        field="limite"></p-sortIcon></span></th>
+                            <th pSortableColumn="importe_minimo"><span class="th-content">Importe mínimo <p-sortIcon
+                                        field="importe_minimo"></p-sortIcon></span></th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -140,7 +147,8 @@
                                     title="Clic para editar">
                                     {{ cupon.limite }}
                                 </span>
-                                <div *ngIf="editingCell === cupon.id_cupon + '_limite'" class="inline-edit-container" #inlineContainer>
+                                <div *ngIf="editingCell === cupon.id_cupon + '_limite'" class="inline-edit-container"
+                                    #inlineContainer>
                                     <input pInputText type="number" [(ngModel)]="cupon.limite" [min]="1"
                                         (keyup.enter)="saveInlineCupon(cupon, 'limite')"
                                         (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
@@ -167,7 +175,8 @@
                                         (keyup.enter)="saveInlineCupon(cupon, 'importe_minimo')"
                                         (keyup.escape)="cancelInlineEdit()" class="p-inputtext-sm flex-1" #input
                                         (focus)="input.select()" autofocus placeholder="Importe mínimo del cupón" />
-                                    <button pButton icon="pi pi-check" (click)="saveInlineCupon(cupon, 'importe_minimo')"
+                                    <button pButton icon="pi pi-check"
+                                        (click)="saveInlineCupon(cupon, 'importe_minimo')"
                                         [disabled]="isInlineSaveDisabled(cupon.importe_minimo)"
                                         class="p-button-sm p-button-success p-button-text inline-action-btn"
                                         pTooltip="Guardar"></button>
@@ -236,13 +245,36 @@
                         'estado_orden'
                     ]">
                     <ng-template #caption>
-                        <div class="flex flex-wrap gap-2 items-center justify-between">
+                        <div class="flex flex-wrap items-center gap-2">
+
+                            <!-- Input búsqueda -->
                             <input pInputText type="text" (input)="onGlobalFilter(dtClientes, $event)"
                                 placeholder="Buscar clientes..." class="w-full sm:w-80" />
-                            <div class="flex gap-1">
+
+                            <!-- Tags + botón -->
+                            <div class="flex items-center gap-2 ml-auto">
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-2">
+                                    <p-tag *ngFor="let card of estadoCards" [severity]="getEstadoSeverityC(card.value)"
+                                        class="estado-tag">
+                                        <div class="flex flex-col items-center px-2 py-1">
+                                            <span class="text-[10px] opacity-80">
+                                                {{ getEstadoLabelC(card.value) }}
+                                            </span>
+
+                                            <span class="text-lg font-bold leading-none">
+                                                {{ card.total }}
+                                            </span>
+                                        </div>
+                                    </p-tag>
+                                </div>
+
+                                <!-- Botón -->
                                 <p-button icon="pi pi-refresh" (onClick)="refreshCupondData()" [loading]="loadingCupond"
-                                    styleClass="p-button-sm p-button-primary p-button-raised" pTooltip="Recargar datos"
+                                    styleClass="p-button-primary p-button-raised" pTooltip="Recargar datos"
                                     tooltipPosition="top" tooltipStyleClass="custom-tooltip"></p-button>
+
                             </div>
                         </div>
                     </ng-template>
@@ -339,7 +371,7 @@
                 <!-- Código -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Código</label>
-                    <input pInputText class="w-full" formControlName="codigo" />
+                    <input pInputText class="w-full" formControlName="codigo" placeholder="Ej.MAXGANA5" />
                     <small *ngIf="CuponesForm.get('codigo')?.invalid && CuponesForm.get('codigo')?.touched"
                         class="text-red-500">
                         El código es obligatorio
@@ -349,17 +381,25 @@
                 <!-- ID Promo< -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>ID Promo</label>
-                    <input pInputText type="number" class="w-full" formControlName="id_promo" />
-                    <small *ngIf="CuponesForm.get('id_promo')?.invalid && CuponesForm.get('id_promo')?.touched"
-                        class="text-red-500">
-                        ID promo es obligatorio
-                    </small>
+                    <input pInputText type="number" class="w-full" formControlName="id_promo" placeholder="Ej.25828" />
+                    <div class="flex flex-col gap-1">
+                        <small *ngIf="CuponesForm.get('id_promo')?.hasError('required') 
+                                && CuponesForm.get('id_promo')?.touched" class="text-red-500">
+                            ID promo es obligatorio
+                        </small>
+
+
+                        <small *ngIf="CuponesForm.get('id_promo')?.errors?.promoInvalida" class="text-red-500">
+                            {{ CuponesForm.get('id_promo')?.errors?.promoInvalida }}
+                        </small>
+                    </div>
                 </div>
 
                 <!-- Tipo cupón -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Tipo cupón</label>
-                    <input pInputText type="number" class="w-full" formControlName="tipo_cupon" [min]="1" [max]="3" />
+                    <input pInputText type="number" class="w-full" formControlName="tipo_cupon" [min]="1" [max]="3"
+                        placeholder="Ej.1,2,3" />
                     <small *ngIf="CuponesForm.get('tipo_cupon')?.invalid && CuponesForm.get('tipo_cupon')?.touched"
                         class="text-red-500">
                         El tipo de cupón es obligatorio
@@ -371,7 +411,8 @@
                 <div class="text-sm font-medium mb-1 col-span-1 md:col-span-3">
                     <label>Descripción</label>
                     <textarea pTextarea rows="3" class="w-full p-inputtextarea resize-none text-sm font-medium"
-                        formControlName="descripcion" maxlength="150"></textarea>
+                        formControlName="descripcion" maxlength="150"
+                        placeholder="Ej. 10% de descuento en compras mayores a $500"></textarea>
                     <small *ngIf="CuponesForm.get('descripcion')?.invalid && CuponesForm.get('descripcion')?.touched"
                         class="text-red-500">
                         La descripción es obligatoria
@@ -424,8 +465,9 @@
 
                 <!-- Límite -->
                 <div class="text-sm font-medium mb-1 col-span-1">
-                    <label>Límite</label>
-                    <input pInputText type="number" class="w-full" formControlName="limite" [min]="1" />
+                    <label>Límite de uso</label>
+                    <input pInputText type="number" class="w-full" formControlName="limite" [min]="1"
+                        placeholder="Ej.1000" />
                     <small *ngIf="CuponesForm.get('limite')?.invalid && CuponesForm.get('limite')?.touched"
                         class="text-red-500">
                         El límite es obligatorio
@@ -436,7 +478,8 @@
                 <!-- Importe mínimo -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Importe mínimo</label>
-                    <input pInputText type="number" class="w-full"  formControlName="importe_minimo"/>
+                    <input pInputText type="number" class="w-full" formControlName="importe_minimo"
+                        placeholder="Ej.$50" />
                     <!--<p-inputnumber mode="decimal" class="w-full" formControlName="importe_minimo" />-->
                     <small
                         *ngIf="CuponesForm.get('importe_minimo')?.invalid && CuponesForm.get('importe_minimo')?.touched"
@@ -448,7 +491,7 @@
                 <!-- Valor descuento -->
                 <div class="text-sm font-medium mb-1 col-span-1">
                     <label>Valor descuento</label>
-                    <input pInputText class="w-full" formControlName="valor_desc" />
+                    <input pInputText class="w-full" formControlName="valor_desc" placeholder="Ej.$100 o 10%" />
                     <small *ngIf="CuponesForm.get('valor_desc')?.invalid && CuponesForm.get('valor_desc')?.touched"
                         class="text-red-500">
                         El valor de descuento es obligatorio
@@ -461,9 +504,6 @@
                     <label>URL</label>
                     <input pInputText class="w-full" formControlName="url_min" />
                 </div>
-
-
-
             </div>
 
             <!-- Botones -->

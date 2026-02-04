@@ -11,6 +11,7 @@
 - Cupones: new feature (models, services, page and routes).
 - Cupones: add inline editing, filters, calls and modals; new cuponesclientes service, remove cuponesd service.
 - Cupones: refactor component, add two new columns to main table.
+- Cupones (roberto-dev): add focus id_promo validation, placeholders and cards in customers tab.
 
 # 19.0.0
 

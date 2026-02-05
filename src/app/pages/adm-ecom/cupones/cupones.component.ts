@@ -663,7 +663,6 @@ export class CuponesComponent implements OnInit {
         this.cupondService.getClientesPorCupon(this.cuponSeleccionado.id_cupon)
             .subscribe({
                 next: (response) => {
-                    console.log('Response completa:', response);
                 
                     //Clientes
                     this.cupondClientes = response.data.clientes || [];

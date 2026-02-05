@@ -21,7 +21,8 @@ export const API_CONFIG = {
         PAGINAS: { CRUD: '/api/acatpag/v1' },
         PAGINAS_DET: { CRUD: '/api/acatpagdet/v1' },
         CP: { CRUD: '/api/admcp/v1' },
-        CUPON: {CRUD: '/api/admcupon/v1'}
+        CUPON: {CRUD: '/api/admcupon/v1'},
+        CUPON_CTE: {CRUD: '/api/admcuponcte/v1'},
     }
 };
 
@@ -44,7 +45,8 @@ export const API_URLS = {
     PAGINAS_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS.CRUD}`,
     PAGINAS_DET_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAGINAS_DET.CRUD}`,
     CP_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CP.CRUD}`,
-    CUPON_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUPON.CRUD}`
+    CUPON_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUPON.CRUD}`,
+    CUPON_CTE_CRUD: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUPON_CTE.CRUD}`
 };
 
 

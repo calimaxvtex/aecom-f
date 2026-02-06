@@ -13,38 +13,55 @@ export class CupondService {
     private apiConfigService = inject(ApiConfigService);
     private sessionService = inject(SessionService);
 
-    // ID del servicio Clientes
-    private readonly SERVICE_ID = 32;
-
+    private getClientesPorCuponUrl(): Observable<string> {
+        return this.apiConfigService.getspConfis().pipe(
+            map(() => {
+                const endpoint = this.apiConfigService.getEndpointByName('admcuponcte');
+                if (!endpoint) {
+                    console.warn(
+                        `Endpoint "cupones" no encontrado, usando URL por defecto`
+                    );
+                    return this.apiConfigService.getCuponCteCrudUrl();
+                }
+                return endpoint.url;
+            }),
+            catchError(error => {
+                console.warn(
+                    'Error obteniendo endpoint dinamico de clientes por cupon, usando URL por defecto:',
+                    error
+                );
+                return [this.apiConfigService.getCuponCteCrudUrl()];
+            })
+        );
+    }
 
     getClientesPorCupon(id: number): Observable<CupondResponse> {
-        return from(this.apiConfigService.waitForEndpoints()).pipe(
-            switchMap(() => {
-                const endpoint = this.apiConfigService.getEndpointById(this.SERVICE_ID);
-                if (!endpoint) {
-                    throw new Error(
-                        `Endpoint para servicio ClientesPorCupon (ID: ${this.SERVICE_ID}) no encontrado`
-                    );
-                }
-
-                return this.http.post<any>(endpoint.url, {
+        return this.getClientesPorCuponUrl().pipe(
+            switchMap(url => {
+                const body = {
                     action: 'SLD',
                     id_cupon: id,
                     ...this.getSessionData()
-                }).pipe(
-                    map((response: any) => {
+                };
+    
+                return this.http.post<any>(url, body).pipe(
+                    map(response => {
                         const first = Array.isArray(response) ? response[0] : response;
-
+    
+                        if (first?.statuscode && first.statuscode !== 200) {
+                            throw new Error(first.mensaje || 'Error del servidor');
+                        }
+    
                         return {
-                            statuscode: first?.statuscode ?? 500,
-                            mensaje: first?.mensaje ?? 'Error',
+                            statuscode: first?.statuscode ?? 200,
+                            mensaje: first?.mensaje ?? 'OK',
                             data: first?.data ?? {
                                 clientes: [],
                                 conteo_estados: []
                             }
-                        };
+                        } as CupondResponse;
                     }),
-                    catchError((error) => {
+                    catchError(error => {
                         console.error('Error en getClientesPorCupon:', error);
                         return throwError(() => error);
                     })
@@ -52,6 +69,8 @@ export class CupondService {
             })
         );
     }
+    
+    
 
     /**
      * Método helper para obtener datos de sesión (REGLA CRÍTICA DEL PROYECTO)

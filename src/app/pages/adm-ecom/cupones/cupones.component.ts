@@ -663,7 +663,6 @@ export class CuponesComponent implements OnInit {
         this.cupondService.getClientesPorCupon(this.cuponSeleccionado.id_cupon)
             .subscribe({
                 next: (response) => {
-                    console.log('Response completa:', response);
                 
                     //Clientes
                     this.cupondClientes = response.data.clientes || [];
@@ -800,21 +799,10 @@ export class CuponesComponent implements OnInit {
         return partes.join(' ');
     }
 
-    formatDate(fecha: string | Date | null): string {
-        if (!fecha) {
-            return '';
-        }
-
-        const date = new Date(fecha);
-
-        if (isNaN(date.getTime())) {
-            return '';
-        }
-
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-
+    formatDate(fecha: string | null): string {
+        if (!fecha) return '';
+        const [year, month, day] = fecha.split('-');
+    
         return `${day}/${month}/${year}`;
     }
 
